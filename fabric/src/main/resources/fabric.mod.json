@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+
+  "name": "{$mod_name}",
+  "description": "${description}",
+  "authors": [
+    "${mod_author}"
+  ],
+  "contact": {
+    "homepage": "https://geysermc.org/",
+    "sources": "https://github.com/GeyserMC/Hydraulic"
+  },
+
+  "license": "CC0-1.0",
+  "icon": "assets/hydraulic/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "org.geysermc.hydraulic.fabric.HydraulicFabricMod"
+    ]
+  },
+  "mixins": [
+    "hydraulic.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.14",
+    "fabric": "*",
+    "geyser-fabric": "*",
+    "minecraft": "${minecraft_version}",
+    "java": ">=17"
+  }
+}

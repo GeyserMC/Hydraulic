@@ -1,0 +1,25 @@
+{
+  "conditionals": {
+    "Manifest.properties.format_version": 2,
+    "Attachables.properties.format_version": "1.10.0",
+    "Items.properties.format_version": "1.10.0",
+    "Entity.properties.format_version": "1.10.0",
+    "ModelEntity.properties.format_version": "1.16.0"
+  },
+  "types": {
+    "Particles.main.anyOf": "string",
+    "RenderControllers.color_number.anyOf": "string",
+    "RenderControllers.molang_color.anyOf": "string",
+    "RenderControllers.main.anyOf": "string",
+    "AnimationController.main.anyOf": "string",
+    "ActorAnimation.main.anyOf": "string",
+    "Manifest.dependency.oneOf.0": "object",
+    "Sounds.main.oneOf.1": "array",
+    "Fog.main.oneOf.0": "array",
+    "Entity.main.oneOf.1": "object",
+    "Entity.render_controller.oneOf.0": "string",
+    "Blocks.main.oneOf.1": "object",
+    "Entity.animation_(controller)_condition.oneOf.1": "object",
+    "Attachables.animate.oneOf.1": "object"
+  }
+}

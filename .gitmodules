@@ -1,0 +1,3 @@
+[submodule "pack-schema/generator/src/main/resources/schema"]
+	path = pack-schema/generator/src/main/resources/schema
+	url = https://github.com/Blockception/Minecraft-bedrock-json-schemas
