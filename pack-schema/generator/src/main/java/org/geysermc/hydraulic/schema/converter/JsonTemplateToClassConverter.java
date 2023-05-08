@@ -7,6 +7,7 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -53,7 +54,7 @@ public final class JsonTemplateToClassConverter {
                 return;
             }
 
-            TypeSpec rootClass = createClass(input, schema, schema, className, className, output, options);
+            TypeSpec rootClass = createClass(input, packageName, schema, schema, className, className, className, output, options);
             JavaFile javaFile = JavaFile.builder(packageName, rootClass)
                     .build();
 
@@ -61,16 +62,17 @@ public final class JsonTemplateToClassConverter {
         }
     }
 
-    private static TypeSpec createClass(@NotNull String input, @NotNull JsonObject parentSchema, @NotNull JsonObject schema, @NotNull String rootClassName, @NotNull String className, @NotNull Path output, @NotNull ConverterOptions options) {
+    private static TypeSpec createClass(@NotNull String input, @NotNull String packageName, @NotNull JsonObject parentSchema, @NotNull JsonObject schema, @NotNull String rootClassName, @NotNull String prevClassName, @NotNull String className, @NotNull Path output, @NotNull ConverterOptions options) {
         // Check resolvers on root first
         ResolvedReference forwarded = resolveConditionals(input, rootClassName, parentSchema, schema, "<root>", options);
         if (forwarded != null) {
-            return createClass(input, forwarded.parentObject(), forwarded.object(), rootClassName, className, output, options);
+            return createClass(input, packageName, forwarded.parentObject(), forwarded.object(), rootClassName, prevClassName, className, output, options);
         }
 
         forwarded = flattenReference(
                 input,
                 rootClassName,
+                prevClassName,
                 parentSchema,
                 schema,
                 className,
@@ -79,12 +81,15 @@ public final class JsonTemplateToClassConverter {
         );
 
         if (forwarded != null) {
-            return createClass(input, forwarded.parentObject(), forwarded.object(), rootClassName, className, output, options);
+            return createClass(input, packageName, forwarded.parentObject(), forwarded.object(), rootClassName, prevClassName, className, output, options);
         }
 
         // Replace illegal characters
-        className = className.replace("-", "_");
+        className = className.replace("-", "Minus");
         className = className.replace("+", "Plus");
+
+        packageName = packageName.replace("-", "_");
+        packageName = packageName.replace("+", "plus");
 
         TypeSpec.Builder classBuilder = TypeSpec.classBuilder(className).addModifiers(Modifier.PUBLIC);
 
@@ -104,12 +109,12 @@ public final class JsonTemplateToClassConverter {
         }
 
         if (schema.containsKey("properties")) {
-            parseProperties(input, rootClassName, classBuilder, parentSchema, schema, "properties", output, options);
+            parseProperties(input, packageName, rootClassName, className, classBuilder, parentSchema, schema, "properties", output, options);
         }
 
         if (schema.getValue("additionalProperties") instanceof JsonObject value) {
             if (value.containsKey("properties")) {
-                parseProperties(input, rootClassName, classBuilder, parentSchema, value, "properties", output, options);
+                parseProperties(input, packageName, rootClassName, className, classBuilder, parentSchema, value, "properties", output, options);
             }  else {
                 System.out.println("Unknown additional properties: " + value);
             }
@@ -118,7 +123,7 @@ public final class JsonTemplateToClassConverter {
         return classBuilder.build();
     }
 
-    private static ResolvedReference flattenReference(@NotNull String input, @NotNull String rootClassName, @NotNull JsonObject parentSchema, @NotNull JsonObject schema, @NotNull String className, @NotNull Path output, @NotNull ConverterOptions options) {
+    private static ResolvedReference flattenReference(@NotNull String input, @NotNull String rootClassName, @NotNull String prevClassName, @NotNull JsonObject parentSchema, @NotNull JsonObject schema, @NotNull String className, @NotNull Path output, @NotNull ConverterOptions options) {
         ResolvedReference forwarded = null;
         if (schema.fieldNames().contains("allOf")) {
             forwarded = resolveConditionals(input, rootClassName, parentSchema, schema, "allOf", options);
@@ -131,7 +136,11 @@ public final class JsonTemplateToClassConverter {
         return forwarded;
     }
 
-    private static void parseProperties(@NotNull String input, @NotNull String rootClassName, @NotNull TypeSpec.Builder classBuilder, @NotNull JsonObject parentSchema, @NotNull JsonObject schema, @NotNull String propertiesName, @NotNull Path output, @NotNull ConverterOptions options) {
+    private static void parseProperties(@NotNull String input, @NotNull String packageName, @NotNull String rootClassName, @NotNull String prevClassName, @NotNull TypeSpec.Builder classBuilder, @NotNull JsonObject parentSchema, @NotNull JsonObject schema, @NotNull String propertiesName, @NotNull Path output, @NotNull ConverterOptions options) {
+        // Replace illegal characters
+        packageName = packageName.replace("-", "minus");
+        packageName = packageName.replace("+", "plus");
+
         JsonObject properties = schema.getJsonObject(propertiesName);
         if (properties != null) {
             for (Map.Entry<String, Object> property : properties) {
@@ -139,11 +148,31 @@ public final class JsonTemplateToClassConverter {
                     continue;
                 }
 
+                String fieldName = property.getKey();
+                if (fieldName.contains(":")) {
+                    fieldName = fieldName.split(":")[1];
+                }
+
+                if (fieldName.contains("+")) {
+                    fieldName = fieldName.replace("+", "");
+                }
+
+                if (fieldName.contains("-")) {
+                    fieldName = fieldName.replace("-", "_");
+                }
+
+                String newPackageName = packageName;
+                if (!packageName.endsWith(prevClassName.toLowerCase(Locale.ROOT))) {
+                    newPackageName += "." + prevClassName.toLowerCase(Locale.ROOT);
+                }
+
                 parseProperty(
                         property.getKey(),
+                        newPackageName,
                         propertyValue,
                         input,
                         rootClassName,
+                        prevClassName,
                         classBuilder,
                         parentSchema,
                         output,
@@ -153,15 +182,53 @@ public final class JsonTemplateToClassConverter {
         }
     }
 
-    private static void parseProperty(@NotNull String propertyName, @NotNull JsonObject propertyValue, @NotNull String input, @NotNull String rootClassName, @NotNull TypeSpec.Builder classBuilder, @NotNull JsonObject parentSchema, @NotNull Path output, @NotNull ConverterOptions options) {
-        String fieldName = CaseUtils.toCamelCase(propertyName, false, '_');
+    private static void parseProperty(@NotNull String propertyName, @NotNull String packageName, @NotNull JsonObject propertyValue, @NotNull String input, @NotNull String rootClassName, @NotNull String prevClassName, @NotNull TypeSpec.Builder classBuilder, @NotNull JsonObject parentSchema, @NotNull Path output, @NotNull ConverterOptions options) {
+        String fieldName = propertyName;
+        if (propertyName.contains("_")) {
+            fieldName = CaseUtils.toCamelCase(propertyName, false, '_');
+        }
+
         if (fieldName.contains(":")) {
             fieldName = fieldName.split(":")[1];
         }
 
         // Replace illegal characters
-        fieldName = fieldName.replace("-", "_");
-        fieldName = fieldName.replace("+", "Plus");
+        packageName = packageName.replace("-", "minus");
+        packageName = packageName.replace("+", "plus");
+
+        if (fieldName.contains("+")) {
+            fieldName = fieldName.replace("+", "plus_");
+            fieldName = CaseUtils.toCamelCase(fieldName, false, '_');
+        }
+
+        if (fieldName.contains("-")) {
+            fieldName = fieldName.replace("-", "minus_");
+            fieldName = CaseUtils.toCamelCase(fieldName, false, '_');
+        }
+
+        if (prevClassName.equals("TextureData")) {
+            System.out.println("Schema: " + propertyValue);
+        }
+
+        ResolvedReference flatRef = flattenReference(
+                input,
+                rootClassName,
+                prevClassName,
+                parentSchema,
+                propertyValue,
+                fieldName,
+                output,
+                options
+        );
+
+        if (flatRef != null) {
+            propertyValue = flatRef.object();
+            parentSchema = flatRef.parentObject();
+        }
+
+        if (prevClassName.equals("TextureData")) {
+            System.out.println("Schema new: " + propertyValue);
+        }
 
         String propertyType = propertyValue.getString("type");
         if (propertyType == null) {
@@ -170,13 +237,18 @@ public final class JsonTemplateToClassConverter {
             }
         }
 
+        // Handle default Java param
+        if (fieldName.equals("default")) {
+            fieldName = "defaultValue";
+        }
+
         if (propertyType != null) {
             FieldSpec.Builder spec = switch (propertyType) {
                 case "string" -> FieldSpec.builder(String.class, fieldName, Modifier.PUBLIC);
                 case "integer" -> FieldSpec.builder(int.class, fieldName, Modifier.PUBLIC);
                 case "number" -> FieldSpec.builder(float.class, fieldName, Modifier.PUBLIC);
                 case "boolean" -> FieldSpec.builder(boolean.class, fieldName, Modifier.PUBLIC);
-                case "object" -> FieldSpec.builder(ClassName.get("", StringUtils.capitalize(fieldName)), fieldName, Modifier.PUBLIC);
+                case "object" -> FieldSpec.builder(ClassName.get(packageName, StringUtils.capitalize(fieldName)), fieldName, Modifier.PUBLIC);
                 default -> null;
             };
 
@@ -185,6 +257,7 @@ public final class JsonTemplateToClassConverter {
                     ResolvedReference resolvedReference = flattenReference(
                             input,
                             rootClassName,
+                            prevClassName,
                             parentSchema,
                             items,
                             StringUtils.capitalize(fieldName),
@@ -206,16 +279,18 @@ public final class JsonTemplateToClassConverter {
                             case "boolean" -> spec = FieldSpec.builder(boolean[].class, fieldName, Modifier.PUBLIC);
                             case "object" -> {
                                 ParameterizedTypeName mainType = ParameterizedTypeName.get(ClassName.get(List.class),
-                                        ClassName.get("", StringUtils.capitalize(fieldName)));
+                                        ClassName.get(packageName, StringUtils.capitalize(fieldName)));
 
                                 spec = FieldSpec.builder(mainType, fieldName, Modifier.PUBLIC)
                                         .initializer(CodeBlock.of("new $T<>()", ArrayList.class));
 
                                 FieldSpec.Builder altSpec = createObjectField(
                                         classBuilder,
+                                        packageName,
                                         input,
                                         fieldName,
                                         rootClassName,
+                                        prevClassName,
                                         items,
                                         parentSchema,
                                         output,
@@ -251,9 +326,11 @@ public final class JsonTemplateToClassConverter {
             if (propertyType.equals("object")) {
                 FieldSpec.Builder altSpec = createObjectField(
                         classBuilder,
+                        packageName,
                         input,
                         fieldName,
                         rootClassName,
+                        prevClassName,
                         propertyValue,
                         parentSchema,
                         output,
@@ -273,6 +350,7 @@ public final class JsonTemplateToClassConverter {
                     spec.addAnnotation(annotation);
                 }
 
+                // TODO: Why does this happen?
                 FieldSpec newSpec = spec.build();
                 if (classBuilder.fieldSpecs.contains(newSpec)) {
                     System.err.println("Tried to add duplicate field: " + newSpec.name + " to class: " + rootClassName);
@@ -328,11 +406,18 @@ public final class JsonTemplateToClassConverter {
         if (ref != null) {
             ResolvedReference refSchema = parseRef(input, parentSchema, propertyValue);
             if (refSchema != null) {
+                String newPackageName = packageName;
+                if (!packageName.endsWith(prevClassName.toLowerCase(Locale.ROOT))) {
+                    newPackageName += "." + prevClassName.toLowerCase(Locale.ROOT);
+                }
+
                 parseProperty(
                         propertyName,
+                        newPackageName,
                         refSchema.object(),
                         input,
                         rootClassName,
+                        prevClassName,
                         classBuilder,
                         parentSchema,
                         output,
@@ -356,11 +441,8 @@ public final class JsonTemplateToClassConverter {
         }
     }
 
-    private static FieldSpec.Builder createObjectField(@NotNull TypeSpec.Builder classBuilder, @NotNull String input, @NotNull String fieldName, @NotNull String rootClassName, @NotNull JsonObject propertyValue, @NotNull JsonObject parentSchema, @NotNull Path output, @NotNull ConverterOptions options) {
+    private static FieldSpec.Builder createObjectField(@NotNull TypeSpec.Builder classBuilder, @NotNull String packageName, @NotNull String input, @NotNull String fieldName, @NotNull String rootClassName, @NotNull String prevClassName, @NotNull JsonObject propertyValue, @NotNull JsonObject parentSchema, @NotNull Path output, @NotNull ConverterOptions options) {
         String className = StringUtils.capitalize(fieldName);
-        if (rootClassName.equals(className)) {
-            className = options.collisionPrefix() + className;
-        }
 
         // Check if we need to create a new class or just a HashMap.
         // If the class has an additionalProperties key without any
@@ -385,14 +467,52 @@ public final class JsonTemplateToClassConverter {
                             Modifier.PRIVATE)
                     .initializer(CodeBlock.of("new $T<>()", HashMap.class));
         } else {
-            TypeSpec propertyClass = createClass(input, parentSchema, propertyValue, rootClassName, className, output, options);
-            classBuilder.addType(propertyClass.toBuilder()
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                    .build()
-            );
-        }
+            // Replace illegal characters
+            className = className.replace("-", "Minus");
+            className = className.replace("+", "Plus");
 
-        return null;
+            packageName = packageName.replace("-", "_");
+            packageName = packageName.replace("+", "plus");
+
+            TypeSpec.Builder propertyClass = createClass(input, packageName, parentSchema, propertyValue, rootClassName, prevClassName, className, output, options).toBuilder();
+
+            // Field will be a map
+            FieldSpec.Builder spec = null;
+            if (propertyValue.getValue("additionalProperties") instanceof JsonObject object && object.containsKey("properties")) {
+                ParameterizedTypeName mainType = ParameterizedTypeName.get(ClassName.get(Map.class),
+                        TypeName.get(String.class),
+                        ClassName.get(packageName, className));
+
+                parseProperties(
+                        input,
+                        packageName,
+                        rootClassName,
+                        className,
+                        propertyClass,
+                        parentSchema,
+                        object,
+                        "properties",
+                        output,
+                        options
+                );
+
+                spec = FieldSpec.builder(mainType,
+                                fieldName,
+                                Modifier.PRIVATE)
+                        .initializer(CodeBlock.of("new $T<>()", HashMap.class));
+            }
+
+            JavaFile javaFile = JavaFile.builder(packageName, propertyClass.build())
+                    .build();
+
+            try {
+                javaFile.writeTo(output);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return spec;
+        }
     }
 
     private static ResolvedReference resolveConditionals(@NotNull String input, @NotNull String rootClassName, @NotNull JsonObject parentSchema, @NotNull JsonObject schema, @NotNull String type, @NotNull ConverterOptions options) {
@@ -432,7 +552,7 @@ public final class JsonTemplateToClassConverter {
                 if (type.equals("oneOf")) {
                     name += "." + i++;
                 }
-                String anyType = jsonObject.getString("type", "unknown");
+                String anyType = jsonObject.getString("type", jsonObject.containsKey("$ref") ? "ref" : "unknown");
 
                 Object configuredOption = options.schemaConfig().getTypes().get(name);
                 if (anyType.equals(configuredOption)) {

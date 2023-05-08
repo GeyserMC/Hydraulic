@@ -2,6 +2,9 @@ package org.geysermc.hydraulic.pack.bedrock.resource.textures;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.String;
+import java.util.HashMap;
+import java.util.Map;
+import org.geysermc.hydraulic.pack.bedrock.resource.textures.terraintexture.TextureData;
 
 /**
  * Terrain Texture File
@@ -18,7 +21,7 @@ public class TerrainTexture {
   public String resourcePackName;
 
   @JsonProperty("texture_data")
-  public TextureData textureData;
+  private Map<String, TextureData> textureData = new HashMap<>();
 
   @JsonProperty("texture_name")
   public String textureName;
@@ -68,14 +71,14 @@ public class TerrainTexture {
   /**
    * @return Texture Data
    */
-  public TextureData getTextureData() {
+  public Map<String, TextureData> getTextureData() {
     return this.textureData;
   }
 
   /**
    * @param textureData Texture Data
    */
-  public void setTextureData(TextureData textureData) {
+  public void setTextureData(Map<String, TextureData> textureData) {
     this.textureData = textureData;
   }
 
@@ -91,11 +94,5 @@ public class TerrainTexture {
    */
   public void setTextureName(String textureName) {
     this.textureName = textureName;
-  }
-
-  /**
-   * Texture Data
-   */
-  public static class TextureData {
   }
 }
