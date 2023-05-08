@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 @AutoService(PackModule.class)
@@ -53,7 +54,7 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                         Files.createDirectories(outputPath.getParent());
                     }
 
-                    Files.copy(texturePath, outputPath);
+                    Files.copy(texturePath, outputPath, StandardCopyOption.REPLACE_EXISTING);
                     LOGGER.debug("Copied item texture {} for mod {}", texturePath, context.mod().id());
                 } catch (IOException ex) {
                     LOGGER.error("Failed to copy item texture {} for mod {}", texturePath, context.mod().id(), ex);
@@ -86,7 +87,7 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                     .name(registry.getKey(item).getPath())
                     .displayName(name)
                     .identifier(registry.getKey(item).toString())
-                    .icon(registry.getKey(item).getPath())
+                    .icon(registry.getKey(item).toString())
                     .javaId(registry.getId(item))
                     .stackSize(item.getMaxStackSize())
                     .maxDamage(item.getMaxDamage())

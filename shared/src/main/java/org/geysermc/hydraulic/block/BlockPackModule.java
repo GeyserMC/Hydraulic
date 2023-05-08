@@ -15,7 +15,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     @Override
     public void create(@NotNull PackCreateContext<BlockPackModule> context) {
         List<Block> blocks = context.registryValues(Registries.BLOCK);
-        if (blocks.size() > 1) {
+        if (blocks.size() >= 1) {
             LOGGER.info("Blocks to convert: " + blocks.size() + " in mod " + context.mod().id());
         }
     }

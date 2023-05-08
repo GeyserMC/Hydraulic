@@ -64,6 +64,9 @@ public class FileUtil {
             try (FileInputStream in = new FileInputStream(srcFile)) {
                 String name = srcFile.getPath();
                 name = name.replace(rootPath.getPath(), "");
+                if (name.startsWith("\\")) {
+                    name = name.substring(1);
+                }
                 zip.putNextEntry(new ZipEntry(name));
                 while ((len = in.read(buf)) > 0) {
                     zip.write(buf, 0, len);
