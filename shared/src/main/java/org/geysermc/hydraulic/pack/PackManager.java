@@ -2,19 +2,26 @@ package org.geysermc.hydraulic.pack;
 
 import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
+import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.hydraulic.HydraulicImpl;
+import org.geysermc.hydraulic.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.hydraulic.pack.context.PackCreateContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.hydraulic.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.zip.ZipFile;
 
 /**
  * Manages packs within Hydraulic. Most of the pack conversion
@@ -27,21 +34,32 @@ public class PackManager {
     static final Set<String> IGNORED_MODS = Set.of(
             "minecraft",
             "java",
+            "hydraulic",
+            "geyser-fabric",
+            "geyser-forge",
             "vanilla"
     );
 
     private final HydraulicImpl hydraulic;
     private final List<PackModule<?>> modules = new ArrayList<>();
 
+    private final Map<String, BedrockResourcePack> packs = new HashMap<>();
+
     public PackManager(HydraulicImpl hydraulic) {
         this.hydraulic = hydraulic;
+    }
+
+    /**
+     * Initializes the pack manager.
+     */
+    public void initialize() {
         for (PackModule<?> module : ServiceLoader.load(PackModule.class)) {
             this.modules.add(module);
 
-            GeyserApi.api().eventBus().register(hydraulic, module);
+            GeyserApi.api().eventBus().register(this.hydraulic, module);
         }
 
-        GeyserApi.api().eventBus().register(hydraulic, new PackListener(hydraulic, this));
+        GeyserApi.api().eventBus().register(this.hydraulic, new PackListener(hydraulic, this));
     }
 
     /**
@@ -52,11 +70,29 @@ public class PackManager {
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
     void createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
-        // TODO: Create manifest
-        // TODO: Other global stuff
+        // Initialize our resource pack for our mod
+        BedrockResourcePack pack = BedrockResourcePack.initializeForMod(mod);
+        this.packs.put(mod.id(), pack);
 
         for (PackModule<?> module : this.modules) {
-            module.create(new PackCreateContext(this.hydraulic, mod, module, packPath));
+            module.create(new PackCreateContext(this.hydraulic, mod, module, pack, packPath));
+        }
+
+
+        // Now export the pack
+        try {
+            pack.export(packPath);
+        } catch (IOException ex) {
+            LOGGER.error("Failed to export pack for mod {}", mod.id(), ex);
+        }
+
+        // TODO: NIO
+        // Zip up the pack
+        Path packsPath = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("packs");
+        try {
+            FileUtil.zipDirectory(packPath.toFile(), packsPath.resolve(mod.id() + ".zip").toFile());
+        } catch (Exception ex) {
+            LOGGER.error("Failed to zip pack for mod {}", mod.id(), ex);
         }
     }
 

@@ -36,10 +36,14 @@ public class HydraulicImpl implements EventRegistrar {
     }
 
     /**
-     * Initializes Hydraulic.
+     * Called when the server is starting.
+     *
+     * @param server the Minecraft server instance
      */
-    public void onServerStarting(MinecraftServer server) {
+    public void onServerStarting(@NotNull MinecraftServer server) {
         this.server = server;
+
+        this.packManager.initialize();
     }
 
     /**
@@ -68,6 +72,7 @@ public class HydraulicImpl implements EventRegistrar {
      *
      * @return the Minecraft server instance
      */
+    @NotNull
     public MinecraftServer server() {
         return this.server;
     }
@@ -79,7 +84,8 @@ public class HydraulicImpl implements EventRegistrar {
      * @param bootstrap the Hydraulic platform bootstrap
      * @return the loaded Hydraulic instance
      */
-    public static HydraulicImpl load(HydraulicPlatform platform, HydraulicBootstrap bootstrap) {
+    @NotNull
+    public static HydraulicImpl load(@NotNull HydraulicPlatform platform, @NotNull HydraulicBootstrap bootstrap) {
         if (instance != null) {
             throw new IllegalStateException("Singleton HydraulicImpl has already been loaded!");
         }

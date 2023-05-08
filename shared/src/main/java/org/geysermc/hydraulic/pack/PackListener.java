@@ -31,7 +31,7 @@ public class PackListener {
     @Subscribe
     public void onLoadResourcePacks(GeyserLoadResourcePacksEvent event) {
         // TODO: Add this to Geyser API
-        Path packsPath = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("packs");
+        Path packsPath = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("development_packs");
 
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
         for (ModInfo mod : this.hydraulic.mods()) {
@@ -54,6 +54,7 @@ public class PackListener {
         this.manager.callEvents(event);
 
         for (Map.Entry<String, Pair<ModInfo, Path>> entry : packsToLoad.entrySet()) {
+            event.resourcePacks().add(entry.getValue().getRight());
             this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight());
         }
     }

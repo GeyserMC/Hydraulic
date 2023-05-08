@@ -47,12 +47,16 @@ public abstract class PackModule<T extends PackModule<T>> {
      * @param <E> the event type
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public <E extends Event> void listenOn(@NotNull Class<E> event, Consumer<PackEventContext<E, T>> eventConsumer) {
+    public <E extends Event> void listenOn(@NotNull Class<E> event, @NotNull Consumer<PackEventContext<E, T>> eventConsumer) {
         this.eventListeners.computeIfAbsent(event, v -> new ArrayList<>()).add((Consumer) eventConsumer);
     }
 
-    <E extends Event> void call(Class<E> event, PackEventContext<E, T> context) {
+    <E extends Event> void call(@NotNull Class<E> event, @NotNull PackEventContext<E, T> context) {
         for (Map.Entry<Class<? extends Event>, List<Consumer<PackEventContext<?, T>>>> entry : this.eventListeners.entrySet()) {
+            if (!entry.getKey().isAssignableFrom(event)) {
+                continue;
+            }
+
             List<Consumer<PackEventContext<?, T>>> listeners = entry.getValue();
             for (Consumer<PackEventContext<?, T>> listener : listeners) {
                 try {
