@@ -28,7 +28,7 @@
     "TerrainTexture.main.oneOf.0": "ref",
     "TerrainTexture.texture.oneOf.1": "object",
     "ItemTexture.main.oneOf.0": "ref",
-    "ItemTexture.texture.oneOf.1": "object",
+    "ItemTexture.texture.oneOf.0": "string",
     "Entity.main.anyOf": "string",
     "Blocks.format_version.oneOf.1": "array",
     "Particles.main.oneOf.0": "string",

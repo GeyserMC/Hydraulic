@@ -67,17 +67,29 @@ public class PackManager {
      *
      * @param mod the mod to create the pack for
      * @param packPath the path to the pack
+     * @return {@code true} if the pack was created, {@code false} otherwise
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    void createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
+    boolean createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
         // Initialize our resource pack for our mod
         BedrockResourcePack pack = BedrockResourcePack.initializeForMod(mod);
-        this.packs.put(mod.id(), pack);
 
+        boolean shouldExportPack = false;
         for (PackModule<?> module : this.modules) {
-            module.create(new PackCreateContext(this.hydraulic, mod, module, pack, packPath));
+            PackCreateContext context = new PackCreateContext(this.hydraulic, mod, module, pack, packPath);
+            if (!module.test(context)) {
+                continue;
+            }
+
+            module.create(context);
+            shouldExportPack = true;
         }
 
+        if (!shouldExportPack) {
+            return false;
+        }
+
+        this.packs.put(mod.id(), pack);
 
         // Now export the pack
         try {
@@ -94,6 +106,8 @@ public class PackManager {
         } catch (Exception ex) {
             LOGGER.error("Failed to zip pack for mod {}", mod.id(), ex);
         }
+
+        return true;
     }
 
     void callEvents(@NotNull Event event) {

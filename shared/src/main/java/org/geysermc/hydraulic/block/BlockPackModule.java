@@ -19,4 +19,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             LOGGER.info("Blocks to convert: " + blocks.size() + " in mod " + context.mod().id());
         }
     }
+
+    @Override
+    public boolean test(@NotNull PackCreateContext<BlockPackModule> context) {
+        return context.registryValues(Registries.BLOCK).size() > 0;
+    }
 }

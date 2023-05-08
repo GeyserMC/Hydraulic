@@ -15,10 +15,10 @@ public class HydraulicForgeMod {
     public HydraulicForgeMod() {
         this.hydraulic = HydraulicImpl.load(HydraulicPlatform.FORGE, new HydraulicForgeBootstrap());
 
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onServerStarted);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onServerStarting);
     }
 
-    private void onServerStarted(ServerStartingEvent event) {
+    private void onServerStarting(ServerStartingEvent event) {
         this.hydraulic.onServerStarting(event.getServer());
     }
 }

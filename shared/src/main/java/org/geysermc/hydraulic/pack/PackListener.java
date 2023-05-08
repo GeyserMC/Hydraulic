@@ -31,17 +31,19 @@ public class PackListener {
     @Subscribe
     public void onLoadResourcePacks(GeyserLoadResourcePacksEvent event) {
         // TODO: Add this to Geyser API
-        Path packsPath = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("development_packs");
+        Path packsPath = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("packs");
+        Path devPacksPath = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("development_packs");
 
-        Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
+        Map<String, Pair<ModInfo, Pair<Path, Path>>> packsToLoad = new HashMap<>();
         for (ModInfo mod : this.hydraulic.mods()) {
             if (PackManager.IGNORED_MODS.contains(mod.id())) {
                 continue;
             }
 
-            Path packPath = packsPath.resolve(mod.id());
+            Path packPath = packsPath.resolve(mod.id() + ".zip");
+            Path devPackPath = devPacksPath.resolve(mod.id());
             if (!event.resourcePacks().contains(packPath)) {
-                packsToLoad.put(mod.id(), Pair.of(mod, packPath));
+                packsToLoad.put(mod.id(), Pair.of(mod, Pair.of(packPath, devPackPath)));
             }
         }
 
@@ -53,9 +55,10 @@ public class PackListener {
 
         this.manager.callEvents(event);
 
-        for (Map.Entry<String, Pair<ModInfo, Path>> entry : packsToLoad.entrySet()) {
-            event.resourcePacks().add(entry.getValue().getRight());
-            this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight());
+        for (Map.Entry<String, Pair<ModInfo, Pair<Path, Path>>> entry : packsToLoad.entrySet()) {
+            if (this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight().getRight())) {
+                event.resourcePacks().add(entry.getValue().getRight().getLeft());
+            }
         }
     }
 

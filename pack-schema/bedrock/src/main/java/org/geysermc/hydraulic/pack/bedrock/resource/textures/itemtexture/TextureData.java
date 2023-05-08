@@ -1,28 +1,28 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.textures.itemtexture;
 
-import org.geysermc.hydraulic.pack.bedrock.resource.textures.itemtexture.texturedata.Textures;
+import java.lang.String;
 
 /**
  * Texture Data
  */
 public class TextureData {
-  public Textures textures;
+  public String textures;
 
   /**
-   * A collection of texture files.
+   * A texture file.
    *
    * @return Texture
    */
-  public Textures getTextures() {
+  public String getTextures() {
     return this.textures;
   }
 
   /**
-   * A collection of texture files.
+   * A texture file.
    *
    * @param textures Texture
    */
-  public void setTextures(Textures textures) {
+  public void setTextures(String textures) {
     this.textures = textures;
   }
 }

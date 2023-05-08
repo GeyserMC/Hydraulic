@@ -14,14 +14,24 @@ public class HydraulicForgeBootstrap implements HydraulicBootstrap {
     @Override
     public @NotNull Set<ModInfo> mods() {
         return ModList.get().getMods().stream().map(modInfo ->
-                new ModInfo(modInfo.getModId(), modInfo.getVersion().toString(), modInfo.getDisplayName())
+                new ModInfo(
+                        modInfo.getModId(),
+                        modInfo.getVersion().toString(),
+                        modInfo.getDisplayName(),
+                        modInfo.getOwningFile().getFile().getFilePath()
+                )
         ).collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
     public @Nullable ModInfo mod(@NotNull String modName) {
         return ModList.get().getModContainerById(modName).map(container ->
-                new ModInfo(container.getModId(), container.getModInfo().getVersion().toString(), container.getModInfo().getDisplayName())
+                new ModInfo(
+                        container.getModId(),
+                        container.getModInfo().getVersion().toString(),
+                        container.getModInfo().getDisplayName(),
+                        container.getModInfo().getOwningFile().getFile().getFilePath()
+                )
         ).orElse(null);
     }
 }

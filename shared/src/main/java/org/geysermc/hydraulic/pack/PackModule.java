@@ -40,6 +40,15 @@ public abstract class PackModule<T extends PackModule<T>> {
     public abstract void create(@NotNull PackCreateContext<T> context);
 
     /**
+     * Tests if this pack module should be used.
+     *
+     * @param context the context of the pack
+     * @return if this pack module should be used
+     */
+    public boolean test(@NotNull PackCreateContext<T> context) {
+        return true;
+    }
+    /**
      * Listens on the given {@link Event event}.
      *
      * @param event the event to listen on

@@ -83,9 +83,7 @@ public class BedrockResourcePack {
         }
 
         TextureData data = new TextureData();
-        Textures texture = new Textures();
-        texture.setPath(textureLocation);
-        data.setTextures(texture);
+        data.setTextures(textureLocation);
 
         this.itemTexture.getTextureData().put(id, data);
     }
