@@ -78,6 +78,8 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                     .stackSize(item.getMaxStackSize())
                     .maxDamage(item.getMaxDamage())
                     .allowOffhand(true)
+                    .creativeCategory(4) // 4 - "Items"
+                    .creativeGroup("")
                     .build());
         }
     }
