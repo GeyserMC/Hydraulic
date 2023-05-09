@@ -13,6 +13,7 @@ import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackCreateContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
+import org.geysermc.hydraulic.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -46,22 +47,7 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
             String outputLoc = String.format(BEDROCK_ITEM_TEXTURE_LOCATION, context.mod().id(), itemKey.getPath());
             context.pack().addItem(itemKey.toString(), outputLoc.replace(".png", ""));
 
-            Path texturePath = jarPath.resolve(String.format(JAVA_ITEM_TEXTURE_LOCATION, context.mod().id(), itemKey.getPath()));
-            if (Files.exists(texturePath)) {
-                try {
-                    Path outputPath = context.path().resolve(outputLoc);
-                    if (Files.notExists(outputPath.getParent())) {
-                        Files.createDirectories(outputPath.getParent());
-                    }
-
-                    Files.copy(texturePath, outputPath, StandardCopyOption.REPLACE_EXISTING);
-                    LOGGER.debug("Copied item texture {} for mod {}", texturePath, context.mod().id());
-                } catch (IOException ex) {
-                    LOGGER.error("Failed to copy item texture {} for mod {}", texturePath, context.mod().id(), ex);
-                }
-            } else {
-                LOGGER.warn("Item texture {} not found for mod {}", texturePath, context.mod().id());
-            }
+            FileUtil.copyFileFromMod(context.mod(), String.format(JAVA_ITEM_TEXTURE_LOCATION, context.mod().id(), itemKey.getPath()), context.path().resolve(outputLoc));
         }
     }
 

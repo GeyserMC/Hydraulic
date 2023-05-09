@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Header;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Modules;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.ItemTexture;
+import org.geysermc.hydraulic.pack.bedrock.resource.textures.TerrainTexture;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.itemtexture.TextureData;
-import org.geysermc.hydraulic.pack.bedrock.resource.textures.itemtexture.texturedata.Textures;
+import org.geysermc.hydraulic.pack.bedrock.resource.textures.terraintexture.texturedata.Textures;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,14 +31,16 @@ public class BedrockResourcePack {
     private final Manifest manifest;
 
     private ItemTexture itemTexture;
+    private TerrainTexture terrainTexture;
 
     public BedrockResourcePack(@NotNull Manifest manifest) {
-        this(manifest, null);
+        this(manifest, null, null);
     }
 
-    public BedrockResourcePack(@NotNull Manifest manifest, @Nullable ItemTexture itemTexture) {
+    public BedrockResourcePack(@NotNull Manifest manifest, @Nullable ItemTexture itemTexture, @Nullable TerrainTexture terrainTexture) {
         this.manifest = manifest;
         this.itemTexture = itemTexture;
+        this.terrainTexture = terrainTexture;
     }
 
     /**
@@ -70,6 +73,25 @@ public class BedrockResourcePack {
     }
 
     /**
+     * Get the terrain texture of the resource pack.
+     *
+     * @return the terrain texture of the resource pack
+     */
+    @Nullable
+    public TerrainTexture terrainTexture() {
+        return this.terrainTexture;
+    }
+
+    /**
+     * Set the terrain texture of the resource pack.
+     *
+     * @param terrainTexture the terrain texture of the resource pack
+     */
+    public void terrainTexture(@Nullable TerrainTexture terrainTexture) {
+        this.terrainTexture = terrainTexture;
+    }
+
+    /**
      * Add an item to the resource pack.
      *
      * @param id the id of the item
@@ -89,6 +111,29 @@ public class BedrockResourcePack {
     }
 
     /**
+     * Add a block texture to the resource pack.
+     *
+     * @param id the id of the block texture
+     * @param textureLocation the location of the texture
+     */
+    public void addBlockTexture(@NotNull String id, @NotNull String textureLocation) {
+        if (this.terrainTexture == null) {
+            this.terrainTexture = new TerrainTexture();
+            this.terrainTexture.setResourcePackName(this.manifest.getHeader().getName());
+            this.terrainTexture.setTextureName("atlas.terrain");
+            this.terrainTexture.setPadding(8);
+            this.terrainTexture.setNumMipLevels(4);
+        }
+
+        org.geysermc.hydraulic.pack.bedrock.resource.textures.terraintexture.TextureData data = new org.geysermc.hydraulic.pack.bedrock.resource.textures.terraintexture.TextureData();
+        Textures textures = new Textures();
+        textures.setPath(textureLocation);
+        data.setTextures(textures);
+
+        this.terrainTexture.getTextureData().put(id, data);
+    }
+
+    /**
      * Exports the resource pack to the specified directory.
      *
      * @param directory the directory to export the resource pack to
@@ -98,6 +143,10 @@ public class BedrockResourcePack {
 
         if (this.itemTexture != null) {
             exportJson(MAPPER, directory.resolve("textures/item_texture.json"), this.itemTexture);
+        }
+
+        if (this.terrainTexture != null) {
+            exportJson(MAPPER, directory.resolve("textures/terrain_texture.json"), this.terrainTexture);
         }
     }
 

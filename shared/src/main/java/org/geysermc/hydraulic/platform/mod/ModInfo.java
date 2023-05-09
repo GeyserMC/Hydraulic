@@ -16,6 +16,7 @@ public record ModInfo(
         @NotNull String id,
         @NotNull String version,
         @NotNull String name,
-        @NotNull Path modPath
+        @NotNull Path modPath,
+        @NotNull String iconPath
 ) {
 }

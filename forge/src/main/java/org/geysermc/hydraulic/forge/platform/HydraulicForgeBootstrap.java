@@ -18,7 +18,8 @@ public class HydraulicForgeBootstrap implements HydraulicBootstrap {
                         modInfo.getModId(),
                         modInfo.getVersion().toString(),
                         modInfo.getDisplayName(),
-                        modInfo.getOwningFile().getFile().getFilePath()
+                        modInfo.getOwningFile().getFile().getFilePath(),
+                        modInfo.getLogoFile().orElse("")
                 )
         ).collect(Collectors.toUnmodifiableSet());
     }
@@ -30,7 +31,8 @@ public class HydraulicForgeBootstrap implements HydraulicBootstrap {
                         container.getModId(),
                         container.getModInfo().getVersion().toString(),
                         container.getModInfo().getDisplayName(),
-                        container.getModInfo().getOwningFile().getFile().getFilePath()
+                        container.getModInfo().getOwningFile().getFile().getFilePath(),
+                        container.getModInfo().getLogoFile().orElse("")
                 )
         ).orElse(null);
     }

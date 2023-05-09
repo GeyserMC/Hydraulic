@@ -1,7 +1,10 @@
 package org.geysermc.hydraulic.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mojang.logging.LogUtils;
+import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -17,6 +21,7 @@ import java.util.zip.ZipOutputStream;
  * Utility class for files.
  */
 public class FileUtil {
+    protected static Logger LOGGER = LogUtils.getLogger();
 
     /**
      * Exports the specified object to the given location as JSON.
@@ -78,6 +83,31 @@ public class FileUtil {
     private static void addDirectoryToZip(@NotNull File rootPath, @NotNull File srcDirectory, ZipOutputStream zip) throws Exception {
         for (File fileName : srcDirectory.listFiles()) {
             addFileToZip(rootPath, fileName, zip);
+        }
+    }
+
+    /**
+     * Copies a file from a mod to the specified output path.
+     *
+     * @param mod the mod to copy the file from
+     * @param filePath the path to the file to copy
+     * @param outputPath the path to copy the file to
+     */
+    public static void copyFileFromMod(ModInfo mod, String filePath, Path outputPath) {
+        Path iconPath = mod.modPath().resolve(filePath);
+        if (Files.exists(iconPath)) {
+            try {
+                if (Files.notExists(outputPath.getParent())) {
+                    Files.createDirectories(outputPath.getParent());
+                }
+
+                Files.copy(iconPath, outputPath, StandardCopyOption.REPLACE_EXISTING);
+                LOGGER.debug("Copied file {} for mod {}", iconPath, mod.id());
+            } catch (IOException ex) {
+                LOGGER.error("Failed to copy file {} for mod {}", iconPath, mod.id(), ex);
+            }
+        } else {
+            LOGGER.warn("File {} not found for mod {}", iconPath, mod.id());
         }
     }
 }

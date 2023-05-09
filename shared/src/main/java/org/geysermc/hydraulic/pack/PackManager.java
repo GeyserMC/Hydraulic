@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.zip.ZipFile;
 
 /**
  * Manages packs within Hydraulic. Most of the pack conversion
@@ -87,6 +86,12 @@ public class PackManager {
 
         if (!shouldExportPack) {
             return false;
+        }
+
+        // Copy the icon if it exists
+        // TODO Add a default icon?
+        if (!mod.iconPath().isEmpty()) {
+            FileUtil.copyFileFromMod(mod, mod.iconPath(), packPath.resolve("pack_icon.png"));
         }
 
         this.packs.put(mod.id(), pack);
