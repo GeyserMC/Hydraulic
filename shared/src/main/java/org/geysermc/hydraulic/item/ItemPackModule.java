@@ -20,6 +20,7 @@ import org.geysermc.hydraulic.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -48,8 +49,8 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
             }
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
-            try {
-                Model model = Constants.MAPPER.readValue(Files.newInputStream(jarPath.resolve(String.format(JAVA_ITEM_MODEL_LOCATION, itemLocation.getNamespace(), itemLocation.getPath()))), Model.class);
+            try (InputStream itemModelStream = Files.newInputStream(jarPath.resolve(String.format(JAVA_ITEM_MODEL_LOCATION, itemLocation.getNamespace(), itemLocation.getPath())))) {
+                Model model = Constants.MAPPER.readValue(itemModelStream, Model.class);
 
                 ResourceLocation layer0 = model.textures().get("layer0");
 

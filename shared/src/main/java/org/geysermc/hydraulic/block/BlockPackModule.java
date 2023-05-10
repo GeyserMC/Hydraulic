@@ -15,6 +15,7 @@ import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.hydraulic.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -38,28 +39,30 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         for (Block block : blocks) {
             ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
             Path blockStatePath = jarPath.resolve(String.format(JAVA_BLOCK_STATE_LOCATION, blockKey.getNamespace(), blockKey.getPath()));
-            try {
-                BlockState state = Constants.MAPPER.readValue(Files.newInputStream(blockStatePath), BlockState.class);
+            try (InputStream blockStateStream = Files.newInputStream(blockStatePath)) {
+                BlockState state = Constants.MAPPER.readValue(blockStateStream, BlockState.class);
                 ResourceLocation modelPath = state.variants().get("").model();
-                Model model = Constants.MAPPER.readValue(Files.newInputStream(jarPath.resolve(String.format(JAVA_BLOCK_MODEL_LOCATION, modelPath.getNamespace(), modelPath.getPath()))), Model.class);
+                try (InputStream modelStream = Files.newInputStream(jarPath.resolve(String.format(JAVA_BLOCK_MODEL_LOCATION, modelPath.getNamespace(), modelPath.getPath())))) {
+                    Model model = Constants.MAPPER.readValue(modelStream, Model.class);
 
-                if (!model.parent().getNamespace().equals("minecraft")) {
-                    // TODO Parse inherited models?
-                    return;
-                }
-
-                for (Map.Entry<String, ResourceLocation> texture : model.textures().entrySet()) {
-                    if (texture.getValue().getNamespace().equals("minecraft")) {
-                        // TODO Map these
-                        continue;
+                    if (!model.parent().getNamespace().equals("minecraft")) {
+                        // TODO Parse inherited models?
+                        return;
                     }
 
-                    String rawPath = texture.getValue().getPath().replace("block/", "");
-                    String texturePath = String.format(BEDROCK_BLOCK_TEXTURE_LOCATION, texture.getValue().getNamespace(), rawPath);
+                    for (Map.Entry<String, ResourceLocation> texture : model.textures().entrySet()) {
+                        if (texture.getValue().getNamespace().equals("minecraft")) {
+                            // TODO Map these
+                            continue;
+                        }
 
-                    context.pack().addBlockTexture(texture.getValue().toString(), texturePath);
+                        String rawPath = texture.getValue().getPath().replace("block/", "");
+                        String texturePath = String.format(BEDROCK_BLOCK_TEXTURE_LOCATION, texture.getValue().getNamespace(), rawPath);
 
-                    FileUtil.copyFileFromMod(context.mod(), String.format(Constants.JAVA_TEXTURE_LOCATION, texture.getValue().getNamespace(), texture.getValue().getPath()), context.path().resolve(texturePath));
+                        context.pack().addBlockTexture(texture.getValue().toString(), texturePath);
+
+                        FileUtil.copyFileFromMod(context.mod(), String.format(Constants.JAVA_TEXTURE_LOCATION, texture.getValue().getNamespace(), texture.getValue().getPath()), context.path().resolve(texturePath));
+                    }
                 }
             } catch (Exception ex) {
                 LOGGER.error("Failed to read block state {} for mod {}", blockStatePath, context.mod().id(), ex);
