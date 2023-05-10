@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.item;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -10,9 +11,11 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
+import org.geysermc.hydraulic.assets.Model;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackCreateContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
+import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.hydraulic.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +29,7 @@ import java.util.List;
 public class ItemPackModule extends PackModule<ItemPackModule> {
     private static final String JAVA_ITEM_TEXTURE_LOCATION = "assets/%s/textures/item/%s.png";
     private static final String BEDROCK_ITEM_TEXTURE_LOCATION = "textures/items/%s/%s.png";
+    private static final String JAVA_ITEM_MODEL_LOCATION = "assets/%s/models/item/%s.json";
 
     public ItemPackModule() {
         this.listenOn(GeyserDefineCustomItemsEvent.class, ItemPackModule::onDefineCustomItems);
@@ -35,19 +39,28 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
     public void create(@NotNull PackCreateContext<ItemPackModule> context) {
         List<Item> items = context.registryValues(Registries.ITEM);
 
-        LOGGER.debug("Items to convert: " + items.size() + " in mod " + context.mod());
+        LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod());
         Path jarPath = context.mod().modPath();
 
         for (Item item : items) {
             if (item instanceof BlockItem) {
                 continue; // TODO: Special handling here?
             }
+            ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
-            ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
-            String outputLoc = String.format(BEDROCK_ITEM_TEXTURE_LOCATION, context.mod().id(), itemKey.getPath());
-            context.pack().addItem(itemKey.toString(), outputLoc.replace(".png", ""));
+            try {
+                Model model = Constants.MAPPER.readValue(Files.newInputStream(jarPath.resolve(String.format(JAVA_ITEM_MODEL_LOCATION, itemLocation.getNamespace(), itemLocation.getPath()))), Model.class);
 
-            FileUtil.copyFileFromMod(context.mod(), String.format(JAVA_ITEM_TEXTURE_LOCATION, context.mod().id(), itemKey.getPath()), context.path().resolve(outputLoc));
+                ResourceLocation layer0 = model.textures().get("layer0");
+
+                ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
+                String outputLoc = String.format(BEDROCK_ITEM_TEXTURE_LOCATION, context.mod().id(), layer0.getPath().replace("item/", ""));
+                context.pack().addItem(itemKey.toString(), outputLoc.replace(".png", ""));
+
+                FileUtil.copyFileFromMod(context.mod(), String.format(Constants.JAVA_TEXTURE_LOCATION, layer0.getNamespace(), layer0.getPath()), context.path().resolve(outputLoc));
+            } catch (Exception ex) {
+                LOGGER.error("Failed to read item model {} for mod {}", itemLocation.toString(), context.mod().id(), ex);
+            }
         }
     }
 

@@ -6,9 +6,12 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import org.geysermc.hydraulic.assets.Model;
+import org.geysermc.hydraulic.assets.BlockState;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.TerrainTexture;
 import org.geysermc.hydraulic.pack.context.PackCreateContext;
+import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.hydraulic.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,9 +24,7 @@ import java.util.Map;
 public class BlockPackModule extends PackModule<BlockPackModule> {
     private static final String JAVA_BLOCK_STATE_LOCATION = "assets/%s/blockstates/%s.json";
     private static final String JAVA_BLOCK_MODEL_LOCATION = "assets/%s/models/%s.json";
-    private static final String JAVA_BLOCK_TEXTURE_LOCATION = "assets/%s/textures/block/%s.png";
     private static final String BEDROCK_BLOCK_TEXTURE_LOCATION = "textures/blocks/%s/%s.png";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
     public void create(@NotNull PackCreateContext<BlockPackModule> context) {
@@ -38,9 +39,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             ResourceLocation blockKey = BuiltInRegistries.BLOCK.getKey(block);
             Path blockStatePath = jarPath.resolve(String.format(JAVA_BLOCK_STATE_LOCATION, blockKey.getNamespace(), blockKey.getPath()));
             try {
-                BlockState state = MAPPER.readValue(Files.newInputStream(blockStatePath), BlockState.class);
+                BlockState state = Constants.MAPPER.readValue(Files.newInputStream(blockStatePath), BlockState.class);
                 ResourceLocation modelPath = state.variants().get("").model();
-                BlockModel model = MAPPER.readValue(Files.newInputStream(jarPath.resolve(String.format(JAVA_BLOCK_MODEL_LOCATION, modelPath.getNamespace(), modelPath.getPath()))), BlockModel.class);
+                Model model = Constants.MAPPER.readValue(Files.newInputStream(jarPath.resolve(String.format(JAVA_BLOCK_MODEL_LOCATION, modelPath.getNamespace(), modelPath.getPath()))), Model.class);
 
                 if (!model.parent().getNamespace().equals("minecraft")) {
                     // TODO Parse inherited models?
@@ -58,7 +59,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
                     context.pack().addBlockTexture(texture.getValue().toString(), texturePath);
 
-                    FileUtil.copyFileFromMod(context.mod(), String.format(JAVA_BLOCK_TEXTURE_LOCATION, texture.getValue().getNamespace(), rawPath), context.path().resolve(texturePath));
+                    FileUtil.copyFileFromMod(context.mod(), String.format(Constants.JAVA_TEXTURE_LOCATION, texture.getValue().getNamespace(), texture.getValue().getPath()), context.path().resolve(texturePath));
                 }
             } catch (Exception ex) {
                 LOGGER.error("Failed to read block state {} for mod {}", blockStatePath, context.mod().id(), ex);

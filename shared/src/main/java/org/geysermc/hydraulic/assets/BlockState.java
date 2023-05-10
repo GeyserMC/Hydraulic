@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.block;
+package org.geysermc.hydraulic.assets;
 
 import java.util.Map;
 
