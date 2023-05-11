@@ -1,13 +1,13 @@
 package org.geysermc.hydraulic.block;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
-import org.geysermc.hydraulic.assets.Model;
 import org.geysermc.hydraulic.assets.BlockState;
+import org.geysermc.hydraulic.assets.Model;
+import org.geysermc.hydraulic.assets.Variant;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.TerrainTexture;
 import org.geysermc.hydraulic.pack.context.PackCreateContext;
@@ -41,7 +41,13 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             Path blockStatePath = jarPath.resolve(String.format(JAVA_BLOCK_STATE_LOCATION, blockKey.getNamespace(), blockKey.getPath()));
             try (InputStream blockStateStream = Files.newInputStream(blockStatePath)) {
                 BlockState state = Constants.MAPPER.readValue(blockStateStream, BlockState.class);
-                ResourceLocation modelPath = state.variants().get("").model();
+                Variant rootVariant = state.variants().get("");
+                if (rootVariant == null) {
+                    // TODO: Handle multi-face block variants
+                    continue;
+                }
+
+                ResourceLocation modelPath = rootVariant.model();
                 try (InputStream modelStream = Files.newInputStream(jarPath.resolve(String.format(JAVA_BLOCK_MODEL_LOCATION, modelPath.getNamespace(), modelPath.getPath())))) {
                     Model model = Constants.MAPPER.readValue(modelStream, Model.class);
 
