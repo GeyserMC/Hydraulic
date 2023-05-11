@@ -1,12 +1,12 @@
 package org.geysermc.hydraulic.item;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.locale.Language;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
@@ -19,16 +19,13 @@ import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.hydraulic.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends PackModule<ItemPackModule> {
-    private static final String JAVA_ITEM_TEXTURE_LOCATION = "assets/%s/textures/item/%s.png";
     private static final String BEDROCK_ITEM_TEXTURE_LOCATION = "textures/items/%s/%s.png";
     private static final String JAVA_ITEM_MODEL_LOCATION = "assets/%s/models/item/%s.json";
 
@@ -82,19 +79,41 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;
         for (Item item : items) {
             String name = Language.getInstance().getOrDefault(item.getDescriptionId());
+            NonVanillaCustomItemData.Builder customItemBuilder = NonVanillaCustomItemData.builder()
+                .name(registry.getKey(item).getPath())
+                .displayName(name)
+                .identifier(registry.getKey(item).toString())
+                .icon(registry.getKey(item).toString())
+                .javaId(registry.getId(item))
+                .stackSize(item.getMaxStackSize())
+                .maxDamage(item.getMaxDamage())
+                .allowOffhand(true)
+                .creativeCategory(4) // 4 - "Items" // 3 - "Equipment"
+                .creativeGroup("itemGroup.name.items");
 
-            event.register(NonVanillaCustomItemData.builder()
-                    .name(registry.getKey(item).getPath())
-                    .displayName(name)
-                    .identifier(registry.getKey(item).toString())
-                    .icon(registry.getKey(item).toString())
-                    .javaId(registry.getId(item))
-                    .stackSize(item.getMaxStackSize())
-                    .maxDamage(item.getMaxDamage())
-                    .allowOffhand(true)
-                    .creativeCategory(4) // 4 - "Items"
-                    .creativeGroup("itemGroup.name.items")
-                    .build());
+            if (item instanceof ArmorItem armorItem) {
+                customItemBuilder.creativeCategory(3);
+                switch (armorItem.getEquipmentSlot()) {
+                    case HEAD -> {
+                        customItemBuilder.armorType("helmet")
+                            .creativeGroup("itemGroup.name.helmet");
+                    }
+                    case CHEST -> {
+                        customItemBuilder.armorType("chestplate")
+                            .creativeGroup("itemGroup.name.chestplate");
+                    }
+                    case LEGS -> {
+                        customItemBuilder.armorType("leggings")
+                            .creativeGroup("itemGroup.name.leggings");
+                    }
+                    case FEET -> {
+                        customItemBuilder.armorType("boots")
+                            .creativeGroup("itemGroup.name.boots");
+                    }
+                }
+            }
+
+            event.register(customItemBuilder.build());
         }
     }
 }
