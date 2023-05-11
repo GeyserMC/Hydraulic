@@ -93,7 +93,7 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                     .maxDamage(item.getMaxDamage())
                     .allowOffhand(true)
                     .creativeCategory(4) // 4 - "Items"
-                    .creativeGroup("")
+                    .creativeGroup("itemGroup.name.items")
                     .build());
         }
     }
