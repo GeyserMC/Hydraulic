@@ -93,23 +93,13 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
 
             if (item instanceof ArmorItem armorItem) {
                 customItemBuilder.creativeCategory(3);
+                customItemBuilder.protectionValue(armorItem.getDefense());
+                customItemBuilder.maxDamage(armorItem.getMaxDamage());
                 switch (armorItem.getEquipmentSlot()) {
-                    case HEAD -> {
-                        customItemBuilder.armorType("helmet")
-                            .creativeGroup("itemGroup.name.helmet");
-                    }
-                    case CHEST -> {
-                        customItemBuilder.armorType("chestplate")
-                            .creativeGroup("itemGroup.name.chestplate");
-                    }
-                    case LEGS -> {
-                        customItemBuilder.armorType("leggings")
-                            .creativeGroup("itemGroup.name.leggings");
-                    }
-                    case FEET -> {
-                        customItemBuilder.armorType("boots")
-                            .creativeGroup("itemGroup.name.boots");
-                    }
+                    case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
+                    case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
+                    case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("itemGroup.name.leggings");
+                    case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
                 }
             }
 
