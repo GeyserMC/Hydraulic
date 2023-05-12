@@ -6,9 +6,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.locale.Language;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.*;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import org.geysermc.hydraulic.assets.Model;
@@ -37,7 +35,7 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
     public void create(@NotNull PackCreateContext<ItemPackModule> context) {
         List<Item> items = context.registryValues(Registries.ITEM);
 
-        LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod());
+        LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod().id());
         Path jarPath = context.mod().modPath();
 
         for (Item item : items) {
@@ -89,18 +87,42 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                 .maxDamage(item.getMaxDamage())
                 .allowOffhand(true)
                 .creativeCategory(4) // 4 - "Items" // 3 - "Equipment"
-                .creativeGroup("itemGroup.name.items");
+                .creativeGroup("itemGroup.name.items")
+                .maxDamage(item.getMaxDamage());
 
             if (item instanceof ArmorItem armorItem) {
                 customItemBuilder.creativeCategory(3);
                 customItemBuilder.protectionValue(armorItem.getDefense());
-                customItemBuilder.maxDamage(armorItem.getMaxDamage());
                 switch (armorItem.getEquipmentSlot()) {
                     case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
                     case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
                     case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("itemGroup.name.leggings");
                     case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
                 }
+            } else if (item instanceof TieredItem tieredItem) {
+                customItemBuilder.creativeCategory(3);
+
+                // TODO Support custom tiers
+                customItemBuilder.toolTier("DIAMOND");
+                if (tieredItem.getTier() instanceof Tiers) {
+                    customItemBuilder.toolTier(tieredItem.getTier().toString());
+                }
+
+                // TODO Work out a nicer way of assigning groups based on classes
+                if (item instanceof PickaxeItem) {
+                    customItemBuilder.toolType("pickaxe").creativeGroup("itemGroup.name.pickaxe");
+                } else if (item instanceof HoeItem) {
+                    customItemBuilder.toolType("hoe").creativeGroup("itemGroup.name.hoe");
+                } else if (item instanceof AxeItem) {
+                    customItemBuilder.toolType("axe").creativeGroup("itemGroup.name.axe");
+                } else if (item instanceof ShovelItem) {
+                    customItemBuilder.toolType("shovel").creativeGroup("itemGroup.name.shovel");
+                } else if (item instanceof SwordItem) {
+                    customItemBuilder.toolType("sword").creativeGroup("itemGroup.name.sword");
+                }
+            } else if (item instanceof ShearsItem) {
+                customItemBuilder.creativeCategory(3);
+                customItemBuilder.toolType("shears").creativeGroup("itemGroup.name.equipment");
             }
 
             event.register(customItemBuilder.build());

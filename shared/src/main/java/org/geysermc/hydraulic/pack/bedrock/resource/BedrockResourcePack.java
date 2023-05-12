@@ -1,7 +1,9 @@
 package org.geysermc.hydraulic.pack.bedrock.resource;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.geysermc.hydraulic.pack.bedrock.resource.attachables.Attachables;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Header;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Modules;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.ItemTexture;
@@ -14,7 +16,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.geysermc.hydraulic.util.FileUtil.exportJson;
@@ -26,12 +30,15 @@ public class BedrockResourcePack {
     private static final int FORMAT_VERSION = 2;
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
     private final Manifest manifest;
 
     private ItemTexture itemTexture;
     private TerrainTexture terrainTexture;
+    private Map<String, Attachables> attachables;
 
     public BedrockResourcePack(@NotNull Manifest manifest) {
         this(manifest, null, null);
@@ -92,6 +99,25 @@ public class BedrockResourcePack {
     }
 
     /**
+     * Get the attachables of the resource pack.
+     *
+     * @return the attachables of the resource pack
+     */
+    @Nullable
+    public Map<String, Attachables> attachables() {
+        return this.attachables;
+    }
+
+    /**
+     * Set the attachables of the resource pack.
+     *
+     * @param attachables the attachables of the resource pack
+     */
+    public void attachables(@Nullable Map<String, Attachables> attachables) {
+        this.attachables = attachables;
+    }
+
+    /**
      * Add an item to the resource pack.
      *
      * @param id the id of the item
@@ -133,6 +159,21 @@ public class BedrockResourcePack {
         this.terrainTexture.getTextureData().put(id, data);
     }
 
+
+    /**
+     * Add an attachable to the resource pack.
+     *
+     * @param armorAttachable the data of the attachable
+     * @param location the location of the final json
+     */
+    public void addAttachable(Attachables armorAttachable, String location) {
+        if (this.attachables == null) {
+            this.attachables = new HashMap<>();
+        }
+
+        this.attachables.put(location, armorAttachable);
+    }
+
     /**
      * Exports the resource pack to the specified directory.
      *
@@ -147,6 +188,10 @@ public class BedrockResourcePack {
 
         if (this.terrainTexture != null) {
             exportJson(MAPPER, directory.resolve("textures/terrain_texture.json"), this.terrainTexture);
+        }
+
+        for (Map.Entry<String, Attachables> attachable : this.attachables.entrySet()) {
+            exportJson(MAPPER, directory.resolve(attachable.getKey()), attachable.getValue());
         }
     }
 
