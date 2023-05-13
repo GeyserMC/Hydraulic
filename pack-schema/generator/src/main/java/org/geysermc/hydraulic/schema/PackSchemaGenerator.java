@@ -18,10 +18,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class PackSchemaGenerator {
+    private static final String SEPARATOR = FileSystems.getDefault().getSeparator();
     private static final String PACKAGE_NAME = "org.geysermc.hydraulic.pack.bedrock.resource";
 
-    private static final String GENERAL_SCHEMA_PATH = "/schema/source/general";
-    private static final String RESOURCE_SCHEMA_PATH = "/schema/source/resource";
+    private static final String GENERAL_SCHEMA_PATH = SEPARATOR + "schema" + SEPARATOR + "source" + SEPARATOR + "general";
+    private static final String RESOURCE_SCHEMA_PATH = SEPARATOR + "schema" + SEPARATOR + "source" + SEPARATOR + "resource";
 
     private static final Pattern VERSION_PATTERN = Pattern.compile("(?!\\.)(\\d+(\\.\\d+)+)");
 
@@ -40,7 +41,7 @@ public class PackSchemaGenerator {
             myPath = Paths.get(uri);
         }
 
-        Path output = Paths.get("pack-schema/bedrock/src/main/java");
+        Path output = Paths.get("pack-schema" + SEPARATOR + "bedrock" + SEPARATOR + "src" + SEPARATOR + "main" + SEPARATOR + "java");
         try (Stream<Path> paths = Files.walk(myPath)) {
             paths.forEach(path -> {
                 if (Files.isDirectory(path) || !path.toString().endsWith(".json")) {
@@ -61,7 +62,7 @@ public class PackSchemaGenerator {
                     }
 
                     JsonTemplateToClassConverter.convert(
-                            schemaPath + "/" +
+                            schemaPath + SEPARATOR +
                                     relativePath,
                             output,
                             ConverterOptions.builder()
