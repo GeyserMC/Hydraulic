@@ -44,7 +44,7 @@ public final class JsonTemplateToClassConverter {
      * @throws IOException if an I/O error occurs
      */
     public static void convert(@NotNull String input, @NotNull Path output, @NotNull ConverterOptions options) throws Exception {
-        URL source = PackSchemaGenerator.class.getResource(input);
+        URL source = PackSchemaGenerator.class.getClassLoader().getResource(input);
 
         try (InputStream stream = source.openStream()) {
             JsonObject schema = new JsonObject(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
@@ -641,7 +641,7 @@ public final class JsonTemplateToClassConverter {
 
         String location = FilenameUtils.concat(FilenameUtils.getFullPathNoEndSeparator(input), ref);
 
-        URL source = PackSchemaGenerator.class.getResource(location);
+        URL source = PackSchemaGenerator.class.getClassLoader().getResource(location);
         if (source == null) {
             // No clue why this happens, since inside the JSON file
             // everything is just fine. Somewhere, somehow, an extra
@@ -651,7 +651,7 @@ public final class JsonTemplateToClassConverter {
                 location = FilenameUtils.concat(FilenameUtils.getFullPathNoEndSeparator(input), ref.substring(3));
             }
 
-            source = PackSchemaGenerator.class.getResource(location);
+            source = PackSchemaGenerator.class.getClassLoader().getResource(location);
             if (source == null) {
                 System.err.println("Could not find schema: " + location);
                 return null;
