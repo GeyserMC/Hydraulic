@@ -77,18 +77,25 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;
         for (Item item : items) {
             String name = Language.getInstance().getOrDefault(item.getDescriptionId());
+            ResourceLocation itemLocation = registry.getKey(item);
             NonVanillaCustomItemData.Builder customItemBuilder = NonVanillaCustomItemData.builder()
-                .name(registry.getKey(item).getPath())
+                .name(itemLocation.getPath())
                 .displayName(name)
-                .identifier(registry.getKey(item).toString())
-                .icon(registry.getKey(item).toString())
+                .identifier(itemLocation.toString())
+                .icon(itemLocation.toString())
                 .javaId(registry.getId(item))
                 .stackSize(item.getMaxStackSize())
                 .maxDamage(item.getMaxDamage())
                 .allowOffhand(true)
-                .creativeCategory(4) // 4 - "Items" // 3 - "Equipment"
+                .creativeCategory(4) // 4 - "Items" // 3 - "Equipment" // https://wiki.bedrock.dev/documentation/creative-categories.html#list-of-creative-tabs
                 .creativeGroup("itemGroup.name.items")
-                .maxDamage(item.getMaxDamage());
+                .maxDamage(item.getMaxDamage())
+                .stackSize(item.getMaxStackSize());
+
+            // Enchantment glint by default
+            if (item.isFoil(item.getDefaultInstance())) {
+                customItemBuilder.foil(true);
+            }
 
             if (item instanceof ArmorItem armorItem) {
                 customItemBuilder.creativeCategory(3);
@@ -100,7 +107,8 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                     case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
                 }
             } else if (item instanceof TieredItem tieredItem) {
-                customItemBuilder.creativeCategory(3);
+                customItemBuilder.creativeCategory(3)
+                    .displayHandheld(true); // So we hold the tool right
 
                 // TODO Support custom tiers
                 customItemBuilder.toolTier("DIAMOND");

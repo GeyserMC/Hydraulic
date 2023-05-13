@@ -52,7 +52,6 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             armorAttachable.setFormatVersion("1.8.0");
 
             Description description = new Description();
-//            description.setEnableAttachables(true);
             description.setIdentifier(armorLocation.toString());
             description.setMaterials(ATTACHABLE_MATERIALS);
             description.setScripts(ATTACHABLE_SCRIPTS);
