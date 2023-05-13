@@ -13,7 +13,7 @@ import org.geysermc.hydraulic.pack.bedrock.resource.blocks.Textures;
  */
 public class Blocks {
   @JsonProperty("format_version")
-  public int[] formatVersion;
+  public String formatVersion;
 
   @JsonProperty("brightness_gamma")
   public float brightnessGamma;
@@ -28,20 +28,20 @@ public class Blocks {
   public Textures textures;
 
   /**
-   * A version that tells Minecraft what type of data format can be expected when reading this file.
+   * A version that tells minecraft what type of data format can be expected when reading this file.
    *
    * @return Format Version
    */
-  public int[] getFormatVersion() {
+  public String getFormatVersion() {
     return this.formatVersion;
   }
 
   /**
-   * A version that tells Minecraft what type of data format can be expected when reading this file.
+   * A version that tells minecraft what type of data format can be expected when reading this file.
    *
    * @param formatVersion Format Version
    */
-  public void setFormatVersion(int[] formatVersion) {
+  public void setFormatVersion(String formatVersion) {
     this.formatVersion = formatVersion;
   }
 

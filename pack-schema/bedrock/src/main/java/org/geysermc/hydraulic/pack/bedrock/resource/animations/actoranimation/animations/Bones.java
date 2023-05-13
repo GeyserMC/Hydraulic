@@ -1,10 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.animations.actoranimation.animations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.lang.Object;
 import java.lang.String;
-import java.util.HashMap;
-import java.util.Map;
 import org.geysermc.hydraulic.pack.bedrock.resource.animations.actoranimation.animations.bones.RelativeTo;
 
 /**
@@ -20,7 +17,7 @@ public class Bones {
   @JsonProperty("relative_to")
   public RelativeTo relativeTo;
 
-  private Map<String, Object> scale = new HashMap<>();
+  public float scale;
 
   public String[] getPosition() {
     return this.position;
@@ -56,11 +53,11 @@ public class Bones {
     this.relativeTo = relativeTo;
   }
 
-  public Map<String, Object> getScale() {
+  public float getScale() {
     return this.scale;
   }
 
-  public void setScale(Map<String, Object> scale) {
+  public void setScale(float scale) {
     this.scale = scale;
   }
 }

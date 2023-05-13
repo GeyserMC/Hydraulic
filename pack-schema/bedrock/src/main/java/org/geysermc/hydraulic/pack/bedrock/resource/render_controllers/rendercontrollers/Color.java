@@ -1,90 +1,88 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.render_controllers.rendercontrollers;
 
-import java.lang.String;
-
 /**
  * Color
  * <p>
  * The color to apply.
  */
 public class Color {
-  public String r;
+  public float r;
 
-  public String g;
+  public float g;
 
-  public String b;
+  public float b;
 
-  public String a;
+  public float a;
 
   /**
-   * A color definition in molang, between 0 and 1.
+   * A color definition as number, between 0 and 1.
    *
-   * @return Molang Color
+   * @return Color Number
    */
-  public String getR() {
+  public float getR() {
     return this.r;
   }
 
   /**
-   * A color definition in molang, between 0 and 1.
+   * A color definition as number, between 0 and 1.
    *
-   * @param r Molang Color
+   * @param r Color Number
    */
-  public void setR(String r) {
+  public void setR(float r) {
     this.r = r;
   }
 
   /**
-   * A color definition in molang, between 0 and 1.
+   * A color definition as number, between 0 and 1.
    *
-   * @return Molang Color
+   * @return Color Number
    */
-  public String getG() {
+  public float getG() {
     return this.g;
   }
 
   /**
-   * A color definition in molang, between 0 and 1.
+   * A color definition as number, between 0 and 1.
    *
-   * @param g Molang Color
+   * @param g Color Number
    */
-  public void setG(String g) {
+  public void setG(float g) {
     this.g = g;
   }
 
   /**
-   * A color definition in molang, between 0 and 1.
+   * A color definition as number, between 0 and 1.
    *
-   * @return Molang Color
+   * @return Color Number
    */
-  public String getB() {
+  public float getB() {
     return this.b;
   }
 
   /**
-   * A color definition in molang, between 0 and 1.
+   * A color definition as number, between 0 and 1.
    *
-   * @param b Molang Color
+   * @param b Color Number
    */
-  public void setB(String b) {
+  public void setB(float b) {
     this.b = b;
   }
 
   /**
-   * A color definition in molang, between 0 and 1.
+   * A color definition as number, between 0 and 1.
    *
-   * @return Molang Color
+   * @return Color Number
    */
-  public String getA() {
+  public float getA() {
     return this.a;
   }
 
   /**
-   * A color definition in molang, between 0 and 1.
+   * A color definition as number, between 0 and 1.
    *
-   * @param a Molang Color
+   * @param a Color Number
    */
-  public void setA(String a) {
+  public void setA(float a) {
     this.a = a;
   }
 }

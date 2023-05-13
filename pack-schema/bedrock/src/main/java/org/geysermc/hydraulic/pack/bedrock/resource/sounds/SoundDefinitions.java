@@ -1,7 +1,6 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.sounds;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.lang.Object;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +15,7 @@ public class SoundDefinitions {
   public String formatVersion;
 
   @JsonProperty("sound_definitions")
-  private Map<String, Object> soundDefinitions = new HashMap<>();
+  private Map<String, org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions.SoundDefinitions> soundDefinitions = new HashMap<>();
 
   @JsonProperty("__use_legacy_max_distance")
   public String useLegacyMaxDistance;
@@ -42,14 +41,16 @@ public class SoundDefinitions {
   /**
    * @return Sound Definitions
    */
-  public Map<String, Object> getSoundDefinitions() {
+  public Map<String, org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions.SoundDefinitions> getSoundDefinitions(
+      ) {
     return this.soundDefinitions;
   }
 
   /**
    * @param soundDefinitions Sound Definitions
    */
-  public void setSoundDefinitions(Map<String, Object> soundDefinitions) {
+  public void setSoundDefinitions(
+      Map<String, org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions.SoundDefinitions> soundDefinitions) {
     this.soundDefinitions = soundDefinitions;
   }
 

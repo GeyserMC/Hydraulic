@@ -8,7 +8,7 @@ import java.lang.String;
 public class LoopingTravelDistanceEvents {
   public float distance;
 
-  public String effects;
+  public String[] effects;
 
   /**
    * @return Distance
@@ -24,11 +24,11 @@ public class LoopingTravelDistanceEvents {
     this.distance = distance;
   }
 
-  public String getEffects() {
+  public String[] getEffects() {
     return this.effects;
   }
 
-  public void setEffects(String effects) {
+  public void setEffects(String[] effects) {
     this.effects = effects;
   }
 }

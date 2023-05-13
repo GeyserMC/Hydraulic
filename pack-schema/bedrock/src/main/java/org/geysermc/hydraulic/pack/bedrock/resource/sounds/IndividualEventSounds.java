@@ -1,9 +1,9 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.sounds;
 
-import java.lang.Object;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
+import org.geysermc.hydraulic.pack.bedrock.resource.sounds.individualeventsounds.Events;
 
 /**
  * Individual Event Sounds
@@ -11,14 +11,14 @@ import java.util.Map;
  * Individual event sounds definitions.
  */
 public class IndividualEventSounds {
-  private Map<String, Object> events = new HashMap<>();
+  private Map<String, Events> events = new HashMap<>();
 
   /**
    * Events.
    *
    * @return Events
    */
-  public Map<String, Object> getEvents() {
+  public Map<String, Events> getEvents() {
     return this.events;
   }
 
@@ -27,7 +27,7 @@ public class IndividualEventSounds {
    *
    * @param events Events
    */
-  public void setEvents(Map<String, Object> events) {
+  public void setEvents(Map<String, Events> events) {
     this.events = events;
   }
 }

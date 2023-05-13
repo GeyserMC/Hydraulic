@@ -24,6 +24,8 @@ public class Animations {
 
   private Map<String, Bones> bones = new HashMap<>();
 
+  public String loop;
+
   @JsonProperty("loop_delay")
   public String loopDelay;
 
@@ -91,6 +93,14 @@ public class Animations {
    */
   public void setBones(Map<String, Bones> bones) {
     this.bones = bones;
+  }
+
+  public String getLoop() {
+    return this.loop;
+  }
+
+  public void setLoop(String loop) {
+    this.loop = loop;
   }
 
   public String getLoopDelay() {

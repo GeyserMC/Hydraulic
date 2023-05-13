@@ -1,16 +1,16 @@
-package org.geysermc.hydraulic.pack.bedrock.resource.sounds;
+package org.geysermc.hydraulic.pack.bedrock.resource.sounds.entitysounds;
 
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
-import org.geysermc.hydraulic.pack.bedrock.resource.sounds.blocksounds.Events;
+import org.geysermc.hydraulic.pack.bedrock.resource.sounds.entitysounds.entities.Events;
 
 /**
- * Block Sounds
+ * Entity Sound
  * <p>
- * Block sound definitions.
+ * Entity sound definitions.
  */
-public class BlockSounds {
+public class Entities {
   public float[] volume;
 
   public float[] pitch;

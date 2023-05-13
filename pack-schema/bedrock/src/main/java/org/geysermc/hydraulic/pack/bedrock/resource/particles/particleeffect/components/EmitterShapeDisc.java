@@ -11,9 +11,6 @@ public class EmitterShapeDisc {
 
   public String radius;
 
-  @JsonProperty("plane_normal")
-  public String planeNormal;
-
   @JsonProperty("surface_only")
   public boolean surfaceOnly;
 
@@ -31,14 +28,6 @@ public class EmitterShapeDisc {
 
   public void setRadius(String radius) {
     this.radius = radius;
-  }
-
-  public String getPlaneNormal() {
-    return this.planeNormal;
-  }
-
-  public void setPlaneNormal(String planeNormal) {
-    this.planeNormal = planeNormal;
   }
 
   /**

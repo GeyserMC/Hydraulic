@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.String;
 import org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components.EmitterInitialization;
 import org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components.EmitterLifetimeEvents;
 import org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components.EmitterLifetimeExpression;
@@ -89,6 +90,9 @@ public class Components {
 
   @JsonProperty("minecraft:particle_initialization")
   public ParticleInitialization particleInitialization;
+
+  @JsonProperty("minecraft:particle_initial_speed")
+  public String particleInitialSpeed;
 
   @JsonProperty("minecraft:particle_initial_spin")
   public ParticleInitialSpin particleInitialSpin;
@@ -381,6 +385,14 @@ public class Components {
    */
   public void setParticleInitialization(ParticleInitialization particleInitialization) {
     this.particleInitialization = particleInitialization;
+  }
+
+  public String getParticleInitialSpeed() {
+    return this.particleInitialSpeed;
+  }
+
+  public void setParticleInitialSpeed(String particleInitialSpeed) {
+    this.particleInitialSpeed = particleInitialSpeed;
   }
 
   /**

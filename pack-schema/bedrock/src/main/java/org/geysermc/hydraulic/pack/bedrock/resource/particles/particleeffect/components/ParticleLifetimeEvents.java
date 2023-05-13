@@ -8,24 +8,24 @@ import java.lang.String;
  */
 public class ParticleLifetimeEvents {
   @JsonProperty("creation_event")
-  public String creationEvent;
+  public String[] creationEvent;
 
   @JsonProperty("expiration_event")
-  public String expirationEvent;
+  public String[] expirationEvent;
 
-  public String getCreationEvent() {
+  public String[] getCreationEvent() {
     return this.creationEvent;
   }
 
-  public void setCreationEvent(String creationEvent) {
+  public void setCreationEvent(String[] creationEvent) {
     this.creationEvent = creationEvent;
   }
 
-  public String getExpirationEvent() {
+  public String[] getExpirationEvent() {
     return this.expirationEvent;
   }
 
-  public void setExpirationEvent(String expirationEvent) {
+  public void setExpirationEvent(String[] expirationEvent) {
     this.expirationEvent = expirationEvent;
   }
 }

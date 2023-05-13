@@ -2,6 +2,9 @@ package org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.String;
+import java.util.HashMap;
+import java.util.Map;
+import org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.curves.Nodes;
 
 /**
  * Curves
@@ -10,6 +13,8 @@ import java.lang.String;
  */
 public class Curves {
   public String input;
+
+  private Map<String, Nodes> nodes = new HashMap<>();
 
   public String type;
 
@@ -22,6 +27,14 @@ public class Curves {
 
   public void setInput(String input) {
     this.input = input;
+  }
+
+  public Map<String, Nodes> getNodes() {
+    return this.nodes;
+  }
+
+  public void setNodes(Map<String, Nodes> nodes) {
+    this.nodes = nodes;
   }
 
   /**

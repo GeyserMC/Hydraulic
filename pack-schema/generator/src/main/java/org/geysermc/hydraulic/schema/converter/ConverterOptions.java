@@ -8,11 +8,13 @@ import java.io.InputStream;
 public class ConverterOptions {
     private final MultiConvertType multiConvertType;
     private final String collisionPrefix;
+    private final String rootPackage;
     private final SchemaConfig schemaConfig;
 
-    private ConverterOptions(MultiConvertType multiConvertType, String collisionPrefix, String schemaConfig) {
+    private ConverterOptions(MultiConvertType multiConvertType, String collisionPrefix, String rootPackage, String schemaConfig) {
         this.multiConvertType = multiConvertType;
         this.collisionPrefix = collisionPrefix;
+        this.rootPackage = rootPackage;
 
         InputStream schemaResource = ConverterOptions.class.getResourceAsStream("/" + schemaConfig);
         try {
@@ -30,6 +32,10 @@ public class ConverterOptions {
         return this.collisionPrefix;
     }
 
+    public String rootPackage() {
+        return this.rootPackage;
+    }
+
     public SchemaConfig schemaConfig() {
         return this.schemaConfig;
     }
@@ -41,6 +47,7 @@ public class ConverterOptions {
     public static class Builder {
         private MultiConvertType multiConvertType = MultiConvertType.SIMPLE;
         private String collisionPrefix = "Json";
+        private String rootPackage;
         private String schemaConfig = "schema-config.json";
 
         public Builder multiConvertType(MultiConvertType multiConvertType) {
@@ -53,13 +60,18 @@ public class ConverterOptions {
             return this;
         }
 
+        public Builder rootPackage(String rootPackage) {
+            this.rootPackage = rootPackage;
+            return this;
+        }
+
         public Builder schemaConfig(String schemaConfig) {
             this.schemaConfig = schemaConfig;
             return this;
         }
 
         public ConverterOptions build() {
-            return new ConverterOptions(this.multiConvertType, this.collisionPrefix, this.schemaConfig);
+            return new ConverterOptions(this.multiConvertType, this.collisionPrefix, this.rootPackage, this.schemaConfig);
         }
     }
 }

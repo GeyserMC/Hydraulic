@@ -63,12 +63,12 @@ public class PackSchemaGenerator {
                     JsonTemplateToClassConverter.convert(
                             schemaPath + "/" +
                                     relativePath,
-                            packageName,
                             output,
                             ConverterOptions.builder()
                                     .multiConvertType(MultiConvertType.COMPLEX)
                                     .collisionPrefix("Minecraft")
                                     .schemaConfig("schema-config.json")
+                                    .rootPackage(packageName)
                                     .build()
                     );
                 } catch (Exception ex) {

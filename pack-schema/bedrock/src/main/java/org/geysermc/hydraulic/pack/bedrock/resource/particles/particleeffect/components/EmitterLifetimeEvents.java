@@ -14,29 +14,29 @@ import org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.com
  */
 public class EmitterLifetimeEvents {
   @JsonProperty("creation_event")
-  public String creationEvent;
+  public String[] creationEvent;
 
   @JsonProperty("expiration_event")
-  public String expirationEvent;
+  public String[] expirationEvent;
 
   private Map<String, Object> timeline = new HashMap<>();
 
   @JsonProperty("looping_travel_distance_events")
   public List<LoopingTravelDistanceEvents> loopingTravelDistanceEvents = new ArrayList<>();
 
-  public String getCreationEvent() {
+  public String[] getCreationEvent() {
     return this.creationEvent;
   }
 
-  public void setCreationEvent(String creationEvent) {
+  public void setCreationEvent(String[] creationEvent) {
     this.creationEvent = creationEvent;
   }
 
-  public String getExpirationEvent() {
+  public String[] getExpirationEvent() {
     return this.expirationEvent;
   }
 
-  public void setExpirationEvent(String expirationEvent) {
+  public void setExpirationEvent(String[] expirationEvent) {
     this.expirationEvent = expirationEvent;
   }
 

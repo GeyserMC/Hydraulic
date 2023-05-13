@@ -1,9 +1,9 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.sounds.entitysounds;
 
-import java.lang.Object;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
+import org.geysermc.hydraulic.pack.bedrock.resource.sounds.entitysounds.defaults.Events;
 
 /**
  * Entity Sound
@@ -15,7 +15,7 @@ public class Defaults {
 
   public float[] pitch;
 
-  private Map<String, Object> events = new HashMap<>();
+  private Map<String, Events> events = new HashMap<>();
 
   /**
    * A random selection between a minimum and maximum.
@@ -48,14 +48,14 @@ public class Defaults {
   /**
    * @return Events
    */
-  public Map<String, Object> getEvents() {
+  public Map<String, Events> getEvents() {
     return this.events;
   }
 
   /**
    * @param events Events
    */
-  public void setEvents(Map<String, Object> events) {
+  public void setEvents(Map<String, Events> events) {
     this.events = events;
   }
 }
