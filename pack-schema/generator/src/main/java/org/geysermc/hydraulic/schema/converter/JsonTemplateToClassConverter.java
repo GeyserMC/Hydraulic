@@ -769,7 +769,7 @@ public final class JsonTemplateToClassConverter {
             return new ResolvedReference(obj, parentJson);
         }
 
-        String location = FilenameUtils.concat(FilenameUtils.getFullPathNoEndSeparator(input), ref);
+        String location = FilenameUtils.separatorsToUnix(FilenameUtils.concat(FilenameUtils.getFullPathNoEndSeparator(input), ref));
 
         URL source = PackSchemaGenerator.class.getResource(location);
         if (source == null) {
@@ -778,7 +778,7 @@ public final class JsonTemplateToClassConverter {
             // relative path is being added for a few cases, so this
             // works around that.
             if (ref.startsWith("../")) {
-                location = FilenameUtils.concat(FilenameUtils.getFullPathNoEndSeparator(input), ref.substring(3));
+                location = FilenameUtils.separatorsToUnix(FilenameUtils.concat(FilenameUtils.getFullPathNoEndSeparator(input), ref.substring(3)));
             }
 
             source = PackSchemaGenerator.class.getResource(location);
