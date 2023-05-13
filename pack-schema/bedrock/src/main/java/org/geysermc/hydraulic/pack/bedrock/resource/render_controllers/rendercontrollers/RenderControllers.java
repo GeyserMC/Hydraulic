@@ -1,7 +1,6 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.render_controllers.rendercontrollers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.lang.Object;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +38,7 @@ public class RenderControllers {
   public OverlayColor overlayColor;
 
   @JsonProperty("part_visibility")
-  private Map<String, Object> partVisibility = new HashMap<>();
+  private Map<String, String> partVisibility = new HashMap<>();
 
   @JsonProperty("uv_anim")
   public UvAnim uvAnim;
@@ -219,7 +218,7 @@ public class RenderControllers {
    *
    * @return Part Visibility
    */
-  public Map<String, Object> getPartVisibility() {
+  public Map<String, String> getPartVisibility() {
     return this.partVisibility;
   }
 
@@ -228,7 +227,7 @@ public class RenderControllers {
    *
    * @param partVisibility Part Visibility
    */
-  public void setPartVisibility(Map<String, Object> partVisibility) {
+  public void setPartVisibility(Map<String, String> partVisibility) {
     this.partVisibility = partVisibility;
   }
 

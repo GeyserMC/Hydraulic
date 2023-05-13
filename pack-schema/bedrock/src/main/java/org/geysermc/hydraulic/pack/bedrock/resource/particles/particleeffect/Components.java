@@ -103,6 +103,9 @@ public class Components {
   @JsonProperty("minecraft:particle_lifetime_events")
   public ParticleLifetimeEvents particleLifetimeEvents;
 
+  @JsonProperty("minecraft:particle_kill_plane")
+  public String[] particleKillPlane;
+
   @JsonProperty("minecraft:particle_motion_collision")
   public ParticleMotionCollision particleMotionCollision;
 
@@ -439,6 +442,26 @@ public class Components {
    */
   public void setParticleLifetimeEvents(ParticleLifetimeEvents particleLifetimeEvents) {
     this.particleLifetimeEvents = particleLifetimeEvents;
+  }
+
+  /**
+   * A*x + B*y + C*z + D = 0
+   * with the parameters being [ A, B, C, D ].
+   *
+   * @return Particle Kill Plane Component For 1.10.0
+   */
+  public String[] getParticleKillPlane() {
+    return this.particleKillPlane;
+  }
+
+  /**
+   * A*x + B*y + C*z + D = 0
+   * with the parameters being [ A, B, C, D ].
+   *
+   * @param particleKillPlane Particle Kill Plane Component For 1.10.0
+   */
+  public void setParticleKillPlane(String[] particleKillPlane) {
+    this.particleKillPlane = particleKillPlane;
   }
 
   /**

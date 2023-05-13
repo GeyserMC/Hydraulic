@@ -1,7 +1,6 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.lang.Object;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,7 +18,7 @@ public class EmitterLifetimeEvents {
   @JsonProperty("expiration_event")
   public String[] expirationEvent;
 
-  private Map<String, Object> timeline = new HashMap<>();
+  private Map<String, String[]> timeline = new HashMap<>();
 
   @JsonProperty("looping_travel_distance_events")
   public List<LoopingTravelDistanceEvents> loopingTravelDistanceEvents = new ArrayList<>();
@@ -45,7 +44,7 @@ public class EmitterLifetimeEvents {
    *
    * @return Timeline
    */
-  public Map<String, Object> getTimeline() {
+  public Map<String, String[]> getTimeline() {
     return this.timeline;
   }
 
@@ -54,7 +53,7 @@ public class EmitterLifetimeEvents {
    *
    * @param timeline Timeline
    */
-  public void setTimeline(Map<String, Object> timeline) {
+  public void setTimeline(Map<String, String[]> timeline) {
     this.timeline = timeline;
   }
 

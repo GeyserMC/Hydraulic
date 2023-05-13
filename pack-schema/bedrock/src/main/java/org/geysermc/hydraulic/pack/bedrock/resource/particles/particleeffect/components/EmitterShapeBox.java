@@ -11,6 +11,11 @@ public class EmitterShapeBox {
 
   public String radius;
 
+  public String[] offset;
+
+  @JsonProperty("half_dimensions")
+  public String[] halfDimensions;
+
   @JsonProperty("surface_only")
   public boolean surfaceOnly;
 
@@ -28,6 +33,34 @@ public class EmitterShapeBox {
 
   public void setRadius(String radius) {
     this.radius = radius;
+  }
+
+  /**
+   * @return Offset
+   */
+  public String[] getOffset() {
+    return this.offset;
+  }
+
+  /**
+   * @param offset Offset
+   */
+  public void setOffset(String[] offset) {
+    this.offset = offset;
+  }
+
+  /**
+   * @return Half Dimensions
+   */
+  public String[] getHalfDimensions() {
+    return this.halfDimensions;
+  }
+
+  /**
+   * @param halfDimensions Half Dimensions
+   */
+  public void setHalfDimensions(String[] halfDimensions) {
+    this.halfDimensions = halfDimensions;
   }
 
   /**

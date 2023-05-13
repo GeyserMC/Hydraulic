@@ -389,6 +389,28 @@ public final class JsonTemplateToClassConverter {
             if (propertyValue.getValue("items") instanceof JsonArray array && array.size() > 0) {
                 if (array.getValue(0) instanceof JsonObject object) {
                     String type = object.getString("type");
+                    if (type == null && object.getString("$ref") != null) {
+                        ResolvedReference resolvedReference = parseRef(input, parentSchema, object);
+                        if (resolvedReference != null) {
+                            JsonObject resolvedObject = resolvedReference.object();
+                            ResolvedReference flatReference = flattenReference(
+                                    input,
+                                    packageName,
+                                    rootClassName,
+                                    prevClassName,
+                                    resolvedReference.parentObject(),
+                                    resolvedReference.object(),
+                                    options
+                            );
+
+                            if (flatReference != null) {
+                                resolvedObject = flatReference.object();
+                            }
+
+                            type = resolvedObject.getString("type");
+                        }
+                    }
+
                     if (type != null) {
                         switch (type) {
                             case "string" -> spec = FieldSpec.builder(String[].class, fieldName, Modifier.PUBLIC);
@@ -414,6 +436,21 @@ public final class JsonTemplateToClassConverter {
         // If the class has an additionalProperties key without any
         // properties, the types are not explicitly defined.
         if (propertyValue.getValue("additionalProperties") instanceof JsonObject object && !object.containsKey("properties")) {
+            ResolvedReference resolvedReference = flattenReference(
+                    input,
+                    packageName,
+                    rootClassName,
+                    prevClassName,
+                    parentSchema,
+                    object,
+                    options
+            );
+
+            if (resolvedReference != null) {
+                object = resolvedReference.object();
+                parentSchema = resolvedReference.parentObject();
+            }
+
             String type = object.getString("type") == null ? "object" : object.getString("type");
             TypeName classType = switch (type) {
                 case "string" -> ClassName.get(String.class);
@@ -423,6 +460,31 @@ public final class JsonTemplateToClassConverter {
                 case "array" -> ArrayTypeName.of(String.class);
                 default -> ClassName.get(Object.class);
             };
+
+            if (type.equals("object")) {
+                TypeSpec.Builder refClass = createClass(
+                        input,
+                        packageName,
+                        parentSchema,
+                        object,
+                        rootClassName,
+                        prevClassName,
+                        ConvertUtil.toClassName(fieldName),
+                        output,
+                        options
+                ).toBuilder();
+
+                JavaFile javaFile = JavaFile.builder(packageName, refClass.build())
+                        .build();
+
+                try {
+                    javaFile.writeTo(output);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                classType = ClassName.get(packageName, ConvertUtil.toClassName(fieldName));
+            }
 
             String ref = object.getString("$ref");
             if (object.getString("type") == null && ref != null) {
@@ -678,6 +740,7 @@ public final class JsonTemplateToClassConverter {
         return null;
     }
 
+    @Nullable
     private static ResolvedReference parseRef(@NotNull String input, @NotNull JsonObject parentJson, @NotNull JsonObject object) {
         String ref = object.getString("$ref");
 
