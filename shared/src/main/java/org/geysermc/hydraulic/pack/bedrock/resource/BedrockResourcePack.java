@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.geysermc.hydraulic.pack.bedrock.resource.attachables.Attachables;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Header;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Modules;
+import org.geysermc.hydraulic.pack.bedrock.resource.sounds.SoundDefinitions;
+import org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions.Sounds;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.ItemTexture;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.TerrainTexture;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.itemtexture.TextureData;
@@ -39,6 +41,7 @@ public class BedrockResourcePack {
     private ItemTexture itemTexture;
     private TerrainTexture terrainTexture;
     private Map<String, Attachables> attachables;
+    private SoundDefinitions soundDefinitions;
 
     public BedrockResourcePack(@NotNull Manifest manifest) {
         this(manifest, null, null);
@@ -118,6 +121,25 @@ public class BedrockResourcePack {
     }
 
     /**
+     * Get the sound definitions of the resource pack.
+     *
+     * @return the sound definitions of the resource pack
+     */
+    @Nullable
+    public SoundDefinitions soundDefinitions() {
+        return this.soundDefinitions;
+    }
+
+    /**
+     * Set the sound definitions of the resource pack.
+     *
+     * @param soundDefinitions the sound definitions of the resource pack
+     */
+    public void soundDefinitions(@Nullable SoundDefinitions soundDefinitions) {
+        this.soundDefinitions = soundDefinitions;
+    }
+
+    /**
      * Add an item to the resource pack.
      *
      * @param id the id of the item
@@ -175,6 +197,33 @@ public class BedrockResourcePack {
     }
 
     /**
+     * Add a sound to the resource pack.
+     *
+     * @param id the id of the sound
+     * @param soundLocation the location of the sound
+     */
+    public void addSound(@NotNull String id, @NotNull String soundLocation) {
+        if (this.soundDefinitions == null) {
+            this.soundDefinitions = new SoundDefinitions();
+            this.soundDefinitions.setFormatVersion("1.14.0");
+        }
+
+        Sounds sounds = new Sounds();
+        sounds.setName(soundLocation);
+        sounds.setLoadOnLowMemory(true);
+        sounds.setStream(true);
+        sounds.setVolume(1);
+        sounds.setIs3D(true);
+        sounds.setPitch(1);
+
+        org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions.SoundDefinitions data = new org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions.SoundDefinitions();
+        data.getSounds().add(sounds);
+        data.setMaxDistance(64);
+
+        this.soundDefinitions.getSoundDefinitions().put(id, data);
+    }
+
+    /**
      * Exports the resource pack to the specified directory.
      *
      * @param directory the directory to export the resource pack to
@@ -194,6 +243,10 @@ public class BedrockResourcePack {
             for (Map.Entry<String, Attachables> attachable : this.attachables.entrySet()) {
                 exportJson(MAPPER, directory.resolve(attachable.getKey()), attachable.getValue());
             }
+        }
+
+        if (this.soundDefinitions != null) {
+            exportJson(MAPPER, directory.resolve("sounds/sound_definitions.json"), this.soundDefinitions);
         }
     }
 

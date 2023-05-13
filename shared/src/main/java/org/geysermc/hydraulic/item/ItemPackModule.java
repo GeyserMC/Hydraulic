@@ -105,7 +105,6 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
             CreativeMappings.setup(item, customItemBuilder);
 
             if (item instanceof ArmorItem armorItem) {
-                customItemBuilder.creativeCategory(3);
                 customItemBuilder.protectionValue(armorItem.getDefense());
                 switch (armorItem.getEquipmentSlot()) {
                     case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
@@ -114,8 +113,7 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                     case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
                 }
             } else if (item instanceof TieredItem tieredItem) {
-                customItemBuilder.creativeCategory(CreativeCategory.EQUIPMENT.id())
-                    .displayHandheld(true); // So we hold the tool right
+                customItemBuilder.displayHandheld(true); // So we hold the tool right
 
                 // TODO Support custom tiers
                 customItemBuilder.toolTier("DIAMOND");
@@ -137,6 +135,10 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                 }
             } else if (item instanceof ShearsItem) {
                 customItemBuilder.toolType("shears");
+            } else if (item instanceof RecordItem recordItem) {
+                // Format the disc with a slightly different name to follow bedrock's format
+                customItemBuilder.displayName("§b" + Language.getInstance().getOrDefault(item.getDescriptionId()) + "\n§7" + Language.getInstance().getOrDefault(item.getDescriptionId() + ".desc") + "§f")
+                    .recordSound(recordItem.getSound().getLocation().toString());
             }
 
             event.register(customItemBuilder.build());
