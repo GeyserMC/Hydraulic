@@ -2,6 +2,8 @@ package org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.String;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Sound
@@ -11,6 +13,8 @@ public class SoundDefinitions {
   public boolean useLegacyMaxDistance;
 
   public String category;
+
+  private List<Sounds> sounds = new ArrayList<>();
 
   @JsonProperty("max_distance")
   public float maxDistance;
@@ -49,6 +53,24 @@ public class SoundDefinitions {
    */
   public void setCategory(String category) {
     this.category = category;
+  }
+
+  /**
+   * The collection of sounds minecraft can choice from.
+   *
+   * @return Sounds
+   */
+  public List<Sounds> getSounds() {
+    return this.sounds;
+  }
+
+  /**
+   * The collection of sounds minecraft can choice from.
+   *
+   * @param sounds Sounds
+   */
+  public void setSounds(List<Sounds> sounds) {
+    this.sounds = sounds;
   }
 
   /**

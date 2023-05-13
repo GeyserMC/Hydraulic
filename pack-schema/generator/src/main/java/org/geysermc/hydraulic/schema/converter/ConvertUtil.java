@@ -1,6 +1,5 @@
 package org.geysermc.hydraulic.schema.converter;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
 import org.jetbrains.annotations.NotNull;

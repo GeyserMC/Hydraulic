@@ -60,6 +60,7 @@
     "fogsettings.volumetric.mediacoefficients.air.Fog.Air.main.oneOf.0": "array",
     "fogsettings.volumetric.mediacoefficients.water.Fog.Water.main.oneOf.0": "array",
     "fogsettings.volumetric.mediacoefficients.cloud.Fog.Cloud.main.oneOf.0": "array",
+    "sounddefinitions.SoundDefinitions.sounds.anyOf": "object",
     "sounds.blocksounds.Sounds.BlockSounds.main.oneOf.0": "string",
     "sounds.blocksounds.Sounds.BlockSounds.main.oneOf.1": "array",
     "sounds.entitysounds.defaults.Sounds.Defaults.main.oneOf.0": "string",

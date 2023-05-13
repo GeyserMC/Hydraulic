@@ -17,8 +17,6 @@ public class Bones {
   @JsonProperty("relative_to")
   public RelativeTo relativeTo;
 
-  public float scale;
-
   public String[] getPosition() {
     return this.position;
   }
@@ -51,13 +49,5 @@ public class Bones {
    */
   public void setRelativeTo(RelativeTo relativeTo) {
     this.relativeTo = relativeTo;
-  }
-
-  public float getScale() {
-    return this.scale;
-  }
-
-  public void setScale(float scale) {
-    this.scale = scale;
   }
 }

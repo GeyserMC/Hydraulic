@@ -18,6 +18,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.CaseUtils;
 import org.geysermc.hydraulic.schema.PackSchemaGenerator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.lang.model.element.Modifier;
 import java.io.IOException;
@@ -44,7 +45,7 @@ public final class JsonTemplateToClassConverter {
      * @throws IOException if an I/O error occurs
      */
     public static void convert(@NotNull String input, @NotNull Path output, @NotNull ConverterOptions options) throws Exception {
-        URL source = PackSchemaGenerator.class.getClassLoader().getResource(input);
+        URL source = PackSchemaGenerator.class.getResource(input);
 
         try (InputStream stream = source.openStream()) {
             JsonObject schema = new JsonObject(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
@@ -87,11 +88,8 @@ public final class JsonTemplateToClassConverter {
         }
 
         // Replace illegal characters
-        className = className.replace("-", "Minus");
-        className = className.replace("+", "Plus");
-
-        packageName = packageName.replace("-", "_");
-        packageName = packageName.replace("+", "plus");
+        className = ConvertUtil.toClassName(className);
+        packageName = ConvertUtil.sanitizePackageName(packageName);
 
         TypeSpec.Builder classBuilder = TypeSpec.classBuilder(className).addModifiers(Modifier.PUBLIC);
 
@@ -178,7 +176,7 @@ public final class JsonTemplateToClassConverter {
 
         String propertyType = propertyValue.getString("type");
         if (propertyType == null) {
-            if (propertyValue.containsKey("properties")) {
+            if (propertyValue.containsKey("properties") || propertyValue.containsKey("items")) {
                 propertyType = "object";
             }
         }
@@ -476,8 +474,72 @@ public final class JsonTemplateToClassConverter {
                             fieldName,
                             Modifier.PRIVATE)
                     .initializer(CodeBlock.of("new $T<>()", HashMap.class));
+        } else if (propertyValue.getValue("items") instanceof JsonObject object && !object.containsKey("properties")) {
+            ResolvedReference resolvedReference = flattenReference(
+                    input,
+                    packageName,
+                    rootClassName,
+                    prevClassName,
+                    parentSchema,
+                    object,
+                    options
+            );
+
+            if (resolvedReference != null) {
+                object = resolvedReference.object();
+                parentSchema = resolvedReference.parentObject();
+            }
+
+            String ref = object.getString("$ref");
+            if (ref != null) {
+                ResolvedReference refSchema = parseRef(input, parentSchema, object);
+                if (refSchema != null) {
+                    object = refSchema.object();
+                    parentSchema = refSchema.parentObject();
+                }
+            }
+
+            String refClassName = ConvertUtil.toClassName(fieldName);
+            TypeSpec.Builder refClass = createClass(
+                    input,
+                    packageName,
+                    parentSchema,
+                    object,
+                    rootClassName,
+                    prevClassName,
+                    refClassName,
+                    output,
+                    options
+            ).toBuilder();
+
+            JavaFile javaFile = JavaFile.builder(packageName, refClass.build())
+                    .build();
+
+            try {
+                javaFile.writeTo(output);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            ParameterizedTypeName mainType = ParameterizedTypeName.get(ClassName.get(List.class),
+                    ClassName.get(packageName, StringUtils.capitalize(fieldName)));
+
+            return FieldSpec.builder(mainType,
+                            fieldName,
+                            Modifier.PRIVATE)
+                    .initializer(CodeBlock.of("new $T<>()", ArrayList.class));
         } else {
-            TypeSpec.Builder propertyClass = createClass(input, packageName, parentSchema, propertyValue, rootClassName, prevClassName, className, output, options).toBuilder();
+            TypeSpec.Builder propertyClass = createClass(
+                    input,
+                    packageName,
+                    parentSchema,
+                    propertyValue,
+                    rootClassName,
+                    prevClassName,
+                    className,
+                    output,
+                    options
+            ).toBuilder();
 
             // Field will be a map
             FieldSpec.Builder spec = null;
@@ -542,13 +604,10 @@ public final class JsonTemplateToClassConverter {
             int i = 0;
 
             // TODO: Add an option to combine objecs
+            ResolvedReference resolvedRef = null;
             for (Object object : array) {
                 if (!(object instanceof JsonObject jsonObject)) {
                     continue;
-                }
-
-                if (jsonObject.containsKey("$ref")) {
-                    return new ResolvedReference(jsonObject, parentSchema);
                 }
 
                 String title = jsonObject.getString("title", "main")
@@ -576,9 +635,17 @@ public final class JsonTemplateToClassConverter {
                 if (anyType.equals(configuredOption)) {
                     return new ResolvedReference(jsonObject, parentSchema);
                 } else {
-                    errors.add("Could not find " + name);
-                    errors.add("Found " + configuredOption + " but expected " + anyType);
+                    if (jsonObject.containsKey("$ref")) {
+                        resolvedRef = new ResolvedReference(jsonObject, parentSchema);
+                    } else {
+                        errors.add("Could not find " + name);
+                        errors.add("Found " + configuredOption + " but expected " + anyType);
+                    }
                 }
+            }
+
+            if (resolvedRef != null) {
+                return resolvedRef;
             }
 
             errors.forEach(System.err::println);
@@ -641,7 +708,7 @@ public final class JsonTemplateToClassConverter {
 
         String location = FilenameUtils.concat(FilenameUtils.getFullPathNoEndSeparator(input), ref);
 
-        URL source = PackSchemaGenerator.class.getClassLoader().getResource(location);
+        URL source = PackSchemaGenerator.class.getResource(location);
         if (source == null) {
             // No clue why this happens, since inside the JSON file
             // everything is just fine. Somewhere, somehow, an extra
@@ -651,7 +718,7 @@ public final class JsonTemplateToClassConverter {
                 location = FilenameUtils.concat(FilenameUtils.getFullPathNoEndSeparator(input), ref.substring(3));
             }
 
-            source = PackSchemaGenerator.class.getClassLoader().getResource(location);
+            source = PackSchemaGenerator.class.getResource(location);
             if (source == null) {
                 System.err.println("Could not find schema: " + location);
                 return null;
@@ -685,6 +752,7 @@ public final class JsonTemplateToClassConverter {
         return null;
     }
 
+    @Nullable
     private static ResolvedReference flattenReference(@NotNull String input, @NotNull String packageName, @NotNull String rootClassName, @NotNull String prevClassName, @NotNull JsonObject parentSchema, @NotNull JsonObject schema, @NotNull ConverterOptions options) {
         ResolvedReference forwarded = null;
         if (schema.fieldNames().contains("allOf")) {
