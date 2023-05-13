@@ -190,8 +190,10 @@ public class BedrockResourcePack {
             exportJson(MAPPER, directory.resolve("textures/terrain_texture.json"), this.terrainTexture);
         }
 
-        for (Map.Entry<String, Attachables> attachable : this.attachables.entrySet()) {
-            exportJson(MAPPER, directory.resolve(attachable.getKey()), attachable.getValue());
+        if (this.attachables != null) {
+            for (Map.Entry<String, Attachables> attachable : this.attachables.entrySet()) {
+                exportJson(MAPPER, directory.resolve(attachable.getKey()), attachable.getValue());
+            }
         }
     }
 
