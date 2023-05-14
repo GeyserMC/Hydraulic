@@ -215,6 +215,7 @@ public class BedrockResourcePack {
         sounds.setVolume(1);
         sounds.setIs3D(true);
         sounds.setPitch(1);
+        sounds.setWeight(1);
 
         org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions.SoundDefinitions data = new org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions.SoundDefinitions();
         data.getSounds().add(sounds);
