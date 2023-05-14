@@ -64,15 +64,6 @@ public class Description {
   }
 
   /**
-   * Assumed width in texels of the texture that will be bound to this geometry.
-   *
-   * @param textureWidth Texture Width
-   */
-  public void setTextureWidth(Float textureWidth) {
-    this.textureWidth = textureWidth;
-  }
-
-  /**
    * Assumed height in texels of the texture that will be bound to this geometry.
    *
    * @return Texture Height
@@ -87,15 +78,6 @@ public class Description {
    * @param textureHeight Texture Height
    */
   public void setTextureHeight(float textureHeight) {
-    this.textureHeight = textureHeight;
-  }
-
-  /**
-   * Assumed height in texels of the texture that will be bound to this geometry.
-   *
-   * @param textureHeight Texture Height
-   */
-  public void setTextureHeight(Float textureHeight) {
     this.textureHeight = textureHeight;
   }
 
@@ -136,15 +118,6 @@ public class Description {
   }
 
   /**
-   * Width of the visibility bounding box (in model space units).
-   *
-   * @param visibleBoundsWidth Visible Bounds Width
-   */
-  public void setVisibleBoundsWidth(Float visibleBoundsWidth) {
-    this.visibleBoundsWidth = visibleBoundsWidth;
-  }
-
-  /**
    * Height of the visible bounding box (in model space units).
    *
    * @return Visible Bounds Height
@@ -159,15 +132,6 @@ public class Description {
    * @param visibleBoundsHeight Visible Bounds Height
    */
   public void setVisibleBoundsHeight(float visibleBoundsHeight) {
-    this.visibleBoundsHeight = visibleBoundsHeight;
-  }
-
-  /**
-   * Height of the visible bounding box (in model space units).
-   *
-   * @param visibleBoundsHeight Visible Bounds Height
-   */
-  public void setVisibleBoundsHeight(Float visibleBoundsHeight) {
     this.visibleBoundsHeight = visibleBoundsHeight;
   }
 }

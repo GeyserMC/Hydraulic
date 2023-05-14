@@ -51,15 +51,6 @@ public class Manifest {
   }
 
   /**
-   * This defines the current version of the manifest. Don't change this unless you have a good reason to
-   *
-   * @param formatVersion Format Version
-   */
-  public void setFormatVersion(Float formatVersion) {
-    this.formatVersion = formatVersion;
-  }
-
-  /**
    * These are the different features that the pack makes use of that aren't necessarily enabled by default.
    *
    * @return Capabilities

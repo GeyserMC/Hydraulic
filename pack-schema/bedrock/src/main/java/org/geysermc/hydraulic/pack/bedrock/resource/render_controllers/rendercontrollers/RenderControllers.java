@@ -94,7 +94,7 @@ public class RenderControllers {
    *
    * @param filterLighting Filter Lighting
    */
-  public void setFilterLighting(Boolean filterLighting) {
+  public void setFilterLighting(boolean filterLighting) {
     this.filterLighting = filterLighting;
   }
 
@@ -130,7 +130,7 @@ public class RenderControllers {
    *
    * @param ignoreLighting Ignore Lighting
    */
-  public void setIgnoreLighting(Boolean ignoreLighting) {
+  public void setIgnoreLighting(boolean ignoreLighting) {
     this.ignoreLighting = ignoreLighting;
   }
 

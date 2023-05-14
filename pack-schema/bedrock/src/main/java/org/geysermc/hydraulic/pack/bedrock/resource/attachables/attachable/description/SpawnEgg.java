@@ -71,7 +71,7 @@ public class SpawnEgg {
   /**
    * @param textureIndex Texture Index
    */
-  public void setTextureIndex(Integer textureIndex) {
+  public void setTextureIndex(int textureIndex) {
     this.textureIndex = textureIndex;
   }
 }

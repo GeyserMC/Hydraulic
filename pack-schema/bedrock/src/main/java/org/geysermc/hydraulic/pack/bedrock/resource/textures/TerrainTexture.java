@@ -37,7 +37,7 @@ public class TerrainTexture {
   /**
    * @param numMipLevels Num Mip Levels
    */
-  public void setNumMipLevels(Integer numMipLevels) {
+  public void setNumMipLevels(int numMipLevels) {
     this.numMipLevels = numMipLevels;
   }
 
@@ -51,7 +51,7 @@ public class TerrainTexture {
   /**
    * @param padding Padding
    */
-  public void setPadding(Integer padding) {
+  public void setPadding(int padding) {
     this.padding = padding;
   }
 

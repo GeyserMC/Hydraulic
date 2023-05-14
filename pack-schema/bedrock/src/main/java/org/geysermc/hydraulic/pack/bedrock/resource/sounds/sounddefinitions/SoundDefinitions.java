@@ -35,7 +35,7 @@ public class SoundDefinitions {
    *
    * @param useLegacyMaxDistance Use Legacy Max Distance
    */
-  public void setUseLegacyMaxDistance(Boolean useLegacyMaxDistance) {
+  public void setUseLegacyMaxDistance(boolean useLegacyMaxDistance) {
     this.useLegacyMaxDistance = useLegacyMaxDistance;
   }
 
@@ -86,13 +86,6 @@ public class SoundDefinitions {
    * @param maxDistance Max Distance
    */
   public void setMaxDistance(float maxDistance) {
-    this.maxDistance = maxDistance;
-  }
-
-  /**
-   * @param maxDistance Max Distance
-   */
-  public void setMaxDistance(Float maxDistance) {
     this.maxDistance = maxDistance;
   }
 }

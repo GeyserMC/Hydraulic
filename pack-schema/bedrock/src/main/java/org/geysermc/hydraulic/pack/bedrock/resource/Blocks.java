@@ -64,15 +64,6 @@ public class Blocks {
     this.brightnessGamma = brightnessGamma;
   }
 
-  /**
-   * Specifies the gamma brightness level to apply to the block texture.
-   *
-   * @param brightnessGamma Brightness Gamma
-   */
-  public void setBrightnessGamma(Float brightnessGamma) {
-    this.brightnessGamma = brightnessGamma;
-  }
-
   public CarriedTextures getCarriedTextures() {
     return this.carriedTextures;
   }

@@ -45,7 +45,7 @@ public class Variations {
    *
    * @param weight Weight
    */
-  public void setWeight(Integer weight) {
+  public void setWeight(int weight) {
     this.weight = weight;
   }
 }

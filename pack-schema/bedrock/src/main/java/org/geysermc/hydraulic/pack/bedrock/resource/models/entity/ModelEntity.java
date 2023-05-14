@@ -31,7 +31,7 @@ public class ModelEntity {
   /**
    * @param debug Debug
    */
-  public void setDebug(Boolean debug) {
+  public void setDebug(boolean debug) {
     this.debug = debug;
   }
 

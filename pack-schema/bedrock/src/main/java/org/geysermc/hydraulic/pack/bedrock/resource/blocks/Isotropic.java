@@ -21,7 +21,7 @@ public class Isotropic {
     return this.down;
   }
 
-  public void setDown(Boolean down) {
+  public void setDown(boolean down) {
     this.down = down;
   }
 
@@ -29,7 +29,7 @@ public class Isotropic {
     return this.up;
   }
 
-  public void setUp(Boolean up) {
+  public void setUp(boolean up) {
     this.up = up;
   }
 
@@ -37,7 +37,7 @@ public class Isotropic {
     return this.side;
   }
 
-  public void setSide(Boolean side) {
+  public void setSide(boolean side) {
     this.side = side;
   }
 
@@ -45,7 +45,7 @@ public class Isotropic {
     return this.south;
   }
 
-  public void setSouth(Boolean south) {
+  public void setSouth(boolean south) {
     this.south = south;
   }
 
@@ -53,7 +53,7 @@ public class Isotropic {
     return this.north;
   }
 
-  public void setNorth(Boolean north) {
+  public void setNorth(boolean north) {
     this.north = north;
   }
 
@@ -61,7 +61,7 @@ public class Isotropic {
     return this.west;
   }
 
-  public void setWest(Boolean west) {
+  public void setWest(boolean west) {
     this.west = west;
   }
 
@@ -69,7 +69,7 @@ public class Isotropic {
     return this.east;
   }
 
-  public void setEast(Boolean east) {
+  public void setEast(boolean east) {
     this.east = east;
   }
 }

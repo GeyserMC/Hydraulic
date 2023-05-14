@@ -22,7 +22,7 @@ public class EmitterLocalSpace {
   /**
    * @param position Position
    */
-  public void setPosition(Boolean position) {
+  public void setPosition(boolean position) {
     this.position = position;
   }
 
@@ -36,7 +36,7 @@ public class EmitterLocalSpace {
   /**
    * @param rotation Rotation
    */
-  public void setRotation(Boolean rotation) {
+  public void setRotation(boolean rotation) {
     this.rotation = rotation;
   }
 
@@ -50,7 +50,7 @@ public class EmitterLocalSpace {
   /**
    * @param velocity Rotation
    */
-  public void setVelocity(Boolean velocity) {
+  public void setVelocity(boolean velocity) {
     this.velocity = velocity;
   }
 }

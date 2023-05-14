@@ -39,13 +39,6 @@ public class Cubes {
   }
 
   /**
-   * Grow this box by this additive amount in all directions (in model space units), this field overrides the bone's inflate field for this cube only.
-   */
-  public void setInflate(Float inflate) {
-    this.inflate = inflate;
-  }
-
-  /**
    * Mirrors this cube about the unrotated x axis (effectively flipping the east / west faces), overriding the bone's `mirror` setting for this cube.
    */
   public Boolean getMirror() {
@@ -55,7 +48,7 @@ public class Cubes {
   /**
    * Mirrors this cube about the unrotated x axis (effectively flipping the east / west faces), overriding the bone's `mirror` setting for this cube.
    */
-  public void setMirror(Boolean mirror) {
+  public void setMirror(boolean mirror) {
     this.mirror = mirror;
   }
 
@@ -95,7 +88,7 @@ public class Cubes {
   /**
    * @param reset Reset
    */
-  public void setReset(Boolean reset) {
+  public void setReset(boolean reset) {
     this.reset = reset;
   }
 

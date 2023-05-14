@@ -28,7 +28,7 @@ public class PolyMesh {
   /**
    * If true, UVs are assumed to be [0-1]. If false, UVs are assumed to be [0-texture_width] and [0-texture_height] respectively.
    */
-  public void setNormalizedUvs(Boolean normalizedUvs) {
+  public void setNormalizedUvs(boolean normalizedUvs) {
     this.normalizedUvs = normalizedUvs;
   }
 

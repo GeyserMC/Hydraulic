@@ -77,7 +77,7 @@ public class Header {
    *
    * @param lockTemplateOptions Lock Template Options
    */
-  public void setLockTemplateOptions(Boolean lockTemplateOptions) {
+  public void setLockTemplateOptions(boolean lockTemplateOptions) {
     this.lockTemplateOptions = lockTemplateOptions;
   }
 

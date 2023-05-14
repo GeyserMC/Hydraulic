@@ -25,13 +25,6 @@ public class LoopingTravelDistanceEvents {
     this.distance = distance;
   }
 
-  /**
-   * @param distance Distance
-   */
-  public void setDistance(Float distance) {
-    this.distance = distance;
-  }
-
   public String[] getEffects() {
     return this.effects;
   }

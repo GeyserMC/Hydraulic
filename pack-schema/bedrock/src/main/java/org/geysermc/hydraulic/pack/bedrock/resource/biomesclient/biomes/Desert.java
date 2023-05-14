@@ -72,7 +72,7 @@ public class Desert {
   /**
    * @param inheritFromPriorFog Inherit From Prior Fog
    */
-  public void setInheritFromPriorFog(Boolean inheritFromPriorFog) {
+  public void setInheritFromPriorFog(boolean inheritFromPriorFog) {
     this.inheritFromPriorFog = inheritFromPriorFog;
   }
 
@@ -86,7 +86,7 @@ public class Desert {
   /**
    * @param removeAllPriorFog Remove All Prior Fog
    */
-  public void setRemoveAllPriorFog(Boolean removeAllPriorFog) {
+  public void setRemoveAllPriorFog(boolean removeAllPriorFog) {
     this.removeAllPriorFog = removeAllPriorFog;
   }
 
@@ -104,7 +104,7 @@ public class Desert {
    *
    * @param waterFogDistance Water Fog Distance
    */
-  public void setWaterFogDistance(Integer waterFogDistance) {
+  public void setWaterFogDistance(int waterFogDistance) {
     this.waterFogDistance = waterFogDistance;
   }
 
@@ -123,15 +123,6 @@ public class Desert {
    * @param waterSurfaceTransparency Water Surface Transparency
    */
   public void setWaterSurfaceTransparency(float waterSurfaceTransparency) {
-    this.waterSurfaceTransparency = waterSurfaceTransparency;
-  }
-
-  /**
-   * The amount of transpareny the surface of the water has.
-   *
-   * @param waterSurfaceTransparency Water Surface Transparency
-   */
-  public void setWaterSurfaceTransparency(Float waterSurfaceTransparency) {
     this.waterSurfaceTransparency = waterSurfaceTransparency;
   }
 }

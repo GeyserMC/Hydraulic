@@ -47,7 +47,7 @@ public class MusicDefinitions {
   /**
    * @param minDelay Minimum Delay
    */
-  public void setMinDelay(Integer minDelay) {
+  public void setMinDelay(int minDelay) {
     this.minDelay = minDelay;
   }
 
@@ -61,7 +61,7 @@ public class MusicDefinitions {
   /**
    * @param maxDelay Maximum Delay
    */
-  public void setMaxDelay(Integer maxDelay) {
+  public void setMaxDelay(int maxDelay) {
     this.maxDelay = maxDelay;
   }
 }

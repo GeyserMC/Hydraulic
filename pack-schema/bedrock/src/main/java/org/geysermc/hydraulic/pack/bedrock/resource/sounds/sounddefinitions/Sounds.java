@@ -37,7 +37,7 @@ public class Sounds {
   /**
    * @param is3D Is 3D
    */
-  public void setIs3D(Boolean is3D) {
+  public void setIs3D(boolean is3D) {
     this.is3D = is3D;
   }
 
@@ -60,15 +60,6 @@ public class Sounds {
   }
 
   /**
-   * The pitch of the audio, 1 is nomial.
-   *
-   * @param pitch Pitch
-   */
-  public void setPitch(Float pitch) {
-    this.pitch = pitch;
-  }
-
-  /**
    * The volume of the audio, 1 is nomial.
    *
    * @return Volume
@@ -87,15 +78,6 @@ public class Sounds {
   }
 
   /**
-   * The volume of the audio, 1 is nomial.
-   *
-   * @param volume Volume
-   */
-  public void setVolume(Float volume) {
-    this.volume = volume;
-  }
-
-  /**
    * Marks if this audio should be loaded or not on low memory.
    *
    * @return Load On Low Memory
@@ -109,7 +91,7 @@ public class Sounds {
    *
    * @param loadOnLowMemory Load On Low Memory
    */
-  public void setLoadOnLowMemory(Boolean loadOnLowMemory) {
+  public void setLoadOnLowMemory(boolean loadOnLowMemory) {
     this.loadOnLowMemory = loadOnLowMemory;
   }
 
@@ -127,7 +109,7 @@ public class Sounds {
    *
    * @param stream Stream
    */
-  public void setStream(Boolean stream) {
+  public void setStream(boolean stream) {
     this.stream = stream;
   }
 
@@ -155,7 +137,7 @@ public class Sounds {
   /**
    * @param weight Weight
    */
-  public void setWeight(Integer weight) {
+  public void setWeight(int weight) {
     this.weight = weight;
   }
 }

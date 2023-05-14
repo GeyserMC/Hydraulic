@@ -37,11 +37,4 @@ public class Direction {
   public void setMinSpeedThreshold(float minSpeedThreshold) {
     this.minSpeedThreshold = minSpeedThreshold;
   }
-
-  /**
-   * The direction is set if the speed of the particle is above the threshold.
-   */
-  public void setMinSpeedThreshold(Float minSpeedThreshold) {
-    this.minSpeedThreshold = minSpeedThreshold;
-  }
 }

@@ -273,6 +273,7 @@ public final class JsonTemplateToClassConverter {
                 // Add setter
                 MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + StringUtils.capitalize(fieldName))
                         .addModifiers(Modifier.PUBLIC)
+                        .addParameter(spec.build().type.isBoxedPrimitive() ? spec.build().type.unbox() : spec.build().type, fieldName)
                         .addStatement("this.$L = $L", fieldName, fieldName);
 
                 if (propertyDescription != null && !propertyDescription.contains("UNDOCUMENTED")) {
@@ -287,15 +288,6 @@ public final class JsonTemplateToClassConverter {
                     setterBuilder.addJavadoc("@param " + fieldName + " " + propertyValue.getString("title"));
                 }
 
-                // Add overloaded float setter for implicit conversions
-                if (spec.build().type.equals(TypeName.FLOAT.box())) {
-                    MethodSpec.Builder overloadedSetterBuilder = setterBuilder.build().toBuilder();
-
-                    overloadedSetterBuilder.addParameter(spec.build().type.unbox(), fieldName);
-                    classBuilder.addMethod(overloadedSetterBuilder.build());
-                }
-
-                setterBuilder.addParameter(spec.build().type, fieldName);
                 classBuilder.addMethod(setterBuilder.build());
             }
         }

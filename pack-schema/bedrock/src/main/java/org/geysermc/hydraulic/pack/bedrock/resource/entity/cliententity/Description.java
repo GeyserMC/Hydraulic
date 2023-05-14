@@ -88,7 +88,7 @@ public class Description {
    *
    * @param enableAttachables Enable Attachables
    */
-  public void setEnableAttachables(Boolean enableAttachables) {
+  public void setEnableAttachables(boolean enableAttachables) {
     this.enableAttachables = enableAttachables;
   }
 
@@ -138,7 +138,7 @@ public class Description {
    *
    * @param hideArmor Hide Armor
    */
-  public void setHideArmor(Boolean hideArmor) {
+  public void setHideArmor(boolean hideArmor) {
     this.hideArmor = hideArmor;
   }
 
@@ -156,7 +156,7 @@ public class Description {
    *
    * @param heldItemIgnoresLighting Held Item Ignores Lighting
    */
-  public void setHeldItemIgnoresLighting(Boolean heldItemIgnoresLighting) {
+  public void setHeldItemIgnoresLighting(boolean heldItemIgnoresLighting) {
     this.heldItemIgnoresLighting = heldItemIgnoresLighting;
   }
 

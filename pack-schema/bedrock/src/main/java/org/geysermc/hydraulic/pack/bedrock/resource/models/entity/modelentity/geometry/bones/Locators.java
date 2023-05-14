@@ -49,7 +49,7 @@ public class Locators {
   /**
    * Discard scale inherited from parent bone.
    */
-  public void setIgnoreInheritedScale(Boolean ignoreInheritedScale) {
+  public void setIgnoreInheritedScale(boolean ignoreInheritedScale) {
     this.ignoreInheritedScale = ignoreInheritedScale;
   }
 }

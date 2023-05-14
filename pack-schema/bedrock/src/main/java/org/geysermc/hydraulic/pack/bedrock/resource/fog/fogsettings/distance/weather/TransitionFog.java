@@ -62,15 +62,6 @@ public class TransitionFog {
   }
 
   /**
-   * The minimum progress of fog transition.
-   *
-   * @param minPercent Minimum Percent
-   */
-  public void setMinPercent(Float minPercent) {
-    this.minPercent = minPercent;
-  }
-
-  /**
    * The time takes to reach certain progress('mid_percent') of fog transition.
    *
    * @return Midpoint Seconds
@@ -85,15 +76,6 @@ public class TransitionFog {
    * @param midSeconds Midpoint Seconds
    */
   public void setMidSeconds(float midSeconds) {
-    this.midSeconds = midSeconds;
-  }
-
-  /**
-   * The time takes to reach certain progress('mid_percent') of fog transition.
-   *
-   * @param midSeconds Midpoint Seconds
-   */
-  public void setMidSeconds(Float midSeconds) {
     this.midSeconds = midSeconds;
   }
 
@@ -116,15 +98,6 @@ public class TransitionFog {
   }
 
   /**
-   * The progress of fog transition after 'mid_seconds' seconds.
-   *
-   * @param midPercent Midpoint Percent
-   */
-  public void setMidPercent(Float midPercent) {
-    this.midPercent = midPercent;
-  }
-
-  /**
    * Total amount of time takes to complete fog transition.
    *
    * @return Maximum Seconds
@@ -139,15 +112,6 @@ public class TransitionFog {
    * @param maxSeconds Maximum Seconds
    */
   public void setMaxSeconds(float maxSeconds) {
-    this.maxSeconds = maxSeconds;
-  }
-
-  /**
-   * Total amount of time takes to complete fog transition.
-   *
-   * @param maxSeconds Maximum Seconds
-   */
-  public void setMaxSeconds(Float maxSeconds) {
     this.maxSeconds = maxSeconds;
   }
 }

@@ -87,7 +87,7 @@ public class Bones {
     return this.debug;
   }
 
-  public void setDebug(Boolean debug) {
+  public void setDebug(boolean debug) {
     this.debug = debug;
   }
 
@@ -102,13 +102,6 @@ public class Bones {
    * Grow this box by this additive amount in all directions (in model space units).
    */
   public void setInflate(float inflate) {
-    this.inflate = inflate;
-  }
-
-  /**
-   * Grow this box by this additive amount in all directions (in model space units).
-   */
-  public void setInflate(Float inflate) {
     this.inflate = inflate;
   }
 
@@ -140,7 +133,7 @@ public class Bones {
    *
    * @param mirror Mirror
    */
-  public void setMirror(Boolean mirror) {
+  public void setMirror(boolean mirror) {
     this.mirror = mirror;
   }
 
@@ -216,7 +209,7 @@ public class Bones {
     return this.renderGroupId;
   }
 
-  public void setRenderGroupId(Integer renderGroupId) {
+  public void setRenderGroupId(int renderGroupId) {
     this.renderGroupId = renderGroupId;
   }
 

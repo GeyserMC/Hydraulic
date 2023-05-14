@@ -72,15 +72,6 @@ public class Animations {
     this.animationLength = animationLength;
   }
 
-  /**
-   * Override calculated value (set as the last keyframe time) and set animation length in seconds.
-   *
-   * @param animationLength Animation Length
-   */
-  public void setAnimationLength(Float animationLength) {
-    this.animationLength = animationLength;
-  }
-
   public String getBlendWeight() {
     return this.blendWeight;
   }
@@ -137,7 +128,7 @@ public class Animations {
    *
    * @param overridePreviousAnimation Override Previous Animation
    */
-  public void setOverridePreviousAnimation(Boolean overridePreviousAnimation) {
+  public void setOverridePreviousAnimation(boolean overridePreviousAnimation) {
     this.overridePreviousAnimation = overridePreviousAnimation;
   }
 

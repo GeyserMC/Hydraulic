@@ -74,7 +74,7 @@ public class EmitterShapeBox {
   /**
    * @param surfaceOnly Surface Only
    */
-  public void setSurfaceOnly(Boolean surfaceOnly) {
+  public void setSurfaceOnly(boolean surfaceOnly) {
     this.surfaceOnly = surfaceOnly;
   }
 }

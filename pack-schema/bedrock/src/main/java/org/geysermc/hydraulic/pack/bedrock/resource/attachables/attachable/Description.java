@@ -96,7 +96,7 @@ public class Description {
   /**
    * @param enableAttachables Enable Attachables
    */
-  public void setEnableAttachables(Boolean enableAttachables) {
+  public void setEnableAttachables(boolean enableAttachables) {
     this.enableAttachables = enableAttachables;
   }
 

@@ -30,7 +30,7 @@ public class Capabilities {
    *
    * @param experimentalCustomUi Experimental Custom Ui
    */
-  public void setExperimentalCustomUi(Boolean experimentalCustomUi) {
+  public void setExperimentalCustomUi(boolean experimentalCustomUi) {
     this.experimentalCustomUi = experimentalCustomUi;
   }
 
@@ -48,7 +48,7 @@ public class Capabilities {
    *
    * @param chemistry Chemistry
    */
-  public void setChemistry(Boolean chemistry) {
+  public void setChemistry(boolean chemistry) {
     this.chemistry = chemistry;
   }
 
@@ -66,7 +66,7 @@ public class Capabilities {
    *
    * @param raytraced Raytraced
    */
-  public void setRaytraced(Boolean raytraced) {
+  public void setRaytraced(boolean raytraced) {
     this.raytraced = raytraced;
   }
 }

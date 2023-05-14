@@ -37,15 +37,6 @@ public class OnFireColor {
   /**
    * A color definition as number, between 0 and 1.
    *
-   * @param r Color Number
-   */
-  public void setR(Float r) {
-    this.r = r;
-  }
-
-  /**
-   * A color definition as number, between 0 and 1.
-   *
    * @return Color Number
    */
   public Float getG() {
@@ -58,15 +49,6 @@ public class OnFireColor {
    * @param g Color Number
    */
   public void setG(float g) {
-    this.g = g;
-  }
-
-  /**
-   * A color definition as number, between 0 and 1.
-   *
-   * @param g Color Number
-   */
-  public void setG(Float g) {
     this.g = g;
   }
 
@@ -91,15 +73,6 @@ public class OnFireColor {
   /**
    * A color definition as number, between 0 and 1.
    *
-   * @param b Color Number
-   */
-  public void setB(Float b) {
-    this.b = b;
-  }
-
-  /**
-   * A color definition as number, between 0 and 1.
-   *
    * @return Color Number
    */
   public Float getA() {
@@ -112,15 +85,6 @@ public class OnFireColor {
    * @param a Color Number
    */
   public void setA(float a) {
-    this.a = a;
-  }
-
-  /**
-   * A color definition as number, between 0 and 1.
-   *
-   * @param a Color Number
-   */
-  public void setA(Float a) {
     this.a = a;
   }
 }

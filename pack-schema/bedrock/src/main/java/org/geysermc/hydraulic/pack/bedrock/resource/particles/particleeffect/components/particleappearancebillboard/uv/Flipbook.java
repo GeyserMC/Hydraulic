@@ -45,7 +45,7 @@ public class Flipbook {
   /**
    * @param stretchToLifetime Stretch To Lifetime
    */
-  public void setStretchToLifetime(Boolean stretchToLifetime) {
+  public void setStretchToLifetime(boolean stretchToLifetime) {
     this.stretchToLifetime = stretchToLifetime;
   }
 
@@ -59,7 +59,7 @@ public class Flipbook {
   /**
    * @param loop Loop
    */
-  public void setLoop(Boolean loop) {
+  public void setLoop(boolean loop) {
     this.loop = loop;
   }
 }

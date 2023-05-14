@@ -38,13 +38,6 @@ public class ParticleMotionCollision {
   }
 
   /**
-   * @param collisionDrag Collision Drag
-   */
-  public void setCollisionDrag(Float collisionDrag) {
-    this.collisionDrag = collisionDrag;
-  }
-
-  /**
    * @return Coefficient Of Restitution
    */
   public Float getCoefficientOfRestitution() {
@@ -59,13 +52,6 @@ public class ParticleMotionCollision {
   }
 
   /**
-   * @param coefficientOfRestitution Coefficient Of Restitution
-   */
-  public void setCoefficientOfRestitution(Float coefficientOfRestitution) {
-    this.coefficientOfRestitution = coefficientOfRestitution;
-  }
-
-  /**
    * @return Collision Radius
    */
   public Float getCollisionRadius() {
@@ -76,13 +62,6 @@ public class ParticleMotionCollision {
    * @param collisionRadius Collision Radius
    */
   public void setCollisionRadius(float collisionRadius) {
-    this.collisionRadius = collisionRadius;
-  }
-
-  /**
-   * @param collisionRadius Collision Radius
-   */
-  public void setCollisionRadius(Float collisionRadius) {
     this.collisionRadius = collisionRadius;
   }
 
@@ -104,7 +83,7 @@ public class ParticleMotionCollision {
   /**
    * @param expireOnContact Expire On Contact
    */
-  public void setExpireOnContact(Boolean expireOnContact) {
+  public void setExpireOnContact(boolean expireOnContact) {
     this.expireOnContact = expireOnContact;
   }
 }

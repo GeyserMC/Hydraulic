@@ -56,15 +56,6 @@ public class InitFog {
   }
 
   /**
-   * The distance from the player that the fog will begin to appear. 'fog_start' must be less than or equal to 'fog_end'.
-   *
-   * @param fogStart Fog Start
-   */
-  public void setFogStart(Float fogStart) {
-    this.fogStart = fogStart;
-  }
-
-  /**
    * The distance from the player that the fog will become fully opaque. 'fog_end' must be greater than or equal to 'fog_start'.
    *
    * @return Fog End
@@ -79,15 +70,6 @@ public class InitFog {
    * @param fogEnd Fog End
    */
   public void setFogEnd(float fogEnd) {
-    this.fogEnd = fogEnd;
-  }
-
-  /**
-   * The distance from the player that the fog will become fully opaque. 'fog_end' must be greater than or equal to 'fog_start'.
-   *
-   * @param fogEnd Fog End
-   */
-  public void setFogEnd(Float fogEnd) {
     this.fogEnd = fogEnd;
   }
 }

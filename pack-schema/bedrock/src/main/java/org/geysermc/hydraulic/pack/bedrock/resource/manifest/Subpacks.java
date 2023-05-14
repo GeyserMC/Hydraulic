@@ -71,13 +71,4 @@ public class Subpacks {
   public void setMemoryTier(float memoryTier) {
     this.memoryTier = memoryTier;
   }
-
-  /**
-   * This creates a requirement on the capacity of memory needed to select the resolution. Each tier increases memory requirement by 256 MB.
-   *
-   * @param memoryTier Memory Tier
-   */
-  public void setMemoryTier(Float memoryTier) {
-    this.memoryTier = memoryTier;
-  }
 }

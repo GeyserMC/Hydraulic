@@ -49,13 +49,6 @@ public class States {
   }
 
   /**
-   * A short-hand version of blend_out that simply sets the amount of time to fade out if the animation is interrupted.
-   */
-  public void setBlendTransition(Float blendTransition) {
-    this.blendTransition = blendTransition;
-  }
-
-  /**
    * When blending a transition to another state, animate each euler axis through the shortest rotation, instead of by value.
    *
    * @return Blend Via Shortest Path
@@ -69,7 +62,7 @@ public class States {
    *
    * @param blendViaShortestPath Blend Via Shortest Path
    */
-  public void setBlendViaShortestPath(Boolean blendViaShortestPath) {
+  public void setBlendViaShortestPath(boolean blendViaShortestPath) {
     this.blendViaShortestPath = blendViaShortestPath;
   }
 

@@ -26,7 +26,7 @@ public class Uv {
   /**
    * @param textureWidth Texture Width
    */
-  public void setTextureWidth(Integer textureWidth) {
+  public void setTextureWidth(int textureWidth) {
     this.textureWidth = textureWidth;
   }
 
@@ -40,7 +40,7 @@ public class Uv {
   /**
    * @param textureHeight Texture Height
    */
-  public void setTextureHeight(Integer textureHeight) {
+  public void setTextureHeight(int textureHeight) {
     this.textureHeight = textureHeight;
   }
 

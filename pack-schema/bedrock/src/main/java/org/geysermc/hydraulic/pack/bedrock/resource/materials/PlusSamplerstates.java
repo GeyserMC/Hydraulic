@@ -23,7 +23,7 @@ public class PlusSamplerstates {
   /**
    * @param samplerIndex Sample State
    */
-  public void setSamplerIndex(Integer samplerIndex) {
+  public void setSamplerIndex(int samplerIndex) {
     this.samplerIndex = samplerIndex;
   }
 
