@@ -1,6 +1,8 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
+import java.lang.Float;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,21 +12,21 @@ import java.util.List;
  */
 public class SoundDefinitions {
   @JsonProperty("__use_legacy_max_distance")
-  public boolean useLegacyMaxDistance;
+  public Boolean useLegacyMaxDistance;
 
   public String category;
 
   private List<Sounds> sounds = new ArrayList<>();
 
   @JsonProperty("max_distance")
-  public float maxDistance;
+  public Float maxDistance;
 
   /**
    * Whenever or not use legacy distance checking.
    *
    * @return Use Legacy Max Distance
    */
-  public boolean getUseLegacyMaxDistance() {
+  public Boolean getUseLegacyMaxDistance() {
     return this.useLegacyMaxDistance;
   }
 
@@ -33,7 +35,7 @@ public class SoundDefinitions {
    *
    * @param useLegacyMaxDistance Use Legacy Max Distance
    */
-  public void setUseLegacyMaxDistance(boolean useLegacyMaxDistance) {
+  public void setUseLegacyMaxDistance(Boolean useLegacyMaxDistance) {
     this.useLegacyMaxDistance = useLegacyMaxDistance;
   }
 
@@ -76,7 +78,7 @@ public class SoundDefinitions {
   /**
    * @return Max Distance
    */
-  public float getMaxDistance() {
+  public Float getMaxDistance() {
     return this.maxDistance;
   }
 
@@ -84,6 +86,13 @@ public class SoundDefinitions {
    * @param maxDistance Max Distance
    */
   public void setMaxDistance(float maxDistance) {
+    this.maxDistance = maxDistance;
+  }
+
+  /**
+   * @param maxDistance Max Distance
+   */
+  public void setMaxDistance(Float maxDistance) {
     this.maxDistance = maxDistance;
   }
 }

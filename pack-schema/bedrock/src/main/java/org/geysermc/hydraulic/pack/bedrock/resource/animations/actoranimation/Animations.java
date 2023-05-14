@@ -1,6 +1,8 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.animations.actoranimation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
+import java.lang.Float;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +20,7 @@ public class Animations {
   public String animTimeUpdate;
 
   @JsonProperty("animation_length")
-  public float animationLength;
+  public Float animationLength;
 
   @JsonProperty("blend_weight")
   public String blendWeight;
@@ -31,7 +33,7 @@ public class Animations {
   public String loopDelay;
 
   @JsonProperty("override_previous_animation")
-  public boolean overridePreviousAnimation;
+  public Boolean overridePreviousAnimation;
 
   @JsonProperty("particle_effects")
   private Map<String, ParticleEffects> particleEffects = new HashMap<>();
@@ -57,7 +59,7 @@ public class Animations {
    *
    * @return Animation Length
    */
-  public float getAnimationLength() {
+  public Float getAnimationLength() {
     return this.animationLength;
   }
 
@@ -67,6 +69,15 @@ public class Animations {
    * @param animationLength Animation Length
    */
   public void setAnimationLength(float animationLength) {
+    this.animationLength = animationLength;
+  }
+
+  /**
+   * Override calculated value (set as the last keyframe time) and set animation length in seconds.
+   *
+   * @param animationLength Animation Length
+   */
+  public void setAnimationLength(Float animationLength) {
     this.animationLength = animationLength;
   }
 
@@ -117,7 +128,7 @@ public class Animations {
    *
    * @return Override Previous Animation
    */
-  public boolean getOverridePreviousAnimation() {
+  public Boolean getOverridePreviousAnimation() {
     return this.overridePreviousAnimation;
   }
 
@@ -126,7 +137,7 @@ public class Animations {
    *
    * @param overridePreviousAnimation Override Previous Animation
    */
-  public void setOverridePreviousAnimation(boolean overridePreviousAnimation) {
+  public void setOverridePreviousAnimation(Boolean overridePreviousAnimation) {
     this.overridePreviousAnimation = overridePreviousAnimation;
   }
 

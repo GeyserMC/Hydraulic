@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.manifest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 import java.lang.String;
 
 /**
@@ -15,7 +16,7 @@ public class Header {
   public String description;
 
   @JsonProperty("lock_template_options")
-  public boolean lockTemplateOptions;
+  public Boolean lockTemplateOptions;
 
   @JsonProperty("min_engine_version")
   public float[] minEngineVersion;
@@ -67,7 +68,7 @@ public class Header {
    *
    * @return Lock Template Options
    */
-  public boolean getLockTemplateOptions() {
+  public Boolean getLockTemplateOptions() {
     return this.lockTemplateOptions;
   }
 
@@ -76,7 +77,7 @@ public class Header {
    *
    * @param lockTemplateOptions Lock Template Options
    */
-  public void setLockTemplateOptions(boolean lockTemplateOptions) {
+  public void setLockTemplateOptions(Boolean lockTemplateOptions) {
     this.lockTemplateOptions = lockTemplateOptions;
   }
 

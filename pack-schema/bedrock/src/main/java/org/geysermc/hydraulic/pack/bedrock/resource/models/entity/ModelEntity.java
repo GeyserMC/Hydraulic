@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.models.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,7 @@ import org.geysermc.hydraulic.pack.bedrock.resource.models.entity.modelentity.Ge
  * The minecraft resourcepack model schema for 1.16.0
  */
 public class ModelEntity {
-  public boolean debug;
+  public Boolean debug;
 
   @JsonProperty("format_version")
   public String formatVersion;
@@ -23,14 +24,14 @@ public class ModelEntity {
   /**
    * @return Debug
    */
-  public boolean getDebug() {
+  public Boolean getDebug() {
     return this.debug;
   }
 
   /**
    * @param debug Debug
    */
-  public void setDebug(boolean debug) {
+  public void setDebug(Boolean debug) {
     this.debug = debug;
   }
 

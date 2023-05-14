@@ -1,6 +1,9 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.biomesclient.biomes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
+import java.lang.Float;
+import java.lang.Integer;
 import java.lang.String;
 
 /**
@@ -16,16 +19,16 @@ public class Jungle {
   public String[] fogIdsToMerge;
 
   @JsonProperty("inherit_from_prior_fog")
-  public boolean inheritFromPriorFog;
+  public Boolean inheritFromPriorFog;
 
   @JsonProperty("remove_all_prior_fog")
-  public boolean removeAllPriorFog;
+  public Boolean removeAllPriorFog;
 
   @JsonProperty("water_fog_distance")
-  public int waterFogDistance;
+  public Integer waterFogDistance;
 
   @JsonProperty("water_surface_transparency")
-  public float waterSurfaceTransparency;
+  public Float waterSurfaceTransparency;
 
   /**
    * A minecraft fog identifier.
@@ -62,28 +65,28 @@ public class Jungle {
   /**
    * @return Inherit From Prior Fog
    */
-  public boolean getInheritFromPriorFog() {
+  public Boolean getInheritFromPriorFog() {
     return this.inheritFromPriorFog;
   }
 
   /**
    * @param inheritFromPriorFog Inherit From Prior Fog
    */
-  public void setInheritFromPriorFog(boolean inheritFromPriorFog) {
+  public void setInheritFromPriorFog(Boolean inheritFromPriorFog) {
     this.inheritFromPriorFog = inheritFromPriorFog;
   }
 
   /**
    * @return Remove All Prior Fog
    */
-  public boolean getRemoveAllPriorFog() {
+  public Boolean getRemoveAllPriorFog() {
     return this.removeAllPriorFog;
   }
 
   /**
    * @param removeAllPriorFog Remove All Prior Fog
    */
-  public void setRemoveAllPriorFog(boolean removeAllPriorFog) {
+  public void setRemoveAllPriorFog(Boolean removeAllPriorFog) {
     this.removeAllPriorFog = removeAllPriorFog;
   }
 
@@ -92,7 +95,7 @@ public class Jungle {
    *
    * @return Water Fog Distance
    */
-  public int getWaterFogDistance() {
+  public Integer getWaterFogDistance() {
     return this.waterFogDistance;
   }
 
@@ -101,7 +104,7 @@ public class Jungle {
    *
    * @param waterFogDistance Water Fog Distance
    */
-  public void setWaterFogDistance(int waterFogDistance) {
+  public void setWaterFogDistance(Integer waterFogDistance) {
     this.waterFogDistance = waterFogDistance;
   }
 
@@ -110,7 +113,7 @@ public class Jungle {
    *
    * @return Water Surface Transparency
    */
-  public float getWaterSurfaceTransparency() {
+  public Float getWaterSurfaceTransparency() {
     return this.waterSurfaceTransparency;
   }
 
@@ -120,6 +123,15 @@ public class Jungle {
    * @param waterSurfaceTransparency Water Surface Transparency
    */
   public void setWaterSurfaceTransparency(float waterSurfaceTransparency) {
+    this.waterSurfaceTransparency = waterSurfaceTransparency;
+  }
+
+  /**
+   * The amount of transpareny the surface of the water has.
+   *
+   * @param waterSurfaceTransparency Water Surface Transparency
+   */
+  public void setWaterSurfaceTransparency(Float waterSurfaceTransparency) {
     this.waterSurfaceTransparency = waterSurfaceTransparency;
   }
 }

@@ -189,9 +189,9 @@ public final class JsonTemplateToClassConverter {
         if (propertyType != null) {
             FieldSpec.Builder spec = switch (propertyType) {
                 case "string" -> FieldSpec.builder(String.class, fieldName, Modifier.PUBLIC);
-                case "integer" -> FieldSpec.builder(int.class, fieldName, Modifier.PUBLIC);
-                case "number" -> FieldSpec.builder(float.class, fieldName, Modifier.PUBLIC);
-                case "boolean" -> FieldSpec.builder(boolean.class, fieldName, Modifier.PUBLIC);
+                case "integer" -> FieldSpec.builder(Integer.class, fieldName, Modifier.PUBLIC);
+                case "number" -> FieldSpec.builder(Float.class, fieldName, Modifier.PUBLIC);
+                case "boolean" -> FieldSpec.builder(Boolean.class, fieldName, Modifier.PUBLIC);
                 case "object" -> FieldSpec.builder(ClassName.get(packageName, StringUtils.capitalize(fieldName)), fieldName, Modifier.PUBLIC);
                 default -> null;
             };
@@ -273,7 +273,6 @@ public final class JsonTemplateToClassConverter {
                 // Add setter
                 MethodSpec.Builder setterBuilder = MethodSpec.methodBuilder("set" + StringUtils.capitalize(fieldName))
                         .addModifiers(Modifier.PUBLIC)
-                        .addParameter(spec.build().type, fieldName)
                         .addStatement("this.$L = $L", fieldName, fieldName);
 
                 if (propertyDescription != null && !propertyDescription.contains("UNDOCUMENTED")) {
@@ -288,6 +287,15 @@ public final class JsonTemplateToClassConverter {
                     setterBuilder.addJavadoc("@param " + fieldName + " " + propertyValue.getString("title"));
                 }
 
+                // Add overloaded float setter for implicit conversions
+                if (spec.build().type.equals(TypeName.FLOAT.box())) {
+                    MethodSpec.Builder overloadedSetterBuilder = setterBuilder.build().toBuilder();
+
+                    overloadedSetterBuilder.addParameter(spec.build().type.unbox(), fieldName);
+                    classBuilder.addMethod(overloadedSetterBuilder.build());
+                }
+
+                setterBuilder.addParameter(spec.build().type, fieldName);
                 classBuilder.addMethod(setterBuilder.build());
             }
         }

@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.sounds;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Integer;
 import java.lang.String;
 
 /**
@@ -13,10 +14,10 @@ public class MusicDefinitions {
   public String eventName;
 
   @JsonProperty("min_delay")
-  public int minDelay;
+  public Integer minDelay;
 
   @JsonProperty("max_delay")
-  public int maxDelay;
+  public Integer maxDelay;
 
   /**
    * The name of the minecraft music event.
@@ -39,28 +40,28 @@ public class MusicDefinitions {
   /**
    * @return Minimum Delay
    */
-  public int getMinDelay() {
+  public Integer getMinDelay() {
     return this.minDelay;
   }
 
   /**
    * @param minDelay Minimum Delay
    */
-  public void setMinDelay(int minDelay) {
+  public void setMinDelay(Integer minDelay) {
     this.minDelay = minDelay;
   }
 
   /**
    * @return Maximum Delay
    */
-  public int getMaxDelay() {
+  public Integer getMaxDelay() {
     return this.maxDelay;
   }
 
   /**
    * @param maxDelay Maximum Delay
    */
-  public void setMaxDelay(int maxDelay) {
+  public void setMaxDelay(Integer maxDelay) {
     this.maxDelay = maxDelay;
   }
 }

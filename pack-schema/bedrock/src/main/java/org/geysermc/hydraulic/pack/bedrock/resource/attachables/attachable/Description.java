@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.attachables.attachable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +18,7 @@ public class Description {
   public String[] animationControllers;
 
   @JsonProperty("enable_attachables")
-  public boolean enableAttachables;
+  public Boolean enableAttachables;
 
   private Map<String, String> geometry = new HashMap<>();
 
@@ -88,14 +89,14 @@ public class Description {
   /**
    * @return Enable Attachables
    */
-  public boolean getEnableAttachables() {
+  public Boolean getEnableAttachables() {
     return this.enableAttachables;
   }
 
   /**
    * @param enableAttachables Enable Attachables
    */
-  public void setEnableAttachables(boolean enableAttachables) {
+  public void setEnableAttachables(Boolean enableAttachables) {
     this.enableAttachables = enableAttachables;
   }
 

@@ -1,25 +1,27 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.render_controllers.rendercontrollers;
 
+import java.lang.Float;
+
 /**
  * Is Hurt Color
  * <p>
  * The color to overlay on the entity when hurt.
  */
 public class IsHurtColor {
-  public float r;
+  public Float r;
 
-  public float g;
+  public Float g;
 
-  public float b;
+  public Float b;
 
-  public float a;
+  public Float a;
 
   /**
    * A color definition as number, between 0 and 1.
    *
    * @return Color Number
    */
-  public float getR() {
+  public Float getR() {
     return this.r;
   }
 
@@ -35,9 +37,18 @@ public class IsHurtColor {
   /**
    * A color definition as number, between 0 and 1.
    *
+   * @param r Color Number
+   */
+  public void setR(Float r) {
+    this.r = r;
+  }
+
+  /**
+   * A color definition as number, between 0 and 1.
+   *
    * @return Color Number
    */
-  public float getG() {
+  public Float getG() {
     return this.g;
   }
 
@@ -53,9 +64,18 @@ public class IsHurtColor {
   /**
    * A color definition as number, between 0 and 1.
    *
+   * @param g Color Number
+   */
+  public void setG(Float g) {
+    this.g = g;
+  }
+
+  /**
+   * A color definition as number, between 0 and 1.
+   *
    * @return Color Number
    */
-  public float getB() {
+  public Float getB() {
     return this.b;
   }
 
@@ -71,9 +91,18 @@ public class IsHurtColor {
   /**
    * A color definition as number, between 0 and 1.
    *
+   * @param b Color Number
+   */
+  public void setB(Float b) {
+    this.b = b;
+  }
+
+  /**
+   * A color definition as number, between 0 and 1.
+   *
    * @return Color Number
    */
-  public float getA() {
+  public Float getA() {
     return this.a;
   }
 
@@ -83,6 +112,15 @@ public class IsHurtColor {
    * @param a Color Number
    */
   public void setA(float a) {
+    this.a = a;
+  }
+
+  /**
+   * A color definition as number, between 0 and 1.
+   *
+   * @param a Color Number
+   */
+  public void setA(Float a) {
     this.a = a;
   }
 }

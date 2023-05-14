@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.entity.cliententity.description;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Integer;
 import java.lang.String;
 
 /**
@@ -18,7 +19,7 @@ public class SpawnEgg {
   public String texture;
 
   @JsonProperty("texture_index")
-  public int textureIndex;
+  public Integer textureIndex;
 
   /**
    * The basic color of the egg.
@@ -79,7 +80,7 @@ public class SpawnEgg {
    *
    * @return Texture Index
    */
-  public int getTextureIndex() {
+  public Integer getTextureIndex() {
     return this.textureIndex;
   }
 
@@ -88,7 +89,7 @@ public class SpawnEgg {
    *
    * @param textureIndex Texture Index
    */
-  public void setTextureIndex(int textureIndex) {
+  public void setTextureIndex(Integer textureIndex) {
     this.textureIndex = textureIndex;
   }
 }

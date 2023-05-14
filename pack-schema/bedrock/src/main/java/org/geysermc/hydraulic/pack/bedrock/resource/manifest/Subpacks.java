@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.manifest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Float;
 import java.lang.String;
 
 /**
@@ -15,7 +16,7 @@ public class Subpacks {
   public String name;
 
   @JsonProperty("memory_tier")
-  public float memoryTier;
+  public Float memoryTier;
 
   /**
    * This represents the folder name located in "subpacks" folder. When user select this resolution Minecraft loads the content inside the folder.
@@ -58,7 +59,7 @@ public class Subpacks {
    *
    * @return Memory Tier
    */
-  public float getMemoryTier() {
+  public Float getMemoryTier() {
     return this.memoryTier;
   }
 
@@ -68,6 +69,15 @@ public class Subpacks {
    * @param memoryTier Memory Tier
    */
   public void setMemoryTier(float memoryTier) {
+    this.memoryTier = memoryTier;
+  }
+
+  /**
+   * This creates a requirement on the capacity of memory needed to select the resolution. Each tier increases memory requirement by 256 MB.
+   *
+   * @param memoryTier Memory Tier
+   */
+  public void setMemoryTier(Float memoryTier) {
     this.memoryTier = memoryTier;
   }
 }

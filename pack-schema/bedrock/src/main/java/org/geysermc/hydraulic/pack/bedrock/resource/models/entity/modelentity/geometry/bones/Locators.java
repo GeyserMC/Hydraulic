@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.models.entity.modelentity.geometry.bones;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 
 public class Locators {
   public float[] offset;
@@ -8,7 +9,7 @@ public class Locators {
   public float[] rotation;
 
   @JsonProperty("ignore_inherited_scale")
-  public boolean ignoreInheritedScale;
+  public Boolean ignoreInheritedScale;
 
   /**
    * Position of the locator in model space.
@@ -41,14 +42,14 @@ public class Locators {
   /**
    * Discard scale inherited from parent bone.
    */
-  public boolean getIgnoreInheritedScale() {
+  public Boolean getIgnoreInheritedScale() {
     return this.ignoreInheritedScale;
   }
 
   /**
    * Discard scale inherited from parent bone.
    */
-  public void setIgnoreInheritedScale(boolean ignoreInheritedScale) {
+  public void setIgnoreInheritedScale(Boolean ignoreInheritedScale) {
     this.ignoreInheritedScale = ignoreInheritedScale;
   }
 }

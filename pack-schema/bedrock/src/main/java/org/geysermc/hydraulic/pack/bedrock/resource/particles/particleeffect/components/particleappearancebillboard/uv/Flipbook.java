@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components.particleappearancebillboard.uv;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 import java.lang.String;
 
 /**
@@ -14,9 +15,9 @@ public class Flipbook {
   public String maxFrame;
 
   @JsonProperty("stretch_to_lifetime")
-  public boolean stretchToLifetime;
+  public Boolean stretchToLifetime;
 
-  public boolean loop;
+  public Boolean loop;
 
   public String getFramesPerSecond() {
     return this.framesPerSecond;
@@ -37,28 +38,28 @@ public class Flipbook {
   /**
    * @return Stretch To Lifetime
    */
-  public boolean getStretchToLifetime() {
+  public Boolean getStretchToLifetime() {
     return this.stretchToLifetime;
   }
 
   /**
    * @param stretchToLifetime Stretch To Lifetime
    */
-  public void setStretchToLifetime(boolean stretchToLifetime) {
+  public void setStretchToLifetime(Boolean stretchToLifetime) {
     this.stretchToLifetime = stretchToLifetime;
   }
 
   /**
    * @return Loop
    */
-  public boolean getLoop() {
+  public Boolean getLoop() {
     return this.loop;
   }
 
   /**
    * @param loop Loop
    */
-  public void setLoop(boolean loop) {
+  public void setLoop(Boolean loop) {
     this.loop = loop;
   }
 }

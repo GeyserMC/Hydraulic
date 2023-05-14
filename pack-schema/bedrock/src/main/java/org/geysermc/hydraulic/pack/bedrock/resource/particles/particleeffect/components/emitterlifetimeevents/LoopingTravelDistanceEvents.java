@@ -1,19 +1,20 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components.emitterlifetimeevents;
 
+import java.lang.Float;
 import java.lang.String;
 
 /**
  * Distance Event
  */
 public class LoopingTravelDistanceEvents {
-  public float distance;
+  public Float distance;
 
   public String[] effects;
 
   /**
    * @return Distance
    */
-  public float getDistance() {
+  public Float getDistance() {
     return this.distance;
   }
 
@@ -21,6 +22,13 @@ public class LoopingTravelDistanceEvents {
    * @param distance Distance
    */
   public void setDistance(float distance) {
+    this.distance = distance;
+  }
+
+  /**
+   * @param distance Distance
+   */
+  public void setDistance(Float distance) {
     this.distance = distance;
   }
 

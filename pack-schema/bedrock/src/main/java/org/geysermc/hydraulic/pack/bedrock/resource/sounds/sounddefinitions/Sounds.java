@@ -1,6 +1,9 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.sounds.sounddefinitions;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
+import java.lang.Float;
+import java.lang.Integer;
 import java.lang.String;
 
 /**
@@ -9,32 +12,32 @@ import java.lang.String;
  * A collection of sounds to choice from.
  */
 public class Sounds {
-  public boolean is3D;
+  public Boolean is3D;
 
-  public float pitch;
+  public Float pitch;
 
-  public float volume;
+  public Float volume;
 
   @JsonProperty("load_on_low_memory")
-  public boolean loadOnLowMemory;
+  public Boolean loadOnLowMemory;
 
-  public boolean stream;
+  public Boolean stream;
 
   public String name;
 
-  public int weight;
+  public Integer weight;
 
   /**
    * @return Is 3D
    */
-  public boolean getIs3D() {
+  public Boolean getIs3D() {
     return this.is3D;
   }
 
   /**
    * @param is3D Is 3D
    */
-  public void setIs3D(boolean is3D) {
+  public void setIs3D(Boolean is3D) {
     this.is3D = is3D;
   }
 
@@ -43,7 +46,7 @@ public class Sounds {
    *
    * @return Pitch
    */
-  public float getPitch() {
+  public Float getPitch() {
     return this.pitch;
   }
 
@@ -57,11 +60,20 @@ public class Sounds {
   }
 
   /**
+   * The pitch of the audio, 1 is nomial.
+   *
+   * @param pitch Pitch
+   */
+  public void setPitch(Float pitch) {
+    this.pitch = pitch;
+  }
+
+  /**
    * The volume of the audio, 1 is nomial.
    *
    * @return Volume
    */
-  public float getVolume() {
+  public Float getVolume() {
     return this.volume;
   }
 
@@ -75,11 +87,20 @@ public class Sounds {
   }
 
   /**
+   * The volume of the audio, 1 is nomial.
+   *
+   * @param volume Volume
+   */
+  public void setVolume(Float volume) {
+    this.volume = volume;
+  }
+
+  /**
    * Marks if this audio should be loaded or not on low memory.
    *
    * @return Load On Low Memory
    */
-  public boolean getLoadOnLowMemory() {
+  public Boolean getLoadOnLowMemory() {
     return this.loadOnLowMemory;
   }
 
@@ -88,7 +109,7 @@ public class Sounds {
    *
    * @param loadOnLowMemory Load On Low Memory
    */
-  public void setLoadOnLowMemory(boolean loadOnLowMemory) {
+  public void setLoadOnLowMemory(Boolean loadOnLowMemory) {
     this.loadOnLowMemory = loadOnLowMemory;
   }
 
@@ -97,7 +118,7 @@ public class Sounds {
    *
    * @return Stream
    */
-  public boolean getStream() {
+  public Boolean getStream() {
     return this.stream;
   }
 
@@ -106,7 +127,7 @@ public class Sounds {
    *
    * @param stream Stream
    */
-  public void setStream(boolean stream) {
+  public void setStream(Boolean stream) {
     this.stream = stream;
   }
 
@@ -127,14 +148,14 @@ public class Sounds {
   /**
    * @return Weight
    */
-  public int getWeight() {
+  public Integer getWeight() {
     return this.weight;
   }
 
   /**
    * @param weight Weight
    */
-  public void setWeight(int weight) {
+  public void setWeight(Integer weight) {
     this.weight = weight;
   }
 }

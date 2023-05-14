@@ -1,6 +1,9 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.models.entity.modelentity.geometry;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
+import java.lang.Float;
+import java.lang.Integer;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,13 +22,13 @@ public class Bones {
 
   public List<Cubes> cubes = new ArrayList<>();
 
-  public boolean debug;
+  public Boolean debug;
 
-  public float inflate;
+  public Float inflate;
 
   private Map<String, Locators> locators = new HashMap<>();
 
-  public boolean mirror;
+  public Boolean mirror;
 
   public String name;
 
@@ -37,7 +40,7 @@ public class Bones {
   public PolyMesh polyMesh;
 
   @JsonProperty("render_group_id")
-  public int renderGroupId;
+  public Integer renderGroupId;
 
   public float[] rotation;
 
@@ -80,18 +83,18 @@ public class Bones {
     this.cubes = cubes;
   }
 
-  public boolean getDebug() {
+  public Boolean getDebug() {
     return this.debug;
   }
 
-  public void setDebug(boolean debug) {
+  public void setDebug(Boolean debug) {
     this.debug = debug;
   }
 
   /**
    * Grow this box by this additive amount in all directions (in model space units).
    */
-  public float getInflate() {
+  public Float getInflate() {
     return this.inflate;
   }
 
@@ -99,6 +102,13 @@ public class Bones {
    * Grow this box by this additive amount in all directions (in model space units).
    */
   public void setInflate(float inflate) {
+    this.inflate = inflate;
+  }
+
+  /**
+   * Grow this box by this additive amount in all directions (in model space units).
+   */
+  public void setInflate(Float inflate) {
     this.inflate = inflate;
   }
 
@@ -121,7 +131,7 @@ public class Bones {
    *
    * @return Mirror
    */
-  public boolean getMirror() {
+  public Boolean getMirror() {
     return this.mirror;
   }
 
@@ -130,7 +140,7 @@ public class Bones {
    *
    * @param mirror Mirror
    */
-  public void setMirror(boolean mirror) {
+  public void setMirror(Boolean mirror) {
     this.mirror = mirror;
   }
 
@@ -202,11 +212,11 @@ public class Bones {
     this.polyMesh = polyMesh;
   }
 
-  public int getRenderGroupId() {
+  public Integer getRenderGroupId() {
     return this.renderGroupId;
   }
 
-  public void setRenderGroupId(int renderGroupId) {
+  public void setRenderGroupId(Integer renderGroupId) {
     this.renderGroupId = renderGroupId;
   }
 

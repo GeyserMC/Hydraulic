@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.models.entity.modelentity.geometry;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Float;
 import java.lang.String;
 
 /**
@@ -12,19 +13,19 @@ public class Description {
   public String identifier;
 
   @JsonProperty("texture_width")
-  public float textureWidth;
+  public Float textureWidth;
 
   @JsonProperty("texture_height")
-  public float textureHeight;
+  public Float textureHeight;
 
   @JsonProperty("visible_bounds_offset")
   public float[] visibleBoundsOffset;
 
   @JsonProperty("visible_bounds_width")
-  public float visibleBoundsWidth;
+  public Float visibleBoundsWidth;
 
   @JsonProperty("visible_bounds_height")
-  public float visibleBoundsHeight;
+  public Float visibleBoundsHeight;
 
   /**
    * Entity definition and Client Block definition files refer to this geometry via this identifier.
@@ -49,7 +50,7 @@ public class Description {
    *
    * @return Texture Width
    */
-  public float getTextureWidth() {
+  public Float getTextureWidth() {
     return this.textureWidth;
   }
 
@@ -63,11 +64,20 @@ public class Description {
   }
 
   /**
+   * Assumed width in texels of the texture that will be bound to this geometry.
+   *
+   * @param textureWidth Texture Width
+   */
+  public void setTextureWidth(Float textureWidth) {
+    this.textureWidth = textureWidth;
+  }
+
+  /**
    * Assumed height in texels of the texture that will be bound to this geometry.
    *
    * @return Texture Height
    */
-  public float getTextureHeight() {
+  public Float getTextureHeight() {
     return this.textureHeight;
   }
 
@@ -77,6 +87,15 @@ public class Description {
    * @param textureHeight Texture Height
    */
   public void setTextureHeight(float textureHeight) {
+    this.textureHeight = textureHeight;
+  }
+
+  /**
+   * Assumed height in texels of the texture that will be bound to this geometry.
+   *
+   * @param textureHeight Texture Height
+   */
+  public void setTextureHeight(Float textureHeight) {
     this.textureHeight = textureHeight;
   }
 
@@ -103,7 +122,7 @@ public class Description {
    *
    * @return Visible Bounds Width
    */
-  public float getVisibleBoundsWidth() {
+  public Float getVisibleBoundsWidth() {
     return this.visibleBoundsWidth;
   }
 
@@ -117,11 +136,20 @@ public class Description {
   }
 
   /**
+   * Width of the visibility bounding box (in model space units).
+   *
+   * @param visibleBoundsWidth Visible Bounds Width
+   */
+  public void setVisibleBoundsWidth(Float visibleBoundsWidth) {
+    this.visibleBoundsWidth = visibleBoundsWidth;
+  }
+
+  /**
    * Height of the visible bounding box (in model space units).
    *
    * @return Visible Bounds Height
    */
-  public float getVisibleBoundsHeight() {
+  public Float getVisibleBoundsHeight() {
     return this.visibleBoundsHeight;
   }
 
@@ -131,6 +159,15 @@ public class Description {
    * @param visibleBoundsHeight Visible Bounds Height
    */
   public void setVisibleBoundsHeight(float visibleBoundsHeight) {
+    this.visibleBoundsHeight = visibleBoundsHeight;
+  }
+
+  /**
+   * Height of the visible bounding box (in model space units).
+   *
+   * @param visibleBoundsHeight Visible Bounds Height
+   */
+  public void setVisibleBoundsHeight(Float visibleBoundsHeight) {
     this.visibleBoundsHeight = visibleBoundsHeight;
   }
 }

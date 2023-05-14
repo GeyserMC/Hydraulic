@@ -1,25 +1,27 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.fog.fogsettings.volumetric.density;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
+import java.lang.Float;
 
 public class LavaResistance {
   @JsonProperty("max_density")
-  public float maxDensity;
+  public Float maxDensity;
 
   @JsonProperty("max_density_height")
-  public float maxDensityHeight;
+  public Float maxDensityHeight;
 
   @JsonProperty("zero_density_height")
-  public float zeroDensityHeight;
+  public Float zeroDensityHeight;
 
-  public boolean uniform;
+  public Boolean uniform;
 
   /**
    * The maximum amount of opaqueness that the ground fog will take on. A value from [0.0, 1.0].
    *
    * @return Maximum Density
    */
-  public float getMaxDensity() {
+  public Float getMaxDensity() {
     return this.maxDensity;
   }
 
@@ -33,11 +35,20 @@ public class LavaResistance {
   }
 
   /**
+   * The maximum amount of opaqueness that the ground fog will take on. A value from [0.0, 1.0].
+   *
+   * @param maxDensity Maximum Density
+   */
+  public void setMaxDensity(Float maxDensity) {
+    this.maxDensity = maxDensity;
+  }
+
+  /**
    * The height in blocks that the ground fog will become it's maximum density.
    *
    * @return Maximum Density Height
    */
-  public float getMaxDensityHeight() {
+  public Float getMaxDensityHeight() {
     return this.maxDensityHeight;
   }
 
@@ -51,11 +62,20 @@ public class LavaResistance {
   }
 
   /**
+   * The height in blocks that the ground fog will become it's maximum density.
+   *
+   * @param maxDensityHeight Maximum Density Height
+   */
+  public void setMaxDensityHeight(Float maxDensityHeight) {
+    this.maxDensityHeight = maxDensityHeight;
+  }
+
+  /**
    * The height in blocks that the ground fog will be completely transparent and begin to appear. This value needs to be at least 1 higher than `max_density_height`.
    *
    * @return Zero Density Height
    */
-  public float getZeroDensityHeight() {
+  public Float getZeroDensityHeight() {
     return this.zeroDensityHeight;
   }
 
@@ -69,11 +89,20 @@ public class LavaResistance {
   }
 
   /**
+   * The height in blocks that the ground fog will be completely transparent and begin to appear. This value needs to be at least 1 higher than `max_density_height`.
+   *
+   * @param zeroDensityHeight Zero Density Height
+   */
+  public void setZeroDensityHeight(Float zeroDensityHeight) {
+    this.zeroDensityHeight = zeroDensityHeight;
+  }
+
+  /**
    * When set to true, the density will be uniform across all heights.
    *
    * @return Uniform
    */
-  public boolean getUniform() {
+  public Boolean getUniform() {
     return this.uniform;
   }
 
@@ -82,7 +111,7 @@ public class LavaResistance {
    *
    * @param uniform Uniform
    */
-  public void setUniform(boolean uniform) {
+  public void setUniform(Boolean uniform) {
     this.uniform = uniform;
   }
 }

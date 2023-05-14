@@ -1,73 +1,75 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.blocks;
 
+import java.lang.Boolean;
+
 public class Isotropic {
-  public boolean down;
+  public Boolean down;
 
-  public boolean up;
+  public Boolean up;
 
-  public boolean side;
+  public Boolean side;
 
-  public boolean south;
+  public Boolean south;
 
-  public boolean north;
+  public Boolean north;
 
-  public boolean west;
+  public Boolean west;
 
-  public boolean east;
+  public Boolean east;
 
-  public boolean getDown() {
+  public Boolean getDown() {
     return this.down;
   }
 
-  public void setDown(boolean down) {
+  public void setDown(Boolean down) {
     this.down = down;
   }
 
-  public boolean getUp() {
+  public Boolean getUp() {
     return this.up;
   }
 
-  public void setUp(boolean up) {
+  public void setUp(Boolean up) {
     this.up = up;
   }
 
-  public boolean getSide() {
+  public Boolean getSide() {
     return this.side;
   }
 
-  public void setSide(boolean side) {
+  public void setSide(Boolean side) {
     this.side = side;
   }
 
-  public boolean getSouth() {
+  public Boolean getSouth() {
     return this.south;
   }
 
-  public void setSouth(boolean south) {
+  public void setSouth(Boolean south) {
     this.south = south;
   }
 
-  public boolean getNorth() {
+  public Boolean getNorth() {
     return this.north;
   }
 
-  public void setNorth(boolean north) {
+  public void setNorth(Boolean north) {
     this.north = north;
   }
 
-  public boolean getWest() {
+  public Boolean getWest() {
     return this.west;
   }
 
-  public void setWest(boolean west) {
+  public void setWest(Boolean west) {
     this.west = west;
   }
 
-  public boolean getEast() {
+  public Boolean getEast() {
     return this.east;
   }
 
-  public void setEast(boolean east) {
+  public void setEast(Boolean east) {
     this.east = east;
   }
 }

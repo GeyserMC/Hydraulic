@@ -1,6 +1,8 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
+import java.lang.Float;
 import java.lang.String;
 
 /**
@@ -8,23 +10,23 @@ import java.lang.String;
  */
 public class ParticleMotionCollision {
   @JsonProperty("collision_drag")
-  public float collisionDrag;
+  public Float collisionDrag;
 
   @JsonProperty("coefficient_of_restitution")
-  public float coefficientOfRestitution;
+  public Float coefficientOfRestitution;
 
   @JsonProperty("collision_radius")
-  public float collisionRadius;
+  public Float collisionRadius;
 
   public String enabled;
 
   @JsonProperty("expire_on_contact")
-  public boolean expireOnContact;
+  public Boolean expireOnContact;
 
   /**
    * @return Collision Drag
    */
-  public float getCollisionDrag() {
+  public Float getCollisionDrag() {
     return this.collisionDrag;
   }
 
@@ -36,9 +38,16 @@ public class ParticleMotionCollision {
   }
 
   /**
+   * @param collisionDrag Collision Drag
+   */
+  public void setCollisionDrag(Float collisionDrag) {
+    this.collisionDrag = collisionDrag;
+  }
+
+  /**
    * @return Coefficient Of Restitution
    */
-  public float getCoefficientOfRestitution() {
+  public Float getCoefficientOfRestitution() {
     return this.coefficientOfRestitution;
   }
 
@@ -50,9 +59,16 @@ public class ParticleMotionCollision {
   }
 
   /**
+   * @param coefficientOfRestitution Coefficient Of Restitution
+   */
+  public void setCoefficientOfRestitution(Float coefficientOfRestitution) {
+    this.coefficientOfRestitution = coefficientOfRestitution;
+  }
+
+  /**
    * @return Collision Radius
    */
-  public float getCollisionRadius() {
+  public Float getCollisionRadius() {
     return this.collisionRadius;
   }
 
@@ -60,6 +76,13 @@ public class ParticleMotionCollision {
    * @param collisionRadius Collision Radius
    */
   public void setCollisionRadius(float collisionRadius) {
+    this.collisionRadius = collisionRadius;
+  }
+
+  /**
+   * @param collisionRadius Collision Radius
+   */
+  public void setCollisionRadius(Float collisionRadius) {
     this.collisionRadius = collisionRadius;
   }
 
@@ -74,14 +97,14 @@ public class ParticleMotionCollision {
   /**
    * @return Expire On Contact
    */
-  public boolean getExpireOnContact() {
+  public Boolean getExpireOnContact() {
     return this.expireOnContact;
   }
 
   /**
    * @param expireOnContact Expire On Contact
    */
-  public void setExpireOnContact(boolean expireOnContact) {
+  public void setExpireOnContact(Boolean expireOnContact) {
     this.expireOnContact = expireOnContact;
   }
 }

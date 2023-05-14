@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Float;
 import java.util.ArrayList;
 import java.util.List;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Capabilities;
@@ -17,7 +18,7 @@ import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Subpacks;
  */
 public class Manifest {
   @JsonProperty("format_version")
-  public float formatVersion;
+  public Float formatVersion;
 
   public Capabilities capabilities;
 
@@ -36,7 +37,7 @@ public class Manifest {
    *
    * @return Format Version
    */
-  public float getFormatVersion() {
+  public Float getFormatVersion() {
     return this.formatVersion;
   }
 
@@ -46,6 +47,15 @@ public class Manifest {
    * @param formatVersion Format Version
    */
   public void setFormatVersion(float formatVersion) {
+    this.formatVersion = formatVersion;
+  }
+
+  /**
+   * This defines the current version of the manifest. Don't change this unless you have a good reason to
+   *
+   * @param formatVersion Format Version
+   */
+  public void setFormatVersion(Float formatVersion) {
     this.formatVersion = formatVersion;
   }
 

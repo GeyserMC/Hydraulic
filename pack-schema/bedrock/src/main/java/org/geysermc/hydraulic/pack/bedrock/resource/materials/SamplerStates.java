@@ -1,12 +1,13 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.materials;
 
+import java.lang.Integer;
 import java.lang.String;
 
 /**
  * Sample State
  */
 public class SamplerStates {
-  public int samplerIndex;
+  public Integer samplerIndex;
 
   public String textureFilter;
 
@@ -15,14 +16,14 @@ public class SamplerStates {
   /**
    * @return Sample State
    */
-  public int getSamplerIndex() {
+  public Integer getSamplerIndex() {
     return this.samplerIndex;
   }
 
   /**
    * @param samplerIndex Sample State
    */
-  public void setSamplerIndex(int samplerIndex) {
+  public void setSamplerIndex(Integer samplerIndex) {
     this.samplerIndex = samplerIndex;
   }
 

@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components.particleappearancebillboard;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Integer;
 import org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components.particleappearancebillboard.uv.Flipbook;
 
 /**
@@ -8,38 +9,38 @@ import org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.com
  */
 public class Uv {
   @JsonProperty("texture_width")
-  public int textureWidth;
+  public Integer textureWidth;
 
   @JsonProperty("texture_height")
-  public int textureHeight;
+  public Integer textureHeight;
 
   public Flipbook flipbook;
 
   /**
    * @return Texture Width
    */
-  public int getTextureWidth() {
+  public Integer getTextureWidth() {
     return this.textureWidth;
   }
 
   /**
    * @param textureWidth Texture Width
    */
-  public void setTextureWidth(int textureWidth) {
+  public void setTextureWidth(Integer textureWidth) {
     this.textureWidth = textureWidth;
   }
 
   /**
    * @return Texture Height
    */
-  public int getTextureHeight() {
+  public Integer getTextureHeight() {
     return this.textureHeight;
   }
 
   /**
    * @param textureHeight Texture Height
    */
-  public void setTextureHeight(int textureHeight) {
+  public void setTextureHeight(Integer textureHeight) {
     this.textureHeight = textureHeight;
   }
 

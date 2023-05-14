@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.particles.particleeffect.components;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 import java.lang.String;
 
 /**
@@ -14,7 +15,7 @@ public class EmitterShapeSphere {
   public String radius;
 
   @JsonProperty("surface_only")
-  public boolean surfaceOnly;
+  public Boolean surfaceOnly;
 
   public String getDirection() {
     return this.direction;
@@ -49,14 +50,14 @@ public class EmitterShapeSphere {
   /**
    * @return Surface Only
    */
-  public boolean getSurfaceOnly() {
+  public Boolean getSurfaceOnly() {
     return this.surfaceOnly;
   }
 
   /**
    * @param surfaceOnly Surface Only
    */
-  public void setSurfaceOnly(boolean surfaceOnly) {
+  public void setSurfaceOnly(Boolean surfaceOnly) {
     this.surfaceOnly = surfaceOnly;
   }
 }

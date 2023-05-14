@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.fog.fogsettings.distance.powdersnow;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Float;
 import org.geysermc.hydraulic.pack.bedrock.resource.fog.fogsettings.distance.powdersnow.transitionfog.InitFog;
 
 /**
@@ -13,16 +14,16 @@ public class TransitionFog {
   public InitFog initFog;
 
   @JsonProperty("min_percent")
-  public float minPercent;
+  public Float minPercent;
 
   @JsonProperty("mid_seconds")
-  public float midSeconds;
+  public Float midSeconds;
 
   @JsonProperty("mid_percent")
-  public float midPercent;
+  public Float midPercent;
 
   @JsonProperty("max_seconds")
-  public float maxSeconds;
+  public Float maxSeconds;
 
   /**
    * Initial fog that will slowly transition into water distance fog of the biome when player goes into water.
@@ -47,7 +48,7 @@ public class TransitionFog {
    *
    * @return Minimum Percent
    */
-  public float getMinPercent() {
+  public Float getMinPercent() {
     return this.minPercent;
   }
 
@@ -61,11 +62,20 @@ public class TransitionFog {
   }
 
   /**
+   * The minimum progress of fog transition.
+   *
+   * @param minPercent Minimum Percent
+   */
+  public void setMinPercent(Float minPercent) {
+    this.minPercent = minPercent;
+  }
+
+  /**
    * The time takes to reach certain progress('mid_percent') of fog transition.
    *
    * @return Midpoint Seconds
    */
-  public float getMidSeconds() {
+  public Float getMidSeconds() {
     return this.midSeconds;
   }
 
@@ -79,11 +89,20 @@ public class TransitionFog {
   }
 
   /**
+   * The time takes to reach certain progress('mid_percent') of fog transition.
+   *
+   * @param midSeconds Midpoint Seconds
+   */
+  public void setMidSeconds(Float midSeconds) {
+    this.midSeconds = midSeconds;
+  }
+
+  /**
    * The progress of fog transition after 'mid_seconds' seconds.
    *
    * @return Midpoint Percent
    */
-  public float getMidPercent() {
+  public Float getMidPercent() {
     return this.midPercent;
   }
 
@@ -97,11 +116,20 @@ public class TransitionFog {
   }
 
   /**
+   * The progress of fog transition after 'mid_seconds' seconds.
+   *
+   * @param midPercent Midpoint Percent
+   */
+  public void setMidPercent(Float midPercent) {
+    this.midPercent = midPercent;
+  }
+
+  /**
    * Total amount of time takes to complete fog transition.
    *
    * @return Maximum Seconds
    */
-  public float getMaxSeconds() {
+  public Float getMaxSeconds() {
     return this.maxSeconds;
   }
 
@@ -111,6 +139,15 @@ public class TransitionFog {
    * @param maxSeconds Maximum Seconds
    */
   public void setMaxSeconds(float maxSeconds) {
+    this.maxSeconds = maxSeconds;
+  }
+
+  /**
+   * Total amount of time takes to complete fog transition.
+   *
+   * @param maxSeconds Maximum Seconds
+   */
+  public void setMaxSeconds(Float maxSeconds) {
     this.maxSeconds = maxSeconds;
   }
 }

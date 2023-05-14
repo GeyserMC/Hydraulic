@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.entity.cliententity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +17,7 @@ public class Description {
   private Map<String, String> animations = new HashMap<>();
 
   @JsonProperty("enable_attachables")
-  public boolean enableAttachables;
+  public Boolean enableAttachables;
 
   private Map<String, String> geometry = new HashMap<>();
 
@@ -24,10 +25,10 @@ public class Description {
   public String queryableGeometry;
 
   @JsonProperty("hide_armor")
-  public boolean hideArmor;
+  public Boolean hideArmor;
 
   @JsonProperty("held_item_ignores_lighting")
-  public boolean heldItemIgnoresLighting;
+  public Boolean heldItemIgnoresLighting;
 
   public String identifier;
 
@@ -78,7 +79,7 @@ public class Description {
    *
    * @return Enable Attachables
    */
-  public boolean getEnableAttachables() {
+  public Boolean getEnableAttachables() {
     return this.enableAttachables;
   }
 
@@ -87,7 +88,7 @@ public class Description {
    *
    * @param enableAttachables Enable Attachables
    */
-  public void setEnableAttachables(boolean enableAttachables) {
+  public void setEnableAttachables(Boolean enableAttachables) {
     this.enableAttachables = enableAttachables;
   }
 
@@ -128,7 +129,7 @@ public class Description {
    *
    * @return Hide Armor
    */
-  public boolean getHideArmor() {
+  public Boolean getHideArmor() {
     return this.hideArmor;
   }
 
@@ -137,7 +138,7 @@ public class Description {
    *
    * @param hideArmor Hide Armor
    */
-  public void setHideArmor(boolean hideArmor) {
+  public void setHideArmor(Boolean hideArmor) {
     this.hideArmor = hideArmor;
   }
 
@@ -146,7 +147,7 @@ public class Description {
    *
    * @return Held Item Ignores Lighting
    */
-  public boolean getHeldItemIgnoresLighting() {
+  public Boolean getHeldItemIgnoresLighting() {
     return this.heldItemIgnoresLighting;
   }
 
@@ -155,7 +156,7 @@ public class Description {
    *
    * @param heldItemIgnoresLighting Held Item Ignores Lighting
    */
-  public void setHeldItemIgnoresLighting(boolean heldItemIgnoresLighting) {
+  public void setHeldItemIgnoresLighting(Boolean heldItemIgnoresLighting) {
     this.heldItemIgnoresLighting = heldItemIgnoresLighting;
   }
 

@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.render_controllers.rendercontrollers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,12 +17,12 @@ public class RenderControllers {
   public Color color;
 
   @JsonProperty("filter_lighting")
-  public boolean filterLighting;
+  public Boolean filterLighting;
 
   public String geometry;
 
   @JsonProperty("ignore_lighting")
-  public boolean ignoreLighting;
+  public Boolean ignoreLighting;
 
   @JsonProperty("is_hurt_color")
   public IsHurtColor isHurtColor;
@@ -84,7 +85,7 @@ public class RenderControllers {
    *
    * @return Filter Lighting
    */
-  public boolean getFilterLighting() {
+  public Boolean getFilterLighting() {
     return this.filterLighting;
   }
 
@@ -93,7 +94,7 @@ public class RenderControllers {
    *
    * @param filterLighting Filter Lighting
    */
-  public void setFilterLighting(boolean filterLighting) {
+  public void setFilterLighting(Boolean filterLighting) {
     this.filterLighting = filterLighting;
   }
 
@@ -120,7 +121,7 @@ public class RenderControllers {
    *
    * @return Ignore Lighting
    */
-  public boolean getIgnoreLighting() {
+  public Boolean getIgnoreLighting() {
     return this.ignoreLighting;
   }
 
@@ -129,7 +130,7 @@ public class RenderControllers {
    *
    * @param ignoreLighting Ignore Lighting
    */
-  public void setIgnoreLighting(boolean ignoreLighting) {
+  public void setIgnoreLighting(Boolean ignoreLighting) {
     this.ignoreLighting = ignoreLighting;
   }
 

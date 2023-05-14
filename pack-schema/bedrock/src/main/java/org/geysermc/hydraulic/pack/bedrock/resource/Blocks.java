@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Float;
 import java.lang.String;
 import org.geysermc.hydraulic.pack.bedrock.resource.blocks.CarriedTextures;
 import org.geysermc.hydraulic.pack.bedrock.resource.blocks.Isotropic;
@@ -16,7 +17,7 @@ public class Blocks {
   public String formatVersion;
 
   @JsonProperty("brightness_gamma")
-  public float brightnessGamma;
+  public Float brightnessGamma;
 
   @JsonProperty("carried_textures")
   public CarriedTextures carriedTextures;
@@ -50,7 +51,7 @@ public class Blocks {
    *
    * @return Brightness Gamma
    */
-  public float getBrightnessGamma() {
+  public Float getBrightnessGamma() {
     return this.brightnessGamma;
   }
 
@@ -60,6 +61,15 @@ public class Blocks {
    * @param brightnessGamma Brightness Gamma
    */
   public void setBrightnessGamma(float brightnessGamma) {
+    this.brightnessGamma = brightnessGamma;
+  }
+
+  /**
+   * Specifies the gamma brightness level to apply to the block texture.
+   *
+   * @param brightnessGamma Brightness Gamma
+   */
+  public void setBrightnessGamma(Float brightnessGamma) {
     this.brightnessGamma = brightnessGamma;
   }
 

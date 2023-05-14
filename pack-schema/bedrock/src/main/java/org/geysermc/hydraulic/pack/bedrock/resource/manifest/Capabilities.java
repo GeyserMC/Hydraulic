@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.manifest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 
 /**
  * Capabilities
@@ -9,18 +10,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class Capabilities {
   @JsonProperty("experimental_custom_ui")
-  public boolean experimentalCustomUi;
+  public Boolean experimentalCustomUi;
 
-  public boolean chemistry;
+  public Boolean chemistry;
 
-  public boolean raytraced;
+  public Boolean raytraced;
 
   /**
    * Allows HTML files in the pack to be used for custom UI, and scripts in the pack to call and manipulate custom UI.
    *
    * @return Experimental Custom Ui
    */
-  public boolean getExperimentalCustomUi() {
+  public Boolean getExperimentalCustomUi() {
     return this.experimentalCustomUi;
   }
 
@@ -29,7 +30,7 @@ public class Capabilities {
    *
    * @param experimentalCustomUi Experimental Custom Ui
    */
-  public void setExperimentalCustomUi(boolean experimentalCustomUi) {
+  public void setExperimentalCustomUi(Boolean experimentalCustomUi) {
     this.experimentalCustomUi = experimentalCustomUi;
   }
 
@@ -38,7 +39,7 @@ public class Capabilities {
    *
    * @return Chemistry
    */
-  public boolean getChemistry() {
+  public Boolean getChemistry() {
     return this.chemistry;
   }
 
@@ -47,7 +48,7 @@ public class Capabilities {
    *
    * @param chemistry Chemistry
    */
-  public void setChemistry(boolean chemistry) {
+  public void setChemistry(Boolean chemistry) {
     this.chemistry = chemistry;
   }
 
@@ -56,7 +57,7 @@ public class Capabilities {
    *
    * @return Raytraced
    */
-  public boolean getRaytraced() {
+  public Boolean getRaytraced() {
     return this.raytraced;
   }
 
@@ -65,7 +66,7 @@ public class Capabilities {
    *
    * @param raytraced Raytraced
    */
-  public void setRaytraced(boolean raytraced) {
+  public void setRaytraced(Boolean raytraced) {
     this.raytraced = raytraced;
   }
 }

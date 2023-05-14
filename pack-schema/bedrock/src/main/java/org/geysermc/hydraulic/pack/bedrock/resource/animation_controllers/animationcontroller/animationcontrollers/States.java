@@ -1,6 +1,8 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.animation_controllers.animationcontroller.animationcontrollers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
+import java.lang.Float;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,10 +18,10 @@ import org.geysermc.hydraulic.pack.bedrock.resource.animation_controllers.animat
  */
 public class States {
   @JsonProperty("blend_transition")
-  public float blendTransition;
+  public Float blendTransition;
 
   @JsonProperty("blend_via_shortest_path")
-  public boolean blendViaShortestPath;
+  public Boolean blendViaShortestPath;
 
   @JsonProperty("sound_effects")
   public List<SoundEffects> soundEffects = new ArrayList<>();
@@ -35,7 +37,7 @@ public class States {
   /**
    * A short-hand version of blend_out that simply sets the amount of time to fade out if the animation is interrupted.
    */
-  public float getBlendTransition() {
+  public Float getBlendTransition() {
     return this.blendTransition;
   }
 
@@ -47,11 +49,18 @@ public class States {
   }
 
   /**
+   * A short-hand version of blend_out that simply sets the amount of time to fade out if the animation is interrupted.
+   */
+  public void setBlendTransition(Float blendTransition) {
+    this.blendTransition = blendTransition;
+  }
+
+  /**
    * When blending a transition to another state, animate each euler axis through the shortest rotation, instead of by value.
    *
    * @return Blend Via Shortest Path
    */
-  public boolean getBlendViaShortestPath() {
+  public Boolean getBlendViaShortestPath() {
     return this.blendViaShortestPath;
   }
 
@@ -60,7 +69,7 @@ public class States {
    *
    * @param blendViaShortestPath Blend Via Shortest Path
    */
-  public void setBlendViaShortestPath(boolean blendViaShortestPath) {
+  public void setBlendViaShortestPath(Boolean blendViaShortestPath) {
     this.blendViaShortestPath = blendViaShortestPath;
   }
 

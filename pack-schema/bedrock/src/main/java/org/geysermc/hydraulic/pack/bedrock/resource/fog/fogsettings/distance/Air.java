@@ -1,15 +1,16 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.fog.fogsettings.distance;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Float;
 import java.lang.String;
 import org.geysermc.hydraulic.pack.bedrock.resource.fog.fogsettings.distance.air.TransitionFog;
 
 public class Air {
   @JsonProperty("fog_start")
-  public float fogStart;
+  public Float fogStart;
 
   @JsonProperty("fog_end")
-  public float fogEnd;
+  public Float fogEnd;
 
   @JsonProperty("fog_color")
   public String fogColor;
@@ -25,7 +26,7 @@ public class Air {
    *
    * @return Fog Start
    */
-  public float getFogStart() {
+  public Float getFogStart() {
     return this.fogStart;
   }
 
@@ -39,11 +40,20 @@ public class Air {
   }
 
   /**
+   * The distance from the player that the fog will begin to appear. 'fog_start' must be less than or equal to 'fog_end'.
+   *
+   * @param fogStart Fog Start
+   */
+  public void setFogStart(Float fogStart) {
+    this.fogStart = fogStart;
+  }
+
+  /**
    * The distance from the player that the fog will become fully opaque. 'fog_end' must be greater than or equal to 'fog_start'.
    *
    * @return Fog End
    */
-  public float getFogEnd() {
+  public Float getFogEnd() {
     return this.fogEnd;
   }
 
@@ -53,6 +63,15 @@ public class Air {
    * @param fogEnd Fog End
    */
   public void setFogEnd(float fogEnd) {
+    this.fogEnd = fogEnd;
+  }
+
+  /**
+   * The distance from the player that the fog will become fully opaque. 'fog_end' must be greater than or equal to 'fog_start'.
+   *
+   * @param fogEnd Fog End
+   */
+  public void setFogEnd(Float fogEnd) {
     this.fogEnd = fogEnd;
   }
 

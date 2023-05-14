@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.textures;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Integer;
 import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,9 +14,9 @@ import org.geysermc.hydraulic.pack.bedrock.resource.textures.terraintexture.Text
  */
 public class TerrainTexture {
   @JsonProperty("num_mip_levels")
-  public int numMipLevels;
+  public Integer numMipLevels;
 
-  public int padding;
+  public Integer padding;
 
   @JsonProperty("resource_pack_name")
   public String resourcePackName;
@@ -29,28 +30,28 @@ public class TerrainTexture {
   /**
    * @return Num Mip Levels
    */
-  public int getNumMipLevels() {
+  public Integer getNumMipLevels() {
     return this.numMipLevels;
   }
 
   /**
    * @param numMipLevels Num Mip Levels
    */
-  public void setNumMipLevels(int numMipLevels) {
+  public void setNumMipLevels(Integer numMipLevels) {
     this.numMipLevels = numMipLevels;
   }
 
   /**
    * @return Padding
    */
-  public int getPadding() {
+  public Integer getPadding() {
     return this.padding;
   }
 
   /**
    * @param padding Padding
    */
-  public void setPadding(int padding) {
+  public void setPadding(Integer padding) {
     this.padding = padding;
   }
 
