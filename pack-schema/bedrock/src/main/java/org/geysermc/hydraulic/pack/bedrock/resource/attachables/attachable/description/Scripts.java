@@ -2,14 +2,15 @@ package org.geysermc.hydraulic.pack.bedrock.resource.attachables.attachable.desc
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.String;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Scripts
  */
 public class Scripts {
-  private Map<String, String> animate = new HashMap<>();
+  public List<Map<String, String>> animate = new ArrayList<>();
 
   @JsonProperty("parent_setup")
   public String parentSetup;
@@ -19,14 +20,14 @@ public class Scripts {
   /**
    * @return Animate
    */
-  public Map<String, String> getAnimate() {
+  public List<Map<String, String>> getAnimate() {
     return this.animate;
   }
 
   /**
    * @param animate Animate
    */
-  public void setAnimate(Map<String, String> animate) {
+  public void setAnimate(List<Map<String, String>> animate) {
     this.animate = animate;
   }
 

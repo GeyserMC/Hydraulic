@@ -3,7 +3,8 @@ package org.geysermc.hydraulic.pack.bedrock.resource.render_controllers.renderco
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.Boolean;
 import java.lang.String;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,7 +31,7 @@ public class RenderControllers {
   @JsonProperty("light_color_multiplier")
   public String lightColorMultiplier;
 
-  private Map<String, String> materials = new HashMap<>();
+  public List<Map<String, String>> materials = new ArrayList<>();
 
   @JsonProperty("on_fire_color")
   public OnFireColor onFireColor;
@@ -39,7 +40,7 @@ public class RenderControllers {
   public OverlayColor overlayColor;
 
   @JsonProperty("part_visibility")
-  private Map<String, String> partVisibility = new HashMap<>();
+  public List<Map<String, String>> partVisibility = new ArrayList<>();
 
   public String[] textures;
 
@@ -167,7 +168,7 @@ public class RenderControllers {
    *
    * @return Materials
    */
-  public Map<String, String> getMaterials() {
+  public List<Map<String, String>> getMaterials() {
     return this.materials;
   }
 
@@ -176,7 +177,7 @@ public class RenderControllers {
    *
    * @param materials Materials
    */
-  public void setMaterials(Map<String, String> materials) {
+  public void setMaterials(List<Map<String, String>> materials) {
     this.materials = materials;
   }
 
@@ -221,7 +222,7 @@ public class RenderControllers {
    *
    * @return Part Visibility
    */
-  public Map<String, String> getPartVisibility() {
+  public List<Map<String, String>> getPartVisibility() {
     return this.partVisibility;
   }
 
@@ -230,7 +231,7 @@ public class RenderControllers {
    *
    * @param partVisibility Part Visibility
    */
-  public void setPartVisibility(Map<String, String> partVisibility) {
+  public void setPartVisibility(List<Map<String, String>> partVisibility) {
     this.partVisibility = partVisibility;
   }
 

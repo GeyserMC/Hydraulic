@@ -1,11 +1,12 @@
 package org.geysermc.hydraulic.pack.bedrock.resource.animation_controllers.animationcontroller.animationcontrollers.states;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.Boolean;
 import java.lang.String;
 
 public class ParticleEffects {
   @JsonProperty("bind_to_actor")
-  public boolean bindToActor;
+  public Boolean bindToActor;
 
   public String effect;
 
@@ -19,7 +20,7 @@ public class ParticleEffects {
    *
    * @return Bind To Actor
    */
-  public boolean getBindToActor() {
+  public Boolean getBindToActor() {
     return this.bindToActor;
   }
 
