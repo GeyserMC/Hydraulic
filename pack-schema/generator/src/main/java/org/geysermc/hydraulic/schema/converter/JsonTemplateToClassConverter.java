@@ -320,15 +320,20 @@ public final class JsonTemplateToClassConverter {
     private static FieldSpec.Builder createArrayField(@NotNull String input, @NotNull String packageName, @NotNull String fieldName, @NotNull String rootClassName, @NotNull String prevClassName, @NotNull JsonObject parentSchema, @NotNull JsonObject propertyValue, @NotNull Path output, @NotNull ConverterOptions options) {
         FieldSpec.Builder spec = null;
         if (propertyValue.getValue("items") instanceof JsonObject items) {
-            ResolvedReference resolvedReference = flattenReference(
-                    input,
-                    packageName,
-                    rootClassName,
-                    prevClassName,
-                    parentSchema,
-                    items,
-                    options
-            );
+            ResolvedReference resolvedReference;
+            if (items.containsKey("$ref")) {
+                resolvedReference = parseRef(input, parentSchema, items);
+            }else {
+                resolvedReference = flattenReference(
+                        input,
+                        packageName,
+                        rootClassName,
+                        prevClassName,
+                        parentSchema,
+                        items,
+                        options
+                );
+            }
 
             if (resolvedReference != null) {
                 items = resolvedReference.object();

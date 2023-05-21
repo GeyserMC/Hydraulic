@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.geysermc.hydraulic.pack.bedrock.resource.animation_controllers.animationcontroller.animationcontrollers.states.ParticleEffects;
 import org.geysermc.hydraulic.pack.bedrock.resource.animation_controllers.animationcontroller.animationcontrollers.states.SoundEffects;
 import org.geysermc.hydraulic.pack.bedrock.resource.animation_controllers.animationcontroller.animationcontrollers.states.Variables;
 
@@ -22,6 +23,9 @@ public class States {
 
   @JsonProperty("blend_via_shortest_path")
   public Boolean blendViaShortestPath;
+
+  @JsonProperty("particle_effects")
+  public List<ParticleEffects> particleEffects = new ArrayList<>();
 
   @JsonProperty("sound_effects")
   public List<SoundEffects> soundEffects = new ArrayList<>();
@@ -64,6 +68,24 @@ public class States {
    */
   public void setBlendViaShortestPath(boolean blendViaShortestPath) {
     this.blendViaShortestPath = blendViaShortestPath;
+  }
+
+  /**
+   * The effects to be emitted.
+   *
+   * @return Particle Effects
+   */
+  public List<ParticleEffects> getParticleEffects() {
+    return this.particleEffects;
+  }
+
+  /**
+   * The effects to be emitted.
+   *
+   * @param particleEffects Particle Effects
+   */
+  public void setParticleEffects(List<ParticleEffects> particleEffects) {
+    this.particleEffects = particleEffects;
   }
 
   /**

@@ -41,6 +41,8 @@ public class RenderControllers {
   @JsonProperty("part_visibility")
   private Map<String, String> partVisibility = new HashMap<>();
 
+  public String[] textures;
+
   @JsonProperty("uv_anim")
   public UvAnim uvAnim;
 
@@ -230,6 +232,24 @@ public class RenderControllers {
    */
   public void setPartVisibility(Map<String, String> partVisibility) {
     this.partVisibility = partVisibility;
+  }
+
+  /**
+   * The texture to apply, multiple texture can be used as to create an overlay effect, a specific material is required though.
+   *
+   * @return Textures
+   */
+  public String[] getTextures() {
+    return this.textures;
+  }
+
+  /**
+   * The texture to apply, multiple texture can be used as to create an overlay effect, a specific material is required though.
+   *
+   * @param textures Textures
+   */
+  public void setTextures(String[] textures) {
+    this.textures = textures;
   }
 
   /**

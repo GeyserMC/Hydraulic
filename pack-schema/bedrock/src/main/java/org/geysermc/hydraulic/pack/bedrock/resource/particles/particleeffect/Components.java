@@ -88,6 +88,12 @@ public class Components {
   @JsonProperty("minecraft:particle_appearance_lighting")
   public ParticleAppearanceLighting particleAppearanceLighting;
 
+  @JsonProperty("minecraft:particle_expire_if_not_in_blocks")
+  public String[] particleExpireIfNotInBlocks;
+
+  @JsonProperty("minecraft:particle_expire_if_in_blocks")
+  public String[] particleExpireIfInBlocks;
+
   @JsonProperty("minecraft:particle_initialization")
   public ParticleInitialization particleInitialization;
 
@@ -374,6 +380,34 @@ public class Components {
    */
   public void setParticleAppearanceLighting(ParticleAppearanceLighting particleAppearanceLighting) {
     this.particleAppearanceLighting = particleAppearanceLighting;
+  }
+
+  /**
+   * @return Particle Expire If Not In Blocks Component For 1.10.0
+   */
+  public String[] getParticleExpireIfNotInBlocks() {
+    return this.particleExpireIfNotInBlocks;
+  }
+
+  /**
+   * @param particleExpireIfNotInBlocks Particle Expire If Not In Blocks Component For 1.10.0
+   */
+  public void setParticleExpireIfNotInBlocks(String[] particleExpireIfNotInBlocks) {
+    this.particleExpireIfNotInBlocks = particleExpireIfNotInBlocks;
+  }
+
+  /**
+   * @return Particle Expire If Not In Blocks Component For 1.10.0
+   */
+  public String[] getParticleExpireIfInBlocks() {
+    return this.particleExpireIfInBlocks;
+  }
+
+  /**
+   * @param particleExpireIfInBlocks Particle Expire If Not In Blocks Component For 1.10.0
+   */
+  public void setParticleExpireIfInBlocks(String[] particleExpireIfInBlocks) {
+    this.particleExpireIfInBlocks = particleExpireIfInBlocks;
   }
 
   /**
