@@ -10,6 +10,9 @@ import java.util.Map;
  * Scripts
  */
 public class Scripts {
+  @JsonProperty("pre_animation")
+  public String[] preAnimation;
+
   public List<Map<String, String>> animate = new ArrayList<>();
 
   @JsonProperty("parent_setup")
@@ -57,5 +60,19 @@ public class Scripts {
    */
   public void setScale(String scale) {
     this.scale = scale;
+  }
+
+  /**
+   * @return Pre-Animation
+   */
+  public String[] getPreAnimation() {
+    return this.preAnimation;
+  }
+
+  /**
+   * @param preAnimation Pre-Animation
+   */
+  public void setPreAnimation(String[] preAnimation) {
+    this.preAnimation = preAnimation;
   }
 }

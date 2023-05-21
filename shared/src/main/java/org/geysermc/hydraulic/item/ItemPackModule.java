@@ -24,8 +24,6 @@ import java.util.List;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends PackModule<ItemPackModule> {
-    private static final String BEDROCK_ITEM_TEXTURE_LOCATION = "textures/items/%s/%s.png";
-    private static final String JAVA_ITEM_MODEL_LOCATION = "assets/%s/models/item/%s.json";
 
     public ItemPackModule() {
         this.listenOn(GeyserDefineCustomItemsEvent.class, ItemPackModule::onDefineCustomItems);
@@ -44,13 +42,13 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
             }
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
-            try (InputStream itemModelStream = Files.newInputStream(jarPath.resolve(String.format(JAVA_ITEM_MODEL_LOCATION, itemLocation.getNamespace(), itemLocation.getPath())))) {
+            try (InputStream itemModelStream = Files.newInputStream(jarPath.resolve(String.format(Constants.JAVA_ITEM_MODEL_LOCATION, itemLocation.getNamespace(), itemLocation.getPath())))) {
                 Model model = Constants.MAPPER.readValue(itemModelStream, Model.class);
 
                 ResourceLocation layer0 = model.textures().get("layer0");
 
                 ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
-                String outputLoc = String.format(BEDROCK_ITEM_TEXTURE_LOCATION, context.mod().id(), layer0.getPath().replace("item/", ""));
+                String outputLoc = String.format(Constants.BEDROCK_ITEM_TEXTURE_LOCATION, context.mod().id(), layer0.getPath().replace("item/", ""));
                 context.pack().addItem(itemKey.toString(), outputLoc.replace(".png", ""));
 
                 FileUtil.copyFileFromMod(context.mod(), String.format(Constants.JAVA_TEXTURE_LOCATION, layer0.getNamespace(), layer0.getPath()), context.path().resolve(outputLoc));
@@ -98,14 +96,20 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
             }
 
             if (item.isEdible()) {
-                customItemBuilder.creativeCategory(CreativeCategory.EQUIPMENT.id())
-                    .creativeGroup("itemGroup.name.miscFood");
+                customItemBuilder
+                        .creativeCategory(CreativeCategory.EQUIPMENT.id())
+                        .creativeGroup("itemGroup.name.miscFood")
+                        .edible(true);
+
+                if (item.getFoodProperties() != null) {
+                    customItemBuilder
+                            .canAlwaysEat(item.getFoodProperties().canAlwaysEat());
+                }
             }
 
             CreativeMappings.setup(item, customItemBuilder);
 
             if (item instanceof ArmorItem armorItem) {
-                customItemBuilder.creativeCategory(3);
                 customItemBuilder.protectionValue(armorItem.getDefense());
                 switch (armorItem.getEquipmentSlot()) {
                     case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
@@ -114,8 +118,7 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                     case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
                 }
             } else if (item instanceof TieredItem tieredItem) {
-                customItemBuilder.creativeCategory(CreativeCategory.EQUIPMENT.id())
-                    .displayHandheld(true); // So we hold the tool right
+                customItemBuilder.displayHandheld(true); // So we hold the tool right
 
                 // TODO Support custom tiers
                 customItemBuilder.toolTier("DIAMOND");
@@ -123,7 +126,6 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                     customItemBuilder.toolTier(tieredItem.getTier().toString());
                 }
 
-                // TODO Work out a nicer way of assigning groups based on classes
                 if (item instanceof PickaxeItem) {
                     customItemBuilder.toolType("pickaxe");
                 } else if (item instanceof HoeItem) {
@@ -137,6 +139,8 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
                 }
             } else if (item instanceof ShearsItem) {
                 customItemBuilder.toolType("shears");
+            } else if (item instanceof BowItem) {
+                customItemBuilder.chargeable(true);
             }
 
             event.register(customItemBuilder.build());

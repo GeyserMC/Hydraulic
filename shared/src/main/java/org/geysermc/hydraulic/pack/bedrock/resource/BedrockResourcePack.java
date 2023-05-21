@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.geysermc.hydraulic.pack.bedrock.resource.attachables.Attachables;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Header;
 import org.geysermc.hydraulic.pack.bedrock.resource.manifest.Modules;
+import org.geysermc.hydraulic.pack.bedrock.resource.render_controllers.RenderControllers;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.ItemTexture;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.TerrainTexture;
 import org.geysermc.hydraulic.pack.bedrock.resource.textures.itemtexture.TextureData;
@@ -39,6 +40,7 @@ public class BedrockResourcePack {
     private ItemTexture itemTexture;
     private TerrainTexture terrainTexture;
     private Map<String, Attachables> attachables;
+    private Map<String, RenderControllers> renderControllers;
 
     public BedrockResourcePack(@NotNull Manifest manifest) {
         this(manifest, null, null);
@@ -118,6 +120,25 @@ public class BedrockResourcePack {
     }
 
     /**
+     * Get the render controllers of the resource pack.
+     *
+     * @return the render controllers of the resource pack
+     */
+    @Nullable
+    public Map<String, RenderControllers> renderControllers() {
+        return this.renderControllers;
+    }
+
+    /**
+     * Set the render controllers of the resource pack.
+     *
+     * @param renderControllers the render controllers of the resource pack
+     */
+    public void renderControllers(@Nullable Map<String, RenderControllers> renderControllers) {
+        this.renderControllers = renderControllers;
+    }
+
+    /**
      * Add an item to the resource pack.
      *
      * @param id the id of the item
@@ -174,6 +195,21 @@ public class BedrockResourcePack {
         this.attachables.put(location, armorAttachable);
     }
 
+
+    /**
+     * Add a render controller to the resource pack.
+     *
+     * @param renderController the data of the render controller
+     * @param location the location of the final json
+     */
+    public void addRenderController(RenderControllers renderController, String location) {
+        if (this.renderControllers == null) {
+            this.renderControllers = new HashMap<>();
+        }
+
+        this.renderControllers.put(location, renderController);
+    }
+
     /**
      * Exports the resource pack to the specified directory.
      *
@@ -193,6 +229,12 @@ public class BedrockResourcePack {
         if (this.attachables != null) {
             for (Map.Entry<String, Attachables> attachable : this.attachables.entrySet()) {
                 exportJson(MAPPER, directory.resolve(attachable.getKey()), attachable.getValue());
+            }
+        }
+
+        if (this.renderControllers != null) {
+            for (Map.Entry<String, RenderControllers> renderController : this.renderControllers.entrySet()) {
+                exportJson(MAPPER, directory.resolve(renderController.getKey()), renderController.getValue());
             }
         }
     }
