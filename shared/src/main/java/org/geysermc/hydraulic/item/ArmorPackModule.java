@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.item;
 
 import com.google.auto.service.AutoService;
+import com.nimbusds.jose.util.Resource;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +22,9 @@ import java.util.Map;
 
 @AutoService(PackModule.class)
 public class ArmorPackModule extends PackModule<ArmorPackModule> {
+    private static final String JAVA_ARMOR_TEXTURE_LOCATION = "assets/%s/textures/models/armor/%s_layer_%s.png";
+    private static final String BEDROCK_ARMOR_TEXTURE_LOCATION = "textures/models/armor/%s/%s_layer_%s.png";
+
     private static final Map<String, String> ATTACHABLE_MATERIALS = new HashMap<>() {
         {
             put("default", "armor");
@@ -40,26 +44,28 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
         LOGGER.info("Armor to convert: " + armorItems.size() + " in mod " + context.mod().id());
 
         for (ArmorItem armorItem : armorItems) {
-            ResourceLocation armorLocation = BuiltInRegistries.ITEM.getKey(armorItem);
+            ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
 
-            String inputFileNamePrefix = "assets/minecraft/textures/models/armor/" + armorItem.getMaterial().getName();
+            ResourceLocation armorTextureLocation = new ResourceLocation(armorItem.getMaterial().getName());
+
+            String inputFileNamePrefix = "assets/%s/textures/models/armor/%s_layer_%s.png" + armorItem.getMaterial().getName();
             String outputFileNamePrefix = "textures/models/armor/" + context.mod().id() + "/" + armorItem.getMaterial().getName();
 
-            FileUtil.copyFileFromMod(context.mod(), inputFileNamePrefix + "_layer_1.png", context.path().resolve(outputFileNamePrefix + "_layer_1.png"));
-            FileUtil.copyFileFromMod(context.mod(), inputFileNamePrefix + "_layer_2.png", context.path().resolve(outputFileNamePrefix + "_layer_2.png"));
+            FileUtil.copyFileFromMod(context.mod(), String.format(JAVA_ARMOR_TEXTURE_LOCATION, armorTextureLocation.getNamespace(), armorTextureLocation.getPath(), 1), context.path().resolve(String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), armorTextureLocation.getPath(), 1)));
+            FileUtil.copyFileFromMod(context.mod(), String.format(JAVA_ARMOR_TEXTURE_LOCATION, armorTextureLocation.getNamespace(), armorTextureLocation.getPath(), 2), context.path().resolve(String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), armorTextureLocation.getPath(), 2)));
 
             Attachables armorAttachable = new Attachables();
             armorAttachable.setFormatVersion("1.8.0");
 
             Description description = new Description();
-            description.setIdentifier(armorLocation.toString());
+            description.setIdentifier(armorItemLocation.toString());
             description.setMaterials(ATTACHABLE_MATERIALS);
             description.setScripts(ATTACHABLE_SCRIPTS);
             description.setRenderControllers(new String[] {"controller.render.armor"});
 
             description.setTextures(new HashMap<>() {
                 {
-                    put("default", outputFileNamePrefix + (armorItem.getEquipmentSlot() == EquipmentSlot.LEGS ? "_layer_2" : "_layer_1"));
+                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), armorTextureLocation.getPath(), (armorItem.getEquipmentSlot() == EquipmentSlot.LEGS ? 2 : 1)));
                     put("enchanted", "textures/misc/enchanted_item_glint");
                 }
             });
@@ -73,17 +79,13 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             }
 
             final String finalGeometryType = geometryType;
-            description.setGeometry(new HashMap<>() {
-                {
-                    put("default", "geometry.player.armor." + finalGeometryType);
-                }
-            });
+            description.setGeometry(Map.of("default", "geometry.player.armor." + finalGeometryType));
 
             Attachable attachable = new Attachable();
             attachable.setDescription(description);
             armorAttachable.setAttachable(attachable);
 
-            context.pack().addAttachable(armorAttachable, "attachables/" + armorLocation.getPath() + ".json");
+            context.pack().addAttachable(armorAttachable, "attachables/" + armorItemLocation.getPath() + ".json");
         }
     }
 

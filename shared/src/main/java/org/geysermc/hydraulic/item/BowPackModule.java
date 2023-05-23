@@ -57,15 +57,10 @@ public class BowPackModule extends PackModule<BowPackModule> {
             "v.step = v.total_frames / 120;",
             "v.frame = query.is_using_item ? math.clamp((v.frame ?? 0) + v.step, 1, v.total_frames) : 0;"
         });
-        ATTACHABLE_SCRIPTS.setAnimate(List.of(new HashMap<>() {
-            {
-                put("wield", "c.is_first_person");
-            }
-        }, new HashMap<>() {
-            {
-                put("wield_first_person_pull", "query.main_hand_item_use_duration > 0.0f && c.is_first_person");
-            }
-        }));
+        ATTACHABLE_SCRIPTS.setAnimate(List.of(
+            Map.of("wield", "c.is_first_person"),
+            Map.of("wield_first_person_pull", "query.main_hand_item_use_duration > 0.0f && c.is_first_person")
+        ));
     }
 
     @Override
