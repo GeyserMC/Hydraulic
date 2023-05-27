@@ -48,6 +48,7 @@ public abstract class PackModule<T extends PackModule<T>> {
     public boolean test(@NotNull PackCreateContext<T> context) {
         return true;
     }
+
     /**
      * Listens on the given {@link Event event}.
      *

@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.fabric.platform;
 
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +14,7 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
 
     @Override
     public @NotNull Set<ModInfo> mods() {
-        return FabricLoader.getInstance().getAllMods().stream().map(container ->
+        return FabricLoader.getInstance().getAllMods().stream().filter(container -> !ignoreMod(container)).map(container ->
             new ModInfo(
                     container.getMetadata().getId(),
                     container.getMetadata().getVersion().getFriendlyString(),
@@ -22,6 +23,19 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
                     container.getMetadata().getIconPath(256).orElse("")
             )
         ).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * Ignore mods that are not built in or sub-mods.
+     *
+     * @param container the mod container
+     * @return whether to ignore the mod
+     */
+    private boolean ignoreMod(ModContainer container) {
+        return (container.getMetadata().getId().startsWith("fabric") && container.getMetadata().containsCustomValue("fabric-api:module-lifecycle"))
+            || container.getMetadata().getId().equals("fabricloader")
+            || container.getMetadata().getId().equals("fabric-api")
+            || !container.getContainingMod().isEmpty();
     }
 
     @Override

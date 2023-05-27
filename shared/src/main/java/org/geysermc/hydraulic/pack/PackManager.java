@@ -36,6 +36,7 @@ public class PackManager {
             "hydraulic",
             "geyser-fabric",
             "geyser-forge",
+            "floodgate",
             "vanilla"
     );
 
