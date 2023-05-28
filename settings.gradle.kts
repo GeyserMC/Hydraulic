@@ -19,6 +19,9 @@ dependencyResolutionManagement {
             }
         }
 
+        // Architectury
+        maven("https://maven.architectury.dev/")
+
         // Forge
         maven("https://maven.minecraftforge.net/")
 
@@ -46,9 +49,18 @@ pluginManagement {
 
         maven("https://repo.opencollab.dev/maven-snapshots")
         maven("https://repo.spongepowered.org/repository/maven-public/")
+        maven("https://maven.architectury.dev/")
         maven("https://maven.minecraftforge.net/")
         maven("https://maven.fabricmc.net/")
     }
+
+    plugins {
+        id("net.kyori.blossom") version "1.2.0"
+        id("net.kyori.indra")
+        id("net.kyori.indra.git")
+    }
+
+    includeBuild("build-logic")
 }
 
 rootProject.name = "hydraulic-parent"

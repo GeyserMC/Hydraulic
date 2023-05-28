@@ -1,33 +1,28 @@
 plugins {
-    id("java")
-    id("java-library")
+    id("hydraulic.build-logic")
 }
 
-val description = project.property("description") as String
+val platforms = setOf(
+    projects.fabric,
+    projects.forge,
+    projects.shared
+).map { it.dependencyProject }
 
-val minecraftVersion = project.property("minecraft_version") as String
+subprojects {
+    apply {
+        plugin("java-library")
+        plugin("hydraulic.build-logic")
+    }
 
-val modId = project.property("mod_id") as String
-val modName = project.property("mod_name") as String
-val modAuthor = project.property("mod_author") as String
+    when (this) {
+        in platforms -> plugins.apply("hydraulic.platform-conventions")
+        else -> plugins.apply("hydraulic.base-conventions")
+    }
+}
 
 allprojects {
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
-    }
-
-    tasks.withType<ProcessResources> {
-        filesMatching(listOf("META-INF/mods.toml", "fabric.mod.json")) {
-            expand(mapOf(
-                "mod_id" to modId,
-                "mod_name" to modName,
-                "mod_author" to modAuthor,
-
-                "minecraft_version" to minecraftVersion,
-                "version" to project.version,
-                "description" to description
-            ))
-        }
     }
 
     repositories {
@@ -41,11 +36,5 @@ allprojects {
         }
 
         maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-    }
-}
-
-subprojects {
-    apply {
-        plugin("java-library")
     }
 }

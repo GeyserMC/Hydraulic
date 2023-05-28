@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "${mod_id}",
+  "id": "${id}",
   "version": "${version}",
-
-  "name": "{$mod_name}",
-  "description": "${description}",
+  "name": "${name}",
+  "description": "A companion mod to Geyser which allows for Bedrock players to join modded Minecraft: Java Edition servers.",
   "authors": [
-    "${mod_author}"
+    "${author}"
   ],
   "contact": {
     "homepage": "https://geysermc.org/",

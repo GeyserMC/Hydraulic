@@ -93,7 +93,7 @@ public class Description {
   }
 
   /**
-   * The reference to defined geometries in `<resource pack>/models/'.
+   * The reference to defined geometries in `(resource pack)/models/'.
    *
    * @return Geometry
    */
@@ -102,7 +102,7 @@ public class Description {
   }
 
   /**
-   * The reference to defined geometries in `<resource pack>/models/'.
+   * The reference to defined geometries in `(resource pack)/models/'.
    *
    * @param geometry Geometry
    */

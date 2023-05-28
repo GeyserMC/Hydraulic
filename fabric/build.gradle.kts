@@ -1,8 +1,3 @@
-plugins {
-    id("idea")
-    id("fabric-loom") version("1.0-SNAPSHOT")
-}
-
 val modId = project.property("mod_id") as String
 val minecraftVersion = project.property("minecraft_version") as String
 
@@ -11,12 +6,18 @@ val fabricLoaderVersion = project.property("fabric_loader_version") as String
 
 base.archivesName.set("${modId}-fabric-${minecraftVersion}")
 
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
 dependencies {
-    minecraft("com.mojang:minecraft:${minecraftVersion}")
-    mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:${fabricLoaderVersion}")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${fabricVersion}")
-    implementation(project(":shared"))
+    modApi("net.fabricmc.fabric-api:fabric-api:${fabricVersion}")
+    api(project(":shared"))
+    shadow(project(path = ":shared", configuration = "transformProductionFabric")) {
+        isTransitive = false
+    }
 
     compileOnly(libs.geyser.api)
     compileOnly(libs.geyser.core) {
@@ -24,19 +25,20 @@ dependencies {
     }
 }
 
-loom {
-    runs {
-        named("client") {
-            client()
-            configName = "Fabric Client"
-            ideConfigGenerated(true)
-            runDir("run")
-        }
-        named("server") {
-            server()
-            configName = "Fabric Server"
-            ideConfigGenerated(true)
-            runDir("run")
-        }
+tasks {
+    remapJar {
+        dependsOn(shadowJar)
+        inputFile.set(shadowJar.get().archiveFile)
+        archiveBaseName.set("Hydraulic-Fabric")
+        archiveClassifier.set("")
+        archiveVersion.set("")
+    }
+
+    shadowJar {
+        archiveClassifier.set("dev-shadow")
+    }
+
+    jar {
+        archiveClassifier.set("dev")
     }
 }
