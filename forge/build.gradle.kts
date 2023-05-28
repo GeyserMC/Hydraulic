@@ -3,8 +3,6 @@ val modId = project.property("mod_id") as String
 val minecraftVersion = project.property("minecraft_version") as String
 val forgeVersion = project.property("forge_version") as String
 
-base.archivesName.set("${modId}-forge-${minecraftVersion}")
-
 architectury {
     platformSetupLoomIde()
     forge()
@@ -18,10 +16,8 @@ loom {
 
 dependencies {
     forge("net.minecraftforge:forge:${minecraftVersion}-${forgeVersion}")
-    api(project(":shared"))
-    shadow(project(path = ":shared", configuration = "transformProductionForge")) {
-        isTransitive = false
-    }
+    api(project(path = ":shared", configuration = "namedElements"))
+    shadow(project(path = ":shared", configuration = "transformProductionForge"))
 
     compileOnly(libs.geyser.api)
     compileOnly(libs.geyser.core) {
@@ -33,8 +29,16 @@ tasks {
     remapJar {
         dependsOn(shadowJar)
         inputFile.set(shadowJar.get().archiveFile)
-        archiveBaseName.set("Hydraulic-Forge")
+        archiveBaseName.set("${modId}-forge-${minecraftVersion}")
         archiveClassifier.set("")
         archiveVersion.set("")
+    }
+
+    shadowJar {
+        archiveClassifier.set("dev-shadow")
+    }
+
+    jar {
+        archiveClassifier.set("dev")
     }
 }

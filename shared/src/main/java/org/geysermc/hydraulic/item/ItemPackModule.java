@@ -45,7 +45,12 @@ public class ItemPackModule extends PackModule<ItemPackModule> {
             try (InputStream itemModelStream = Files.newInputStream(jarPath.resolve(String.format(Constants.JAVA_ITEM_MODEL_LOCATION, itemLocation.getNamespace(), itemLocation.getPath())))) {
                 Model model = Constants.MAPPER.readValue(itemModelStream, Model.class);
 
-                ResourceLocation layer0 = model.textures().get("layer0");
+                // TODO
+                ResourceLocation layer0 = model.textures() == null ? null : model.textures().get("layer0");
+                if (layer0 == null) {
+                    LOGGER.warn("Item {} has no layer0 texture, skipping", itemLocation);
+                    continue;
+                }
 
                 ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
                 String outputLoc = String.format(Constants.BEDROCK_ITEM_TEXTURE_LOCATION, context.mod().id(), layer0.getPath().replace("item/", ""));

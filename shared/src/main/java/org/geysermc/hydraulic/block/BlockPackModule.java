@@ -51,7 +51,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 try (InputStream modelStream = Files.newInputStream(jarPath.resolve(String.format(JAVA_BLOCK_MODEL_LOCATION, modelPath.getNamespace(), modelPath.getPath())))) {
                     Model model = Constants.MAPPER.readValue(modelStream, Model.class);
 
-                    if (!model.parent().getNamespace().equals("minecraft")) {
+                    if (model.parent() == null || !model.parent().getNamespace().equals("minecraft")) {
                         // TODO Parse inherited models?
                         return;
                     }

@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 /**
  * Represents a pack module.
  * <p>
- * Pack modules actually handle converting data from the Minecraft
+ * Pack modules handle converting data from the Minecraft
  * server into a pack that the Bedrock client can understand.
  * <p>
  * These are split up based on each specific aspect of the pack,

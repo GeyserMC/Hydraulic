@@ -9,7 +9,6 @@ dependencies {
         exclude(group = "io.netty")
     }
 
-    implementation(project(":bedrock-pack-schema"))
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)
 }

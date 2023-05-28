@@ -1,5 +1,8 @@
 plugins {
     id("hydraulic.build-logic")
+
+    id("architectury-plugin") version("3.4-SNAPSHOT")
+    id("dev.architectury.loom") version("0.12.0-SNAPSHOT") apply(false)
 }
 
 val platforms = setOf(
