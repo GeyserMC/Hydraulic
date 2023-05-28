@@ -7,5 +7,5 @@ dependencies {
 
     implementation("org.apache.commons:commons-lang3:3.12.0")
     implementation("org.apache.commons:commons-text:1.10.0")
-    implementation("org.apache.commons:commons-io:1.3.2")
+    implementation("commons-io:commons-io:2.12.0")
 }
