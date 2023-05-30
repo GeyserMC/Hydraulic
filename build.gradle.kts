@@ -14,6 +14,7 @@ val platforms = setOf(
 subprojects {
     apply {
         plugin("java-library")
+        plugin("architectury-plugin")
         plugin("hydraulic.build-logic")
     }
 
