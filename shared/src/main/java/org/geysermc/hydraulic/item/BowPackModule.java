@@ -169,7 +169,7 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
                     "texture.bow_pulling_2"
             });
 
-            bowCustomRenderController.arrays().textures().put("array.bow_geo_frames", new String[] {
+            bowCustomRenderController.arrays().geometries().put("array.bow_geo_frames", new String[] {
                     "geometry.default",
                     "geometry.bow_pulling_0",
                     "geometry.bow_pulling_1",

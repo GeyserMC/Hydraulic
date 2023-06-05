@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -95,6 +96,18 @@ public class PackManager {
 
                 module.postProcess0(context);
             }
+
+            // Set the pack name and description
+            pack.manifest().header().name(mod.name().trim() + " Resource Pack");
+            pack.manifest().header().description("Resource pack for mod " + mod.name().trim());
+
+            // Copy the icon if it exists
+            // TODO Add a default icon?
+             if (!mod.iconPath().isEmpty()) {
+                 try {
+                     pack.icon(Files.readAllBytes(mod.modPath().resolve(mod.iconPath())));
+                 } catch (IOException ignored) { }
+             }
         });
 
         try {
@@ -103,12 +116,6 @@ public class PackManager {
             LOGGER.error("Failed to convert mod {} to pack", mod.id(), ex);
             return false;
         }
-
-        // Copy the icon if it exists
-        // TODO Add a default icon?
-        // if (!mod.iconPath().isEmpty()) {
-        //     FileUtil.copyFileFromMod(mod, mod.iconPath(), packPath.resolve("pack_icon.png"));
-        // }
 
         // Now export the pack
         try {
