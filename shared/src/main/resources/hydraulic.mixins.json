@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.geysermc.hydraulic.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "ext.ElementFaceMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

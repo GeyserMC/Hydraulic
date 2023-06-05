@@ -43,6 +43,7 @@ dependencies {
     minecraft("com.mojang:minecraft:$minecraftVersion")
     mappings(loom.officialMojangMappings())
 
-    api(project(":bedrock-pack-schema"))
-    shadow(project(":bedrock-pack-schema"))
+    // Can't use the gradle libs feature here because
+    // this is part of the composite build
+    implementation("com.github.GeyserMC:PackConverter:feature~refactor-SNAPSHOT")
 }

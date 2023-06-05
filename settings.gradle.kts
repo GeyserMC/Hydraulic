@@ -31,7 +31,7 @@ dependencyResolutionManagement {
         // Sponge Snapshots
         maven("https://repo.spongepowered.org/repository/maven-public/")
 
-        // MCProtocolLib
+        // PackConverter
         maven("https://jitpack.io") {
             content {
                 includeGroupByRegex("com\\.github\\..*")
@@ -48,6 +48,11 @@ pluginManagement {
         gradlePluginPortal()
 
         maven("https://repo.opencollab.dev/maven-snapshots")
+        maven("https://jitpack.io") {
+            content {
+                includeGroupByRegex("com\\.github\\..*")
+            }
+        }
         maven("https://repo.spongepowered.org/repository/maven-public/")
         maven("https://maven.architectury.dev/")
         maven("https://maven.minecraftforge.net/")
@@ -66,9 +71,3 @@ pluginManagement {
 rootProject.name = "hydraulic-parent"
 
 include("shared", "fabric", "forge")
-
-include(":bedrock-pack-schema")
-include(":schema-generator")
-
-project(":bedrock-pack-schema").projectDir = file("pack-schema/bedrock")
-project(":schema-generator").projectDir = file("pack-schema/generator")

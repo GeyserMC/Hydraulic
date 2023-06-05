@@ -2,7 +2,7 @@ package org.geysermc.hydraulic.pack;
 
 import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
-import org.geysermc.hydraulic.pack.context.PackCreateContext;
+import org.geysermc.hydraulic.pack.context.PackProcessContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -31,13 +31,28 @@ public abstract class PackModule<T extends PackModule<T>> {
     protected static Logger LOGGER = LogUtils.getLogger();
 
     private final Map<Class<? extends Event>, List<Consumer<PackEventContext<?, T>>>> eventListeners = new HashMap<>();
+    private final List<Consumer<PackProcessContext<T>>> postProcessors = new ArrayList<>();
 
     /**
-     * Creates the relevant data for this section of the pack.
+     * Called after all the pack modules have
+     * been called and the pack has been created.
+     * <p>
+     * This is where you should do any post-processing
+     * of the pack, such as adding any extra files
+     * or modifying existing ones.
      *
      * @param context the context of the pack
      */
-    public abstract void create(@NotNull PackCreateContext<T> context);
+    public abstract void postProcess(@NotNull PackProcessContext<T> context);
+
+    /**
+     * Adds a post processor to this pack module.
+     *
+     * @param postProcessor the post processor
+     */
+    public final void postProcess(@NotNull Consumer<PackProcessContext<T>> postProcessor) {
+        this.postProcessors.add(postProcessor);
+    }
 
     /**
      * Tests if this pack module should be used.
@@ -45,7 +60,7 @@ public abstract class PackModule<T extends PackModule<T>> {
      * @param context the context of the pack
      * @return if this pack module should be used
      */
-    public boolean test(@NotNull PackCreateContext<T> context) {
+    public boolean test(@NotNull PackProcessContext<T> context) {
         return true;
     }
 
@@ -59,6 +74,18 @@ public abstract class PackModule<T extends PackModule<T>> {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public <E extends Event> void listenOn(@NotNull Class<E> event, @NotNull Consumer<PackEventContext<E, T>> eventConsumer) {
         this.eventListeners.computeIfAbsent(event, v -> new ArrayList<>()).add((Consumer) eventConsumer);
+    }
+
+    void postProcess0(@NotNull PackProcessContext<T> context) {
+        for (Consumer<PackProcessContext<T>> postProcessor : this.postProcessors) {
+            try {
+                postProcessor.accept(context);
+            } catch (Throwable t) {
+                LOGGER.error("Error processing post processor {}", postProcessor, t);
+            }
+        }
+
+        this.postProcess(context);
     }
 
     <E extends Event> void call(@NotNull Class<E> event, @NotNull PackEventContext<E, T> context) {

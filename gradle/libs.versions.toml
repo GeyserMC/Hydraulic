@@ -1,9 +1,12 @@
 [versions]
 mixin = "0.8.5"
 geyser = "2.1.0-SNAPSHOT"
+auto-service = "1.0.1"
+pack-converter = "feature~refactor-7266858f10-1"
 
 [libraries]
 mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }
 geyser-api = { group = "org.geysermc.geyser", name = "api", version.ref = "geyser" }
 geyser-core = { group = "org.geysermc.geyser", name = "core", version.ref = "geyser" }
-auto-service = { group = "com.google.auto.service", name = "auto-service", version = "1.0.1" }
+auto-service = { group = "com.google.auto.service", name = "auto-service", version.ref = "auto-service" }
+pack-converter = { group = "com.github.GeyserMC", name = "PackConverter", version.ref = "pack-converter" }

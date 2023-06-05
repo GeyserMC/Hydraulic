@@ -2,21 +2,22 @@ package org.geysermc.hydraulic.pack;
 
 import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
-import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.hydraulic.HydraulicImpl;
-import org.geysermc.hydraulic.pack.bedrock.resource.BedrockResourcePack;
-import org.geysermc.hydraulic.pack.context.PackCreateContext;
+import org.geysermc.hydraulic.pack.context.PackProcessContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
-import org.geysermc.hydraulic.util.FileUtil;
+import org.geysermc.pack.converter.PackConverter;
+import org.geysermc.pack.converter.converter.ActionListener;
+import org.geysermc.pack.converter.converter.Converters;
+import org.geysermc.pack.converter.data.ConversionData;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -42,8 +43,6 @@ public class PackManager {
 
     private final HydraulicImpl hydraulic;
     private final List<PackModule<?>> modules = new ArrayList<>();
-
-    private final Map<String, BedrockResourcePack> packs = new HashMap<>();
 
     public PackManager(HydraulicImpl hydraulic) {
         this.hydraulic = hydraulic;
@@ -71,46 +70,51 @@ public class PackManager {
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
     boolean createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
-        // Initialize our resource pack for our mod
-        BedrockResourcePack pack = BedrockResourcePack.initializeForMod(mod);
+        PackConverter converter = new PackConverter()
+                .logListener(new PackLogListener(LOGGER))
+                .converters(Converters.defaultConverters())
+                .input(mod.modPath(), false)
+                .output(packPath)
+                .textureSubdirectory(mod.id());
 
-        boolean shouldExportPack = false;
+        Map<Class<ConversionData>, List<ActionListener<ConversionData>>> actionListeners = new IdentityHashMap<>();
         for (PackModule<?> module : this.modules) {
-            PackCreateContext context = new PackCreateContext(this.hydraulic, mod, module, pack, packPath);
-            if (!module.test(context)) {
-                continue;
+            if (module instanceof ConvertablePackModule<?, ?> convertableModule) {
+                actionListeners.computeIfAbsent((Class<ConversionData>) convertableModule.conversionType(),
+                        e -> new ArrayList<>()).add((ConvertablePackModule<?, ConversionData>) convertableModule);
             }
-
-            module.create(context);
-            shouldExportPack = true;
         }
 
-        if (!shouldExportPack) {
+        converter.actionListeners(actionListeners);
+        converter.postProcessor(pack -> {
+            for (PackModule<?> module : this.modules) {
+                PackProcessContext context = new PackProcessContext(this.hydraulic, mod, module, converter, pack, packPath);
+                if (!module.test(context)) {
+                    continue;
+                }
+
+                module.postProcess0(context);
+            }
+        });
+
+        try {
+            converter.convert();
+        } catch (IOException ex) {
+            LOGGER.error("Failed to convert mod {} to pack", mod.id(), ex);
             return false;
         }
 
         // Copy the icon if it exists
         // TODO Add a default icon?
-        if (!mod.iconPath().isEmpty()) {
-            FileUtil.copyFileFromMod(mod, mod.iconPath(), packPath.resolve("pack_icon.png"));
-        }
-
-        this.packs.put(mod.id(), pack);
+        // if (!mod.iconPath().isEmpty()) {
+        //     FileUtil.copyFileFromMod(mod, mod.iconPath(), packPath.resolve("pack_icon.png"));
+        // }
 
         // Now export the pack
         try {
-            pack.export(packPath);
+            converter.pack();
         } catch (IOException ex) {
             LOGGER.error("Failed to export pack for mod {}", mod.id(), ex);
-        }
-
-        // TODO: NIO
-        // Zip up the pack
-        Path packsPath = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("packs");
-        try {
-            FileUtil.zipDirectory(packPath.toFile(), packsPath.resolve(mod.id() + ".zip").toFile());
-        } catch (Exception ex) {
-            LOGGER.error("Failed to zip pack for mod {}", mod.id(), ex);
         }
 
         return true;

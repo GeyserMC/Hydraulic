@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.item;
 
 import com.google.auto.service.AutoService;
+import net.kyori.adventure.key.Key;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -9,62 +10,61 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.*;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
-import org.geysermc.hydraulic.assets.Model;
 import org.geysermc.hydraulic.pack.PackModule;
-import org.geysermc.hydraulic.pack.context.PackCreateContext;
+import org.geysermc.hydraulic.pack.TexturePackModule;
+import org.geysermc.hydraulic.pack.context.PackProcessContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
-import org.geysermc.hydraulic.util.Constants;
-import org.geysermc.hydraulic.util.FileUtil;
+import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
+import org.geysermc.pack.converter.PackConversionContext;
+import org.geysermc.pack.converter.data.TextureConversionData;
 import org.jetbrains.annotations.NotNull;
+import team.unnamed.creative.ResourcePack;
+import team.unnamed.creative.model.Model;
+import team.unnamed.creative.model.ModelTexture;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 @AutoService(PackModule.class)
-public class ItemPackModule extends PackModule<ItemPackModule> {
+public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     public ItemPackModule() {
         this.listenOn(GeyserDefineCustomItemsEvent.class, ItemPackModule::onDefineCustomItems);
     }
 
     @Override
-    public void create(@NotNull PackCreateContext<ItemPackModule> context) {
-        List<Item> items = context.registryValues(Registries.ITEM);
+    public void postConvert(PackConversionContext<TextureConversionData> packContext) {
+        ResourcePack assets = packContext.javaResourcePack();
+        BedrockResourcePack bedrockPack = packContext.bedrockResourcePack();
 
-        LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod().id());
-        Path jarPath = context.mod().modPath();
+        this.postProcess(context -> {
+            List<Item> items = context.registryValues(Registries.ITEM);
 
-        for (Item item : items) {
-            if (item instanceof BlockItem) {
-                continue; // TODO: Special handling here?
-            }
-            ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
+            LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod().id());
 
-            try (InputStream itemModelStream = Files.newInputStream(jarPath.resolve(String.format(Constants.JAVA_ITEM_MODEL_LOCATION, itemLocation.getNamespace(), itemLocation.getPath())))) {
-                Model model = Constants.MAPPER.readValue(itemModelStream, Model.class);
+            for (Item item : items) {
+                ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
-                // TODO
-                ResourceLocation layer0 = model.textures() == null ? null : model.textures().get("layer0");
-                if (layer0 == null) {
+                Model model = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
+                if (model == null || model.textures() == null) {
+                    LOGGER.warn("Item {} has no model, skipping", itemLocation);
+                    continue;
+                }
+
+                List<ModelTexture> layers = model.textures().layers();
+                if (layers == null || layers.isEmpty()) {
                     LOGGER.warn("Item {} has no layer0 texture, skipping", itemLocation);
                     continue;
                 }
 
-                ResourceLocation itemKey = BuiltInRegistries.ITEM.getKey(item);
-                String outputLoc = String.format(Constants.BEDROCK_ITEM_TEXTURE_LOCATION, context.mod().id(), layer0.getPath().replace("item/", ""));
-                context.pack().addItem(itemKey.toString(), outputLoc.replace(".png", ""));
-
-                FileUtil.copyFileFromMod(context.mod(), String.format(Constants.JAVA_TEXTURE_LOCATION, layer0.getNamespace(), layer0.getPath()), context.path().resolve(outputLoc));
-            } catch (Exception ex) {
-                LOGGER.error("Failed to read item model {} for mod {}", itemLocation.toString(), context.mod().id(), ex);
+                ModelTexture layer0 = layers.get(0);
+                String outputLoc = getOutputFromModel(context, layer0.key());
+                bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
             }
-        }
+        });
     }
 
     @Override
-    public boolean test(@NotNull PackCreateContext<ItemPackModule> context) {
+    public boolean test(@NotNull PackProcessContext<ItemPackModule> context) {
         return context.registryValues(Registries.ITEM).size() > 0;
     }
 
