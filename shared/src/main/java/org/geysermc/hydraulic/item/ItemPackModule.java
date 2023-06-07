@@ -83,7 +83,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             ResourceLocation itemLocation = registry.getKey(item);
             NonVanillaCustomItemData.Builder customItemBuilder = NonVanillaCustomItemData.builder()
                 .name(itemLocation.getPath())
-                .displayName(name)
+                .displayName("%" + item.getDescriptionId())
                 .identifier(itemLocation.toString())
                 .icon(itemLocation.toString())
                 .javaId(registry.getId(item))
