@@ -13,7 +13,9 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${fabricLoaderVersion}")
     modApi("net.fabricmc.fabric-api:fabric-api:${fabricVersion}")
     api(project(path = ":shared", configuration = "namedElements"))
-    shadow(project(path = ":shared", configuration = "transformProductionFabric"))
+    shadow(project(path = ":shared", configuration = "transformProductionFabric")) {
+        isTransitive = false
+    }
 
     compileOnly(libs.geyser.api)
     compileOnly(libs.geyser.core) {

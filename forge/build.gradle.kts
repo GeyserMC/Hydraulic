@@ -17,7 +17,9 @@ loom {
 dependencies {
     forge("net.minecraftforge:forge:${minecraftVersion}-${forgeVersion}")
     api(project(path = ":shared", configuration = "namedElements"))
-    shadow(project(path = ":shared", configuration = "transformProductionForge"))
+    shadow(project(path = ":shared", configuration = "transformProductionForge")) {
+        isTransitive = false
+    }
 
     compileOnly(libs.geyser.api)
     compileOnly(libs.geyser.core) {

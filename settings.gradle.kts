@@ -70,4 +70,6 @@ pluginManagement {
 
 rootProject.name = "hydraulic-parent"
 
-include("shared", "fabric", "forge")
+include(":shared")
+include(":fabric")
+include(":forge")

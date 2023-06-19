@@ -1,7 +1,6 @@
-import org.gradle.kotlin.dsl.dependencies
-
 plugins {
     id("hydraulic.publish-conventions")
+    id("java-library")
     id("architectury-plugin")
     id("dev.architectury.loom")
 }
@@ -9,8 +8,6 @@ plugins {
 val minecraftVersion = project.property("minecraft_version") as String
 
 architectury {
-    platformSetupLoomIde()
-
     minecraft = minecraftVersion
 }
 
