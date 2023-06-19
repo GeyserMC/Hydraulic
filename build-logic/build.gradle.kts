@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     implementation("net.kyori", "indra-common", "3.1.1")
-    implementation("com.github.johnrengelman", "shadow", "7.1.3-SNAPSHOT")
+    implementation("com.github.johnrengelman", "shadow", "8.1.1")
     implementation("architectury-plugin", "architectury-plugin.gradle.plugin", "3.4-SNAPSHOT")
-    implementation("dev.architectury.loom", "dev.architectury.loom.gradle.plugin", "1.1-SNAPSHOT")
+    implementation("dev.architectury.loom", "dev.architectury.loom.gradle.plugin", "1.2-SNAPSHOT")
 }

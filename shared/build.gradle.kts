@@ -12,3 +12,6 @@ dependencies {
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)
 }
+
+// TODO: WTF is calling this task?
+tasks.create("prepareWorkspace") {}

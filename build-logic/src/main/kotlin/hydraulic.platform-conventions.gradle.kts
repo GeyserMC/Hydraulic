@@ -16,9 +16,6 @@ loom {
 }
 
 tasks {
-    java {
-        withSourcesJar()
-    }
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.
     // If you remove this task, sources will not be generated.
