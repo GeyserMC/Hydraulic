@@ -5,15 +5,14 @@ import net.kyori.adventure.key.Key;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.locale.Language;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.*;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
-import org.geysermc.hydraulic.pack.context.PackProcessContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
+import org.geysermc.hydraulic.pack.context.PackProcessContext;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.PackConversionContext;
 import org.geysermc.pack.converter.data.TextureConversionData;
@@ -72,14 +71,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         GeyserDefineCustomItemsEvent event = context.event();
         List<Item> items = context.registryValues(Registries.ITEM);
 
-        // No custom items
-        if (items.size() == 0) {
-            return;
-        }
-
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;
         for (Item item : items) {
-            String name = Language.getInstance().getOrDefault(item.getDescriptionId());
             ResourceLocation itemLocation = registry.getKey(item);
             NonVanillaCustomItemData.Builder customItemBuilder = NonVanillaCustomItemData.builder()
                 .name(itemLocation.getPath())

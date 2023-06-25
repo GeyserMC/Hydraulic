@@ -4,7 +4,6 @@ import com.mojang.logging.LogUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.geysermc.event.subscribe.Subscribe;
 import org.geysermc.geyser.GeyserImpl;
-import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -51,8 +50,6 @@ public class PackListener {
 
         LOGGER.info("Found {} packs to convert!", packsToLoad.size());
 
-        this.manager.callEvents(event);
-
         for (Map.Entry<String, Pair<ModInfo, Path>> entry : packsToLoad.entrySet()) {
             try {
                 if (this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight())) {
@@ -62,10 +59,5 @@ public class PackListener {
                 LOGGER.error("Failed to convert pack for mod {}", entry.getKey(), t);
             }
         }
-    }
-
-    @Subscribe
-    public void onDefineItems(GeyserDefineCustomItemsEvent event) {
-        this.manager.callEvents(event);
     }
 }

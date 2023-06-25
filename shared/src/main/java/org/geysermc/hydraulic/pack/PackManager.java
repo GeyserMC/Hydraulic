@@ -57,9 +57,13 @@ public class PackManager {
             this.modules.add(module);
 
             GeyserApi.api().eventBus().register(this.hydraulic, module);
+            module.eventListeners().forEach((eventClass, listeners) -> {
+                GeyserApi.api().eventBus().subscribe(this.hydraulic, eventClass, this::callEvents);
+            });
         }
 
-        GeyserApi.api().eventBus().register(this.hydraulic, new PackListener(hydraulic, this));
+        GeyserApi.api().eventBus().register(this.hydraulic, new PackListener(this.hydraulic, this));
+
     }
 
     /**
@@ -127,7 +131,7 @@ public class PackManager {
         return true;
     }
 
-    void callEvents(@NotNull Event event) {
+    private void callEvents(@NotNull Event event) {
         for (ModInfo mod : this.hydraulic.mods()) {
             if (IGNORED_MODS.contains(mod.id())) {
                 continue;

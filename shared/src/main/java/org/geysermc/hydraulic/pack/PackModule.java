@@ -88,6 +88,10 @@ public abstract class PackModule<T extends PackModule<T>> {
         this.postProcess(context);
     }
 
+    Map<Class<? extends Event>, List<Consumer<PackEventContext<?, T>>>> eventListeners() {
+        return this.eventListeners;
+    }
+
     <E extends Event> void call(@NotNull Class<E> event, @NotNull PackEventContext<E, T> context) {
         for (Map.Entry<Class<? extends Event>, List<Consumer<PackEventContext<?, T>>>> entry : this.eventListeners.entrySet()) {
             if (!entry.getKey().isAssignableFrom(event)) {
