@@ -6,8 +6,11 @@ import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Contains mappings for items to their creative groups and categories.
+ */
 public class CreativeMappings {
-    private static Map<Class<? extends Item>, CreativeMapping> CREATIVE_MAPPINGS = new HashMap<>() {
+    private static final Map<Class<? extends Item>, CreativeMapping> CREATIVE_MAPPINGS = new HashMap<>() {
         {
             put(ArmorItem.class, new CreativeMapping(CreativeCategory.EQUIPMENT));
             put(ArrowItem.class, new CreativeMapping("itemGroup.name.arrow", CreativeCategory.EQUIPMENT));
@@ -29,7 +32,7 @@ public class CreativeMappings {
         }
     };
 
-    public static void setup(Item item, NonVanillaCustomItemData.Builder customItemBuilder) {
+    static void setup(Item item, NonVanillaCustomItemData.Builder customItemBuilder) {
         CreativeMapping mapping = CREATIVE_MAPPINGS.get(item.getClass());
 
         // Try find any inheritance mappings

@@ -20,6 +20,7 @@ import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBlockState;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBoundingBox;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
 import org.geysermc.geyser.level.physics.PistonBehavior;
+import org.geysermc.hydraulic.item.CreativeCategory;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
@@ -71,7 +72,8 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
                     .identifier(blockLocation.toString())
                     .name(blockLocation.getPath())
                     .includedInCreativeInventory(true)
-                    .creativeGroup("itemGroup.name.items");
+                    .creativeGroup("itemGroup.name.items")
+                    .creativeCategory(CreativeCategory.ITEMS.internalName());
 
             for (Property<?> property : block.getStateDefinition().getProperties()) {
                 if (property instanceof IntegerProperty intProperty) {
