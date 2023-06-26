@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.block;
 
 import com.google.auto.service.AutoService;
+import net.kyori.adventure.key.Key;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -30,6 +31,8 @@ import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.PackConversionContext;
 import org.geysermc.pack.converter.data.TextureConversionData;
 import org.jetbrains.annotations.NotNull;
+import team.unnamed.creative.ResourcePack;
+import team.unnamed.creative.texture.Texture;
 
 import java.util.List;
 
@@ -42,16 +45,20 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
 
     @Override
     public void postConvert(PackConversionContext<TextureConversionData> packContext) {
+        ResourcePack assets = packContext.javaResourcePack();
         BedrockResourcePack bedrockPack = packContext.bedrockResourcePack();
 
         this.postProcess(context -> {
-            List<Block> blocks = context.registryValues(Registries.BLOCK);
+            for (Texture texture : assets.textures()) {
+                Key key = texture.key();
+                String value = key.value();
 
-            LOGGER.info("Blocks to convert: " + blocks.size() + " in mod " + context.mod().id());
-            for (Block block : blocks) {
-                ResourceLocation blockLocation = BuiltInRegistries.BLOCK.getKey(block);
-                String outputLoc = String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + blockLocation.getPath());
-                bedrockPack.addBlockTexture(blockLocation.toString(), outputLoc.replace(".png", ""));
+                if (value.startsWith("block/")) {
+                    String cleanPath = value.replace("block/", "").replace(".png", "");
+
+                    String outputLoc = String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + cleanPath).replace(".png", "");
+                    bedrockPack.addBlockTexture(key.namespace() + ":" + cleanPath, outputLoc);
+                }
             }
         });
     }

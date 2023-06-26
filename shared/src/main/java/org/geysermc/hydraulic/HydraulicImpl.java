@@ -92,4 +92,18 @@ public class HydraulicImpl implements EventRegistrar {
 
         return new HydraulicImpl(platform, bootstrap);
     }
+
+    /**
+     * Gets the Hydraulic instance.
+     *
+     * @return the Hydraulic instance
+     */
+    @NotNull
+    public static HydraulicImpl instance() {
+        if (instance == null) {
+            throw new IllegalStateException("Hydraulic has not been loaded!");
+        }
+
+        return instance;
+    }
 }
