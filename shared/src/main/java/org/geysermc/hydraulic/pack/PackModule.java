@@ -2,8 +2,9 @@ package org.geysermc.hydraulic.pack;
 
 import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
-import org.geysermc.hydraulic.pack.context.PackProcessContext;
+import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
+import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -31,7 +32,9 @@ public abstract class PackModule<T extends PackModule<T>> {
     protected static Logger LOGGER = LogUtils.getLogger();
 
     private final Map<Class<? extends Event>, List<Consumer<PackEventContext<?, T>>>> eventListeners = new HashMap<>();
-    private final List<Consumer<PackProcessContext<T>>> postProcessors = new ArrayList<>();
+
+    private final List<Consumer<PackPreProcessContext<T>>> preProcessors = new ArrayList<>();
+    private final List<Consumer<PackPostProcessContext<T>>> postProcessors = new ArrayList<>();
 
     /**
      * Called after all the pack modules have
@@ -43,14 +46,23 @@ public abstract class PackModule<T extends PackModule<T>> {
      *
      * @param context the context of the pack
      */
-    public abstract void postProcess(@NotNull PackProcessContext<T> context);
+    public abstract void postProcess(@NotNull PackPostProcessContext<T> context);
+
+    /**
+     * Adds a pre processor to this pack module.
+     *
+     * @param preProcessor the pre processor
+     */
+    public final void preProcess(@NotNull Consumer<PackPreProcessContext<T>> preProcessor) {
+        this.preProcessors.add(preProcessor);
+    }
 
     /**
      * Adds a post processor to this pack module.
      *
      * @param postProcessor the post processor
      */
-    public final void postProcess(@NotNull Consumer<PackProcessContext<T>> postProcessor) {
+    public final void postProcess(@NotNull Consumer<PackPostProcessContext<T>> postProcessor) {
         this.postProcessors.add(postProcessor);
     }
 
@@ -60,7 +72,7 @@ public abstract class PackModule<T extends PackModule<T>> {
      * @param context the context of the pack
      * @return if this pack module should be used
      */
-    public boolean test(@NotNull PackProcessContext<T> context) {
+    public boolean test(@NotNull PackPostProcessContext<T> context) {
         return true;
     }
 
@@ -76,8 +88,22 @@ public abstract class PackModule<T extends PackModule<T>> {
         this.eventListeners.computeIfAbsent(event, v -> new ArrayList<>()).add((Consumer) eventConsumer);
     }
 
-    void postProcess0(@NotNull PackProcessContext<T> context) {
-        for (Consumer<PackProcessContext<T>> postProcessor : this.postProcessors) {
+    boolean hasPreProcessors() {
+        return !this.preProcessors.isEmpty();
+    }
+
+    void preProcess0(@NotNull PackPreProcessContext<T> context) {
+        for (Consumer<PackPreProcessContext<T>> preProcessor : this.preProcessors) {
+            try {
+                preProcessor.accept(context);
+            } catch (Throwable t) {
+                LOGGER.error("Error processing pre processor {}", preProcessor, t);
+            }
+        }
+    }
+
+    void postProcess0(@NotNull PackPostProcessContext<T> context) {
+        for (Consumer<PackPostProcessContext<T>> postProcessor : this.postProcessors) {
             try {
                 postProcessor.accept(context);
             } catch (Throwable t) {

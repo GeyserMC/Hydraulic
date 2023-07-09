@@ -15,12 +15,12 @@ import java.nio.file.Path;
  *
  * @param <T> the module type
  */
-public class PackProcessContext<T extends PackModule<T>> extends PackContext<T> {
+public class PackPostProcessContext<T extends PackModule<T>> extends PackContext<T> {
     private final PackConverter converter;
     private final BedrockResourcePack pack;
     private final Path path;
 
-    public PackProcessContext(@NotNull HydraulicImpl hydraulic, @NotNull ModInfo mod, @NotNull T module, @NotNull PackConverter converter, @NotNull BedrockResourcePack pack, @NotNull Path path) {
+    public PackPostProcessContext(@NotNull HydraulicImpl hydraulic, @NotNull ModInfo mod, @NotNull T module, @NotNull PackConverter converter, @NotNull BedrockResourcePack pack, @NotNull Path path) {
         super(hydraulic, mod, module);
 
         this.converter = converter;

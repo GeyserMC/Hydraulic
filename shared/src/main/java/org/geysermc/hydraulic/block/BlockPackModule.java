@@ -10,13 +10,19 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.*;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
+import org.geysermc.geyser.api.block.custom.CustomBlockPermutation;
 import org.geysermc.geyser.api.block.custom.CustomBlockState;
 import org.geysermc.geyser.api.block.custom.NonVanillaCustomBlockData;
 import org.geysermc.geyser.api.block.custom.component.BoxComponent;
 import org.geysermc.geyser.api.block.custom.component.CustomBlockComponents;
 import org.geysermc.geyser.api.block.custom.component.MaterialInstance;
+import org.geysermc.geyser.api.block.custom.component.TransformationComponent;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBlockState;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBoundingBox;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
@@ -25,22 +31,40 @@ import org.geysermc.hydraulic.item.CreativeCategory;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
-import org.geysermc.hydraulic.pack.context.PackProcessContext;
+import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.PackConversionContext;
 import org.geysermc.pack.converter.data.TextureConversionData;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import team.unnamed.creative.ResourcePack;
+import team.unnamed.creative.blockstate.MultiVariant;
+import team.unnamed.creative.blockstate.Variant;
+import team.unnamed.creative.model.Model;
 import team.unnamed.creative.texture.Texture;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @AutoService(PackModule.class)
 public class BlockPackModule extends TexturePackModule<BlockPackModule> {
+    private static final Key UNIT_CUBE_KEY = Key.key("block/cube_all");
+    private static final String STATE_CONDITION = "query.block_property('%s') == %s";
+
+    private final Map<String, StateDefinition> blockStates = new HashMap<>();
 
     public BlockPackModule() {
-        this.listenOn(GeyserDefineCustomBlocksEvent.class, BlockPackModule::onDefineCustomBlocks);
+        this.listenOn(GeyserDefineCustomBlocksEvent.class, this::onDefineCustomBlocks);
+
+        this.preProcess(context -> {
+            ResourcePack pack = context.pack();
+            for (team.unnamed.creative.blockstate.BlockState blockState : pack.blockStates()) {
+                this.blockStates.put(blockState.key().toString(), new StateDefinition(blockState, context.pack()));
+            }
+        });
     }
 
     @Override
@@ -64,11 +88,11 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
     }
 
     @Override
-    public boolean test(@NotNull PackProcessContext<BlockPackModule> context) {
+    public boolean test(@NotNull PackPostProcessContext<BlockPackModule> context) {
         return context.registryValues(Registries.BLOCK).size() > 0;
     }
 
-    private static void onDefineCustomBlocks(PackEventContext<GeyserDefineCustomBlocksEvent, BlockPackModule> context) {
+    private void onDefineCustomBlocks(PackEventContext<GeyserDefineCustomBlocksEvent, BlockPackModule> context) {
         GeyserDefineCustomBlocksEvent event = context.event();
         List<Block> blocks = context.registryValues(Registries.BLOCK);
 
@@ -94,13 +118,70 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
                 }
             }
 
-            // TODO: Permutations (requires model conversion)
+            List<CustomBlockPermutation> permutations = new ArrayList<>();
+            CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
+            for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                ModelDefinition definition = getModel(blockLocation, state);
+                if (definition != null) {
+                    Key key = definition.model().key();
 
-            CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
+                    CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
+                            .materialInstance("*", new MaterialInstance(getTextureFromModule(context, key), "alpha_test", true, definition.model().ambientOcclusion()))
+                            .transformation(new TransformationComponent(
+                                    definition.variant().x(), // Rotation X
+                                    definition.variant().y(), // Rotation Y
+                                    0, // Rotation Z
+                                    1, // Scale X
+                                    1, // Scale Y
+                                    1, // Scale Z
+                                    0, // Translation X
+                                    0, // Translation Y
+                                    0 // Translation Z
+                            ));
+
+                    if (!UNIT_CUBE_KEY.equals(definition.model().parent())) {
+                        String namespace = key.namespace();
+                        String value = key.value();
+
+                        String fileName = value.substring(value.lastIndexOf('/') + 1);
+                        String geoName = (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + fileName;
+
+                        componentsBuilder.geometry("geometry." + geoName);
+                    } else {
+                        componentsBuilder.unitCube(true);
+                    }
+
+                    // No properties exist on this state, so there's only one
+                    // blockstate that can exist. Update the base builder so that
+                    // the code that creates the component for the base block
+                    // persists everything we did above
+                    if (state.getProperties().isEmpty()) {
+                        baseComponentBuilder = componentsBuilder;
+                        continue;
+                    }
+
+                    List<String> conditions = new ArrayList<>();
+                    for (Property<?> property : state.getProperties()) {
+                        String propValue = state.getValue(property).toString();
+                        if (property instanceof EnumProperty<?>) {
+                            propValue = "'" + propValue + "'";
+                        }
+
+                        conditions.add(String.format(STATE_CONDITION, property.getName(), propValue));
+                    }
+
+                    String condition = String.join(" && ", conditions);
+                    permutations.add(new CustomBlockPermutation(componentsBuilder.build(), condition));
+                }
+            }
+
+            builder.permutations(permutations);
+
+            CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
                     .displayName("%" + block.getDescriptionId())
                     .friction(block.getFriction())
                     .destructibleByMining(block.defaultDestroyTime()) // TODO: Check
-                    .unitCube(true) // TODO: Geometry conversion
+                    // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(BoxComponent.fullBox()) // TODO: Shapes
                     .collisionBox(BoxComponent.fullBox()) // TODO: Shapes
                     .materialInstance("*", new MaterialInstance(blockLocation.toString(), "alpha_test", true, true));
@@ -146,5 +227,79 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
                 );
             }
         }
+    }
+
+    @Nullable
+    private ModelDefinition getModel(@NotNull ResourceLocation blockLocation, @NotNull BlockState state) {
+        StateDefinition definition = this.blockStates.get(blockLocation.toString());
+        if (definition == null) {
+            LOGGER.warn("Missing blockstate for block {}", blockLocation);
+            return null;
+        }
+
+        team.unnamed.creative.blockstate.BlockState packState = definition.state();
+
+        // Check if we have a variant match
+        MultiVariant multiVariant = matchState(state, packState.variants());
+        if (multiVariant == null || multiVariant.variants().isEmpty()) {
+            // No variant, check if we have a default
+            multiVariant = packState.variants().get("");
+        }
+
+        // We have a match! Now we need to find the model
+        if (multiVariant != null && !multiVariant.variants().isEmpty()) {
+            // TODO: Handle multiple variants?
+            Variant variant = multiVariant.variants().get(0);
+            Key modelKey = variant.model();
+
+            Model model = definition.pack().model(modelKey);
+            if (model == null) {
+                LOGGER.warn("Missing model {} for block {}", modelKey, blockLocation);
+            } else {
+                return new ModelDefinition(model, variant);
+            }
+        }
+
+        // TODO: Multipart states
+
+        return null;
+    }
+
+    private static String toPropertyString(@NotNull BlockState state) {
+        StringBuilder builder = new StringBuilder();
+        for (Property<?> property : state.getProperties()) {
+            if (builder.length() > 0) {
+                builder.append(",");
+            }
+            builder.append(property.getName()).append("=").append(state.getValue(property));
+        }
+
+        return builder.toString();
+    }
+
+    private static MultiVariant matchState(@NotNull BlockState state, @NotNull Map<String, MultiVariant> variants) {
+        List<String> properties = new ArrayList<>();
+        for (Property<?> property : state.getProperties()) {
+            properties.add(property.getName() + "=" + state.getValue(property));
+        }
+
+        for (Map.Entry<String, MultiVariant> entry : variants.entrySet()) {
+            String variant = entry.getKey();
+
+            String[] property = variant.split(",");
+            boolean match = true;
+            for (String prop : property) {
+                if (!properties.contains(prop)) {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) {
+                return entry.getValue();
+            }
+        }
+
+        return null;
     }
 }

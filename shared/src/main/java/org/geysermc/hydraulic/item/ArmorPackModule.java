@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ArmorItem;
 import org.geysermc.hydraulic.pack.PackModule;
-import org.geysermc.hydraulic.pack.context.PackProcessContext;
+import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.pack.bedrock.resource.attachables.Attachable;
 import org.geysermc.pack.bedrock.resource.attachables.Attachables;
 import org.geysermc.pack.bedrock.resource.attachables.attachable.Description;
@@ -35,7 +35,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
     }
 
     @Override
-    public void postProcess(@NotNull PackProcessContext<ArmorPackModule> context) {
+    public void postProcess(@NotNull PackPostProcessContext<ArmorPackModule> context) {
         List<ArmorItem> armorItems = context.registryValues(Registries.ITEM).stream()
                 .filter(item -> item instanceof ArmorItem)
                 .map(item -> (ArmorItem) item)
@@ -84,7 +84,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
     }
 
     @Override
-    public boolean test(@NotNull PackProcessContext<ArmorPackModule> context) {
+    public boolean test(@NotNull PackPostProcessContext<ArmorPackModule> context) {
         return context.registryValues(Registries.ITEM).stream().anyMatch(item -> item instanceof ArmorItem);
     }
 }

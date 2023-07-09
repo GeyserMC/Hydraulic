@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BowItem;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
-import org.geysermc.hydraulic.pack.context.PackProcessContext;
+import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.bedrock.resource.attachables.Attachable;
 import org.geysermc.pack.bedrock.resource.attachables.Attachables;
@@ -189,7 +189,7 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
     }
 
     @Override
-    public boolean test(@NotNull PackProcessContext<BowPackModule> context) {
+    public boolean test(@NotNull PackPostProcessContext<BowPackModule> context) {
         return context.registryValues(Registries.ITEM).stream().anyMatch(item -> item instanceof BowItem);
     }
 }

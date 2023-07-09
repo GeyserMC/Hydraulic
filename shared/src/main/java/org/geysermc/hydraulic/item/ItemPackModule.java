@@ -12,7 +12,7 @@ import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
-import org.geysermc.hydraulic.pack.context.PackProcessContext;
+import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.PackConversionContext;
 import org.geysermc.pack.converter.data.TextureConversionData;
@@ -63,7 +63,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
     }
 
     @Override
-    public boolean test(@NotNull PackProcessContext<ItemPackModule> context) {
+    public boolean test(@NotNull PackPostProcessContext<ItemPackModule> context) {
         return context.registryValues(Registries.ITEM).size() > 0;
     }
 

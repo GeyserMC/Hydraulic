@@ -4,15 +4,19 @@ import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.hydraulic.HydraulicImpl;
-import org.geysermc.hydraulic.pack.context.PackProcessContext;
+import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
+import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.converter.PackConverter;
 import org.geysermc.pack.converter.converter.ActionListener;
 import org.geysermc.pack.converter.converter.Converters;
 import org.geysermc.pack.converter.data.ConversionData;
+import org.geysermc.pack.converter.util.NioDirectoryFileTreeReader;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import team.unnamed.creative.ResourcePack;
+import team.unnamed.creative.serialize.minecraft.MinecraftResourcePackReader;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,6 +64,23 @@ public class PackManager {
             module.eventListeners().forEach((eventClass, listeners) -> {
                 GeyserApi.api().eventBus().subscribe(this.hydraulic, eventClass, this::callEvents);
             });
+
+            for (ModInfo mod : this.hydraulic.mods()) {
+                if (IGNORED_MODS.contains(mod.id())) {
+                    continue;
+                }
+
+                if (module.hasPreProcessors()) {
+                    try {
+                        ResourcePack pack = MinecraftResourcePackReader.minecraft().read(NioDirectoryFileTreeReader.read(mod.modPath()));
+
+                        PackPreProcessContext context = new PackPreProcessContext(this.hydraulic, mod, module, pack);
+                        module.preProcess0(context);
+                    } catch (Throwable t) {
+                        LOGGER.error("Failed to pre-process mod {} for module {}", mod.id(), module.getClass().getSimpleName(), t);
+                    }
+                }
+            }
         }
 
         GeyserApi.api().eventBus().register(this.hydraulic, new PackListener(this.hydraulic, this));
@@ -93,7 +114,7 @@ public class PackManager {
         converter.actionListeners(actionListeners);
         converter.postProcessor(pack -> {
             for (PackModule<?> module : this.modules) {
-                PackProcessContext context = new PackProcessContext(this.hydraulic, mod, module, converter, pack, packPath);
+                PackPostProcessContext context = new PackPostProcessContext(this.hydraulic, mod, module, converter, pack, packPath);
                 if (!module.test(context)) {
                     continue;
                 }
