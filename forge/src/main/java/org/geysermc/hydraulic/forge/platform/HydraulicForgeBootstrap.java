@@ -1,11 +1,13 @@
 package org.geysermc.hydraulic.forge.platform;
 
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.FMLPaths;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,5 +37,10 @@ public class HydraulicForgeBootstrap implements HydraulicBootstrap {
                         container.getModInfo().getLogoFile().orElse("")
                 )
         ).orElse(null);
+    }
+
+    @Override
+    public @NotNull Path dataFolder(@NotNull String modId) {
+        return FMLPaths.CONFIGDIR.get().resolve(modId);
     }
 }

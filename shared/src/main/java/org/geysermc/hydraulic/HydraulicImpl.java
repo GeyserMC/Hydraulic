@@ -6,11 +6,15 @@ import org.geysermc.hydraulic.pack.PackManager;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.HydraulicPlatform;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.hydraulic.storage.ModStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -24,6 +28,8 @@ public class HydraulicImpl implements EventRegistrar {
     private final HydraulicPlatform platform;
     private final HydraulicBootstrap bootstrap;
     private final PackManager packManager;
+
+    private final Map<String, ModStorage> modStorage = new HashMap<>();
 
     private MinecraftServer server;
 
@@ -75,6 +81,27 @@ public class HydraulicImpl implements EventRegistrar {
     @NotNull
     public MinecraftServer server() {
         return this.server;
+    }
+
+    /**
+     * Gets the data folder directory of this platform.
+     *
+     * @return the data folder directory
+     */
+    @NotNull
+    public Path dataFolder(@NotNull String modId) {
+        return this.bootstrap.dataFolder(modId);
+    }
+
+    /**
+     * Gets the mod storage for the specified mod.
+     *
+     * @param mod the mod
+     * @return the mod storage
+     */
+    @NotNull
+    public ModStorage modStorage(@NotNull ModInfo mod) {
+        return this.modStorage.computeIfAbsent(mod.id(), e -> ModStorage.load(mod));
     }
 
     /**

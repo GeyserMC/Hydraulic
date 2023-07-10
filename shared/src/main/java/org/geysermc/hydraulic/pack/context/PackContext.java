@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceKey;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.hydraulic.storage.ModStorage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -34,6 +35,16 @@ public class PackContext<T extends PackModule<T>> {
     @NotNull
     public ModInfo mod() {
         return this.mod;
+    }
+
+    /**
+     * Gets the storage for the mod that owns this pack.
+     *
+     * @return the storage for the mod that owns this pack
+     */
+    @NotNull
+    public ModStorage storage() {
+        return this.hydraulic.modStorage(this.mod);
     }
 
     /**

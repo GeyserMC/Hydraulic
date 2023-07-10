@@ -28,20 +28,27 @@ import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBoundingBox;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.hydraulic.item.CreativeCategory;
+import org.geysermc.hydraulic.pack.ConvertablePackModule;
+import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
-import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
+import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.PackConversionContext;
-import org.geysermc.pack.converter.data.TextureConversionData;
+import org.geysermc.pack.converter.converter.model.ModelStitcher;
+import org.geysermc.pack.converter.converter.texture.TextureMappings;
+import org.geysermc.pack.converter.data.ModelConversionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.blockstate.MultiVariant;
 import team.unnamed.creative.blockstate.Variant;
 import team.unnamed.creative.model.Model;
+import team.unnamed.creative.model.ModelTexture;
+import team.unnamed.creative.model.ModelTextures;
 import team.unnamed.creative.texture.Texture;
 
 import java.util.ArrayList;
@@ -50,25 +57,59 @@ import java.util.List;
 import java.util.Map;
 
 @AutoService(PackModule.class)
-public class BlockPackModule extends TexturePackModule<BlockPackModule> {
+public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
     private static final Key UNIT_CUBE_KEY = Key.key("block/cube_all");
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
 
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
 
     public BlockPackModule() {
+        super(ModelConversionData.class);
+
         this.listenOn(GeyserDefineCustomBlocksEvent.class, this::onDefineCustomBlocks);
 
         this.preProcess(context -> {
-            ResourcePack pack = context.pack();
-            for (team.unnamed.creative.blockstate.BlockState blockState : pack.blockStates()) {
+            ResourcePack assets = context.pack();
+            for (team.unnamed.creative.blockstate.BlockState blockState : assets.blockStates()) {
                 this.blockStates.put(blockState.key().toString(), new StateDefinition(blockState, context.pack()));
+            }
+
+            ModStorage storage = context.storage();
+            if (storage.materials().materials().isEmpty()) {
+                ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, new PackLogListener(LOGGER));
+
+                Materials materials = new Materials();
+                for (Model model : assets.models()) {
+                    Model stitchedModel = new ModelStitcher(provider, model).stitch();
+                    if (stitchedModel == null) {
+                        LOGGER.warn("Could not find a stitched model for block {}", model.key());
+                        continue;
+                    }
+
+                    Map<String, String> textures = new HashMap<>();
+                    Map<String, ModelTexture> modelTextures = getTextures(model.textures());
+                    for (Map.Entry<String, ModelTexture> entry : modelTextures.entrySet()) {
+                        ModelTexture modelTexture = getModelTexture(modelTextures, entry.getKey());
+                        if (modelTexture == null || modelTexture.key() == null) {
+                            // LOGGER.warn("Could not find a texture for key {} in model {}", entry.getKey(), model.key());
+                            continue;
+                        }
+
+                        textures.put(entry.getKey(), modelTexture.key().toString());
+                    }
+
+                    Materials.Material material = new Materials.Material(textures);
+                    materials.addMaterial(model.key().toString(), material);
+                }
+
+                storage.materials(materials);
+                storage.save();
             }
         });
     }
 
     @Override
-    public void postConvert(PackConversionContext<TextureConversionData> packContext) {
+    public void postConvert(PackConversionContext<ModelConversionData> packContext) {
         ResourcePack assets = packContext.javaResourcePack();
         BedrockResourcePack bedrockPack = packContext.bedrockResourcePack();
 
@@ -121,12 +162,13 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
             List<CustomBlockPermutation> permutations = new ArrayList<>();
             CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                ModelDefinition definition = getModel(blockLocation, state);
+                ModelDefinition definition = getModel(context.mod(), blockLocation, state);
                 if (definition != null) {
-                    Key key = definition.model().key();
+                    Model model = definition.model();
+                    Key key = model.key();
 
                     CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
-                            .materialInstance("*", new MaterialInstance(getTextureFromModule(context, key), "alpha_test", true, definition.model().ambientOcclusion()))
+                            .materialInstance("*", new MaterialInstance(getTextureName(key.toString()), "alpha_test", true, model.ambientOcclusion()))
                             .transformation(new TransformationComponent(
                                     definition.variant().x(), // Rotation X
                                     definition.variant().y(), // Rotation Y
@@ -139,7 +181,7 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
                                     0 // Translation Z
                             ));
 
-                    if (!UNIT_CUBE_KEY.equals(definition.model().parent())) {
+                    if (!UNIT_CUBE_KEY.equals(model.parent())) {
                         String namespace = key.namespace();
                         String value = key.value();
 
@@ -149,6 +191,21 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
                         componentsBuilder.geometry("geometry." + geoName);
                     } else {
                         componentsBuilder.unitCube(true);
+                    }
+
+                    Materials materials = context.storage().materials();
+                    Materials.Material material = materials.material(model.key().toString());
+                    if (material != null) {
+                        for (Map.Entry<String, String> entry : material.textures().entrySet()) {
+                            baseComponentBuilder.materialInstance(entry.getKey(), new MaterialInstance(
+                                    getTextureName(entry.getValue()),
+                                    "alpha_test",
+                                    true,
+                                    model.ambientOcclusion()
+                            ));
+                        }
+                    } else {
+                        LOGGER.warn("Could not find material for block {}", model.key());
                     }
 
                     // No properties exist on this state, so there's only one
@@ -213,6 +270,7 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
                     default -> PistonBehavior.NORMAL;
                 };
 
+                CustomBlockState customBlockState = stateBuilder.build();
                 event.registerOverride(JavaBlockState.builder()
                                 .identifier(BlockStateParser.serialize(state))
                                 .javaId(Block.getId(state))
@@ -223,14 +281,14 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
                                 .stateGroupId(blockId)
                                 .pistonBehavior(pistonBehavior.name())
                                 .build(),
-                        stateBuilder.build()
+                        customBlockState
                 );
             }
         }
     }
 
     @Nullable
-    private ModelDefinition getModel(@NotNull ResourceLocation blockLocation, @NotNull BlockState state) {
+    private ModelDefinition getModel(@NotNull ModInfo mod, @NotNull ResourceLocation blockLocation, @NotNull BlockState state) {
         StateDefinition definition = this.blockStates.get(blockLocation.toString());
         if (definition == null) {
             LOGGER.warn("Missing blockstate for block {}", blockLocation);
@@ -265,16 +323,22 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
         return null;
     }
 
-    private static String toPropertyString(@NotNull BlockState state) {
-        StringBuilder builder = new StringBuilder();
-        for (Property<?> property : state.getProperties()) {
-            if (builder.length() > 0) {
-                builder.append(",");
+    private static String getTextureName(@NotNull String modelName) {
+        if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
+            String modelValue = modelName.split(":")[1];
+            String type = modelValue.substring(0, modelValue.indexOf("/"));
+            String value = modelValue.substring(modelValue.indexOf("/") + 1);
+
+            // Need to use the Bedrock value for vanilla textures
+            Map<String, String> textures = TextureMappings.textureMappings().textures(type);
+            if (textures != null) {
+                return textures.getOrDefault(value, value);
             }
-            builder.append(property.getName()).append("=").append(state.getValue(property));
+
+            return value;
         }
 
-        return builder.toString();
+        return modelName.replace("block/", "").replace("item/", "");
     }
 
     private static MultiVariant matchState(@NotNull BlockState state, @NotNull Map<String, MultiVariant> variants) {
@@ -301,5 +365,27 @@ public class BlockPackModule extends TexturePackModule<BlockPackModule> {
         }
 
         return null;
+    }
+
+    @Nullable
+    private static ModelTexture getModelTexture(@NotNull Map<String, ModelTexture> textures, @NotNull String key) {
+        // Texture references the value of another texture
+        ModelTexture value = textures.get(key);
+        if (value != null && value.reference() != null) {
+            return getModelTexture(textures, value.reference());
+        }
+
+        return value;
+    }
+
+    private static Map<String, ModelTexture> getTextures(@NotNull ModelTextures modelTextures) {
+        Map<String, ModelTexture> textures = new HashMap<>();
+        textures.putAll(modelTextures.variables());
+        textures.put("particle", modelTextures.particle());
+        for (int i = 0; i < modelTextures.layers().size(); i++) {
+            textures.put("layer" + i, modelTextures.layers().get(i));
+        }
+
+        return textures;
     }
 }

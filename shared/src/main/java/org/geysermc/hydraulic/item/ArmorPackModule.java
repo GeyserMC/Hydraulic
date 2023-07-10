@@ -34,7 +34,10 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
         ATTACHABLE_SCRIPTS.parentSetup("variable.chest_layer_visible = 0.0;");
     }
 
-    @Override
+    public ArmorPackModule() {
+        this.postProcess(this::postProcess);
+    }
+
     public void postProcess(@NotNull PackPostProcessContext<ArmorPackModule> context) {
         List<ArmorItem> armorItems = context.registryValues(Registries.ITEM).stream()
                 .filter(item -> item instanceof ArmorItem)

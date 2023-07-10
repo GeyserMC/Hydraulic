@@ -7,6 +7,7 @@ import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,5 +50,10 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
                         container.getMetadata().getIconPath(256).orElse("")
                 )
         ).orElse(null);
+    }
+
+    @Override
+    public @NotNull Path dataFolder(@NotNull String modId) {
+        return FabricLoader.getInstance().getConfigDir().resolve(modId);
     }
 }

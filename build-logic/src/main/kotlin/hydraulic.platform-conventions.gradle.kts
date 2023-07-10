@@ -39,5 +39,5 @@ dependencies {
 
     // Can't use the gradle libs feature here because
     // this is part of the composite build
-    implementation("com.github.GeyserMC:PackConverter:feature~refactor-SNAPSHOT")
+    implementation("com.github.GeyserMC:PackConverter:6626acb153")
 }

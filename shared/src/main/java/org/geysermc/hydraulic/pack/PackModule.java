@@ -2,8 +2,8 @@ package org.geysermc.hydraulic.pack;
 
 import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
-import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
+import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -35,18 +35,6 @@ public abstract class PackModule<T extends PackModule<T>> {
 
     private final List<Consumer<PackPreProcessContext<T>>> preProcessors = new ArrayList<>();
     private final List<Consumer<PackPostProcessContext<T>>> postProcessors = new ArrayList<>();
-
-    /**
-     * Called after all the pack modules have
-     * been called and the pack has been created.
-     * <p>
-     * This is where you should do any post-processing
-     * of the pack, such as adding any extra files
-     * or modifying existing ones.
-     *
-     * @param context the context of the pack
-     */
-    public abstract void postProcess(@NotNull PackPostProcessContext<T> context);
 
     /**
      * Adds a pre processor to this pack module.
@@ -110,8 +98,6 @@ public abstract class PackModule<T extends PackModule<T>> {
                 LOGGER.error("Error processing post processor {}", postProcessor, t);
             }
         }
-
-        this.postProcess(context);
     }
 
     Map<Class<? extends Event>, List<Consumer<PackEventContext<?, T>>>> eventListeners() {

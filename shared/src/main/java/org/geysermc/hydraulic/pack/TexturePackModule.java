@@ -14,10 +14,6 @@ public abstract class TexturePackModule<T extends PackModule<T>> extends Convert
         super(TextureConversionData.class);
     }
 
-    @Override
-    public final void postProcess(@NotNull PackPostProcessContext<T> context) {
-    }
-
     /**
      * Gets the output location of the given key.
      *
@@ -31,16 +27,5 @@ public abstract class TexturePackModule<T extends PackModule<T>> extends Convert
         String finalDir = DIRECTORY_LOCATIONS.getOrDefault(directory, directory) + "/" + packContext.mod().id();
 
         return String.format(Constants.BEDROCK_TEXTURE_LOCATION, finalDir + "/" + remaining);
-    }
-
-    /**
-     * Gets the texture name from the given model key.
-     *
-     * @param packContext the pack context
-     * @param key the key
-     * @return the texture
-     */
-    protected static <T extends PackModule<T>> String getTextureFromModule(@NotNull PackContext<T> packContext, @NotNull Key key) {
-        return key.toString().replace("block/", "");
     }
 }

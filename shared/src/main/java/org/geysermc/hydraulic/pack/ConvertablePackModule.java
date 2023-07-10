@@ -1,8 +1,5 @@
 package org.geysermc.hydraulic.pack;
 
-import net.kyori.adventure.key.Key;
-import org.apache.commons.lang3.StringUtils;
-import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.pack.converter.converter.ActionListener;
 import org.geysermc.pack.converter.data.ConversionData;
 import org.jetbrains.annotations.NotNull;

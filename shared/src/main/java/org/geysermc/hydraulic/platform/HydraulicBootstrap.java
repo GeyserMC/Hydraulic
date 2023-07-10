@@ -4,6 +4,7 @@ import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Path;
 import java.util.Set;
 
 /**
@@ -27,4 +28,12 @@ public interface HydraulicBootstrap {
      */
     @Nullable
     ModInfo mod(@NotNull String modName);
+
+    /**
+     * Gets the data folder directory of this platform.
+     *
+     * @return the data folder directory
+     */
+    @NotNull
+    Path dataFolder(@NotNull String modId);
 }
