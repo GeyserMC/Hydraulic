@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.item;
 
+import org.geysermc.geyser.api.util.CreativeCategory;
 import org.jetbrains.annotations.NotNull;
 
 /**

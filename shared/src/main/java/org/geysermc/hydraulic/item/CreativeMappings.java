@@ -2,6 +2,7 @@ package org.geysermc.hydraulic.item;
 
 import net.minecraft.world.item.*;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
+import org.geysermc.geyser.api.util.CreativeCategory;
 
 import java.util.HashMap;
 import java.util.Map;

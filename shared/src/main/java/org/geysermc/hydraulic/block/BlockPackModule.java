@@ -26,8 +26,8 @@ import org.geysermc.geyser.api.block.custom.component.TransformationComponent;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBlockState;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBoundingBox;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
+import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.level.physics.PistonBehavior;
-import org.geysermc.hydraulic.item.CreativeCategory;
 import org.geysermc.hydraulic.pack.ConvertablePackModule;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
@@ -145,7 +145,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     .name(blockLocation.getPath())
                     .includedInCreativeInventory(true)
                     .creativeGroup("itemGroup.name.items")
-                    .creativeCategory(CreativeCategory.ITEMS.internalName());
+                    .creativeCategory(CreativeCategory.ITEMS);
 
             for (Property<?> property : block.getStateDefinition().getProperties()) {
                 if (property instanceof IntegerProperty intProperty) {
@@ -168,7 +168,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     Key key = model.key();
 
                     CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
-                            .materialInstance("*", new MaterialInstance(getTextureName(key.toString()), "alpha_test", true, model.ambientOcclusion()))
+                            .materialInstance("*", MaterialInstance.builder()
+                                    .texture(getTextureName(key.toString()))
+                                    .renderMethod("alpha_test")
+                                    .faceDimming(true)
+                                    .ambientOcclusion(model.ambientOcclusion())
+                                    .build())
                             .transformation(new TransformationComponent(
                                     definition.variant().x(), // Rotation X
                                     definition.variant().y(), // Rotation Y
@@ -197,12 +202,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     Materials.Material material = materials.material(model.key().toString());
                     if (material != null) {
                         for (Map.Entry<String, String> entry : material.textures().entrySet()) {
-                            baseComponentBuilder.materialInstance(entry.getKey(), new MaterialInstance(
-                                    getTextureName(entry.getValue()),
-                                    "alpha_test",
-                                    true,
-                                    model.ambientOcclusion()
-                            ));
+                            baseComponentBuilder.materialInstance(entry.getKey(), MaterialInstance.builder()
+                                            .texture(getTextureName(entry.getValue()))
+                                            .renderMethod("alpha_test")
+                                            .faceDimming(true)
+                                            .ambientOcclusion(model.ambientOcclusion())
+                                    .build());
                         }
                     } else {
                         LOGGER.warn("Could not find material for block {}", model.key());
@@ -241,7 +246,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(BoxComponent.fullBox()) // TODO: Shapes
                     .collisionBox(BoxComponent.fullBox()) // TODO: Shapes
-                    .materialInstance("*", new MaterialInstance(blockLocation.toString(), "alpha_test", true, true));
+                    .materialInstance("*", MaterialInstance.builder()
+                            .texture(blockLocation.toString())
+                            .renderMethod("alpha_test")
+                            .faceDimming(true)
+                            .ambientOcclusion(true)
+                            .build());
 
             builder.components(componentsBuilder.build());
 
