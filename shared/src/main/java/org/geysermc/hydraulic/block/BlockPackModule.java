@@ -21,6 +21,7 @@ import org.geysermc.geyser.api.block.custom.CustomBlockState;
 import org.geysermc.geyser.api.block.custom.NonVanillaCustomBlockData;
 import org.geysermc.geyser.api.block.custom.component.BoxComponent;
 import org.geysermc.geyser.api.block.custom.component.CustomBlockComponents;
+import org.geysermc.geyser.api.block.custom.component.GeometryComponent;
 import org.geysermc.geyser.api.block.custom.component.MaterialInstance;
 import org.geysermc.geyser.api.block.custom.component.TransformationComponent;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBlockState;
@@ -141,8 +142,8 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         for (Block block : blocks) {
             ResourceLocation blockLocation = registry.getKey(block);
             CustomBlockData.Builder builder = NonVanillaCustomBlockData.builder()
-                    .identifier(blockLocation.toString())
                     .name(blockLocation.getPath())
+                    .namespace(blockLocation.getNamespace())
                     .includedInCreativeInventory(true)
                     .creativeGroup("itemGroup.name.items")
                     .creativeCategory(CreativeCategory.ITEMS);
@@ -193,7 +194,9 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                         String fileName = value.substring(value.lastIndexOf('/') + 1);
                         String geoName = (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + fileName;
 
-                        componentsBuilder.geometry("geometry." + geoName);
+                        componentsBuilder.geometry(GeometryComponent.builder()
+                                .identifier("geometry." + geoName)
+                                .build());
                     } else {
                         componentsBuilder.unitCube(true);
                     }
