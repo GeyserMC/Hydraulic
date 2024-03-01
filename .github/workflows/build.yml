@@ -47,14 +47,14 @@ jobs:
         if: success()
         with:
           name: Hydraulic Fabric
-          path: fabric/build/libs/Hydraulic-Fabric.jar
+          path: fabric/build/libs/hydraulic-fabric.jar
           if-no-files-found: error
       - name: Archive artifacts (Hydraulic NeoForge)
         uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
         if: success()
         with:
           name: Hydraulic NeoForge
-          path: neoforge/build/libs/Hydraulic-NeoForge.jar
+          path: neoforge/build/libs/hydraulic-neoforge.jar
           if-no-files-found: error
 
       - name: Publish to Downloads API
@@ -75,8 +75,8 @@ jobs:
           # Create the build folder
           ssh -o StrictHostKeyChecking=no -i id_ecdsa $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP mkdir -p "~/uploads/$project/$GITHUB_RUN_NUMBER/"
           # Copy over artifacts
-          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" fabric/build/libs/Geyser-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
-          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" neoforged/build/libs/Geyser-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
+          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" fabric/build/libs/hydraulic-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
+          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" neoforged/build/libs/hydraulic-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
           # Run the build script
           # Push the metadata
           echo "{\"project\": \"$project\", \"version\": \"$version\", \"id\": $GITHUB_RUN_NUMBER, \"commit\": \"$GITHUB_SHA\"}" > metadata.json
