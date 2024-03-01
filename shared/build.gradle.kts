@@ -11,16 +11,10 @@ repositories {
 
 dependencies {
     compileOnly(libs.mixin)
-    // compileOnly(libs.geyser.api)
-    // compileOnly(libs.geyser.core) {
-    //     exclude(group = "io.netty")
-    // }
-
-    // TODO: Remove this once custom block support
-    //       is merged into the master branch. This is
-    //       far from ideal, but is the easiest way to
-    //       get this working for the time being.
-    compileOnly(":Geyser-Fabric")
+     compileOnly(libs.geyser.api)
+     compileOnly(libs.geyser.core) {
+         exclude(group = "io.netty")
+     }
 
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)

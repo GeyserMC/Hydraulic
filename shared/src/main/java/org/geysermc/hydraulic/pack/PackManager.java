@@ -43,7 +43,8 @@ public class PackManager {
             "geyser-fabric",
             "geyser-forge",
             "floodgate",
-            "vanilla"
+            "vanilla",
+            "mixinextras"
     );
 
     private final HydraulicImpl hydraulic;
