@@ -1,8 +1,8 @@
 package org.geysermc.hydraulic.forge;
 
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.forge.platform.HydraulicForgeBootstrap;
@@ -12,10 +12,10 @@ import org.geysermc.hydraulic.platform.HydraulicPlatform;
 public class HydraulicForgeMod {
     private final HydraulicImpl hydraulic;
 
-    public HydraulicForgeMod() {
-        this.hydraulic = HydraulicImpl.load(HydraulicPlatform.FORGE, new HydraulicForgeBootstrap());
+    public HydraulicForgeMod(IEventBus modEventBus) {
+        this.hydraulic = HydraulicImpl.load(HydraulicPlatform.NEOFORGE, new HydraulicForgeBootstrap());
 
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onServerStarting);
+        modEventBus.addListener(this::onServerStarting);
     }
 
     private void onServerStarting(ServerStartingEvent event) {

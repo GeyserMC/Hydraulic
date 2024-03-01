@@ -21,6 +21,7 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
                     container.getMetadata().getVersion().getFriendlyString(),
                     container.getMetadata().getName(),
                     container.getRootPaths().get(0), // TODO: Multi-path support
+                    Path.of(container.getOrigin().toString()),
                     container.getMetadata().getIconPath(256).orElse("")
             )
         ).collect(Collectors.toUnmodifiableSet());
@@ -47,6 +48,7 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
                         container.getMetadata().getVersion().getFriendlyString(),
                         container.getMetadata().getName(),
                         container.getRootPaths().get(0), // TODO: Multi-path support
+                        Path.of(container.getOrigin().toString()),
                         container.getMetadata().getIconPath(256).orElse("")
                 )
         ).orElse(null);

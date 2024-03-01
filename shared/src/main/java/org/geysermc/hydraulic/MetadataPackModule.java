@@ -1,10 +1,8 @@
 package org.geysermc.hydraulic;
 
 import com.google.auto.service.AutoService;
-import org.geysermc.hydraulic.pack.ConvertablePackModule;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
-import org.geysermc.pack.converter.data.ModelConversionData;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -21,7 +19,7 @@ public class MetadataPackModule extends PackModule<MetadataPackModule> {
 
             // Generate the pack uuid from the mod file
             try {
-                context.pack().manifest().header().uuid(UUID.nameUUIDFromBytes(Files.readAllBytes(context.mod().modPath())).toString());
+                context.pack().manifest().header().uuid(UUID.nameUUIDFromBytes(Files.readAllBytes(context.mod().modFile())).toString());
             } catch (IOException ignored) { }
 
             // Copy the icon if it exists

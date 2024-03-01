@@ -83,7 +83,7 @@ public class PackListener {
         String packUUID = "";
 
         try {
-            modUUID = UUID.nameUUIDFromBytes(Files.readAllBytes(mod.modPath().getParent())).toString();
+            modUUID = UUID.nameUUIDFromBytes(Files.readAllBytes(mod.modFile())).toString();
         } catch (IOException e) {
             return true;
         }

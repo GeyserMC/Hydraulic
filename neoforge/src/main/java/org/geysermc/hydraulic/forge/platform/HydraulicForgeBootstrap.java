@@ -1,7 +1,7 @@
 package org.geysermc.hydraulic.forge.platform;
 
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLPaths;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +20,7 @@ public class HydraulicForgeBootstrap implements HydraulicBootstrap {
                         modInfo.getModId(),
                         modInfo.getVersion().toString(),
                         modInfo.getDisplayName(),
+                        modInfo.getOwningFile().getFile().getFilePath(), // Confirm this will work with the .resolve calls used
                         modInfo.getOwningFile().getFile().getFilePath(),
                         modInfo.getLogoFile().orElse("")
                 )
@@ -33,6 +34,7 @@ public class HydraulicForgeBootstrap implements HydraulicBootstrap {
                         container.getModId(),
                         container.getModInfo().getVersion().toString(),
                         container.getModInfo().getDisplayName(),
+                        container.getModInfo().getOwningFile().getFile().getFilePath(), // Confirm this will work with the .resolve calls used
                         container.getModInfo().getOwningFile().getFile().getFilePath(),
                         container.getModInfo().getLogoFile().orElse("")
                 )
