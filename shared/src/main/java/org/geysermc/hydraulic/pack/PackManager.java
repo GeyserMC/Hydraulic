@@ -19,7 +19,6 @@ import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.serialize.minecraft.MinecraftResourcePackReader;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -122,18 +121,6 @@ public class PackManager {
 
                 module.postProcess0(context);
             }
-
-            // Set the pack name and description
-            pack.manifest().header().name(mod.name().trim() + " Resource Pack");
-            pack.manifest().header().description("Resource pack for mod " + mod.name().trim());
-
-            // Copy the icon if it exists
-            // TODO Add a default icon?
-             if (!mod.iconPath().isEmpty()) {
-                 try {
-                     pack.icon(Files.readAllBytes(mod.modPath().resolve(mod.iconPath())));
-                 } catch (IOException ignored) { }
-             }
         });
 
         try {
@@ -142,6 +129,8 @@ public class PackManager {
             LOGGER.error("Failed to convert mod {} to pack", mod.id(), ex);
             return false;
         }
+
+        // TODO Ignore packs if they only have a manifest
 
         // Now export the pack
         try {
