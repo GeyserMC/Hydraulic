@@ -59,7 +59,8 @@ import java.util.Map;
 
 @AutoService(PackModule.class)
 public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
-    private static final Key UNIT_CUBE_KEY = Key.key("block/cube_all");
+    private static final Key UNIT_CUBE_ALL_KEY = Key.key("block/cube_all");
+    private static final Key UNIT_CUBE_KEY = Key.key("block/cube");
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
 
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
@@ -187,7 +188,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                                     0 // Translation Z
                             ));
 
-                    if (!UNIT_CUBE_KEY.equals(model.parent())) {
+                    if (!isUnitCube(model.parent())) {
                         String namespace = key.namespace();
                         String value = key.value();
 
@@ -425,5 +426,9 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         }
 
         return textures;
+    }
+
+    private boolean isUnitCube(Key parent) {
+        return parent.equals(UNIT_CUBE_ALL_KEY) || parent.equals(UNIT_CUBE_KEY);
     }
 }
