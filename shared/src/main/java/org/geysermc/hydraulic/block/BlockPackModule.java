@@ -250,13 +250,36 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     .destructibleByMining(block.defaultDestroyTime()) // TODO: Check
                     // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(BoxComponent.fullBox()) // TODO: Shapes
-                    .collisionBox(BoxComponent.fullBox()) // TODO: Shapes
-                    .materialInstance("*", MaterialInstance.builder()
-                            .texture(blockLocation.toString())
-                            .renderMethod("alpha_test")
-                            .faceDimming(true)
-                            .ambientOcclusion(true)
-                            .build());
+                    .collisionBox(BoxComponent.fullBox()); // TODO: Shapes
+
+
+            // TODO Clean this up as its duplicated code
+            Materials materials = context.storage().materials();
+            Materials.Material material = materials.material(blockLocation.toString().replace(":", ":block/"));
+            if (material != null) {
+                for (Map.Entry<String, String> entry : material.textures().entrySet()) {
+                    String key = entry.getKey();
+
+                    // Bedrock uses "*" for the particle texture
+                    if ("particle".equals(key)) {
+                        key = "*";
+                    }
+
+                    baseComponentBuilder.materialInstance(key, MaterialInstance.builder()
+                        .texture(getTextureName(entry.getValue()))
+                        .renderMethod("alpha_test")
+                        .faceDimming(true)
+                        .ambientOcclusion(true)
+                        .build());
+                }
+            } else {
+                componentsBuilder = componentsBuilder.materialInstance("*", MaterialInstance.builder()
+                    .texture(blockLocation.toString())
+                    .renderMethod("alpha_test")
+                    .faceDimming(true)
+                    .ambientOcclusion(true)
+                    .build());
+            }
 
             builder.components(componentsBuilder.build());
 
