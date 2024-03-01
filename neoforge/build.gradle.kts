@@ -9,6 +9,13 @@ architectury {
 }
 
 dependencies {
+    // See https://github.com/google/guava/issues/6618
+    modules {
+        module("com.google.guava:listenablefuture") {
+            replacedBy("com.google.guava:guava", "listenablefuture is part of guava")
+        }
+    }
+
     neoForge("net.neoforged:neoforge:${neoforgeVersion}")
     api(project(path = ":shared", configuration = "namedElements"))
     shadow(project(path = ":shared", configuration = "transformProductionNeoForge")) {
