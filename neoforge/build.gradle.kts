@@ -1,23 +1,17 @@
 val modId = project.property("mod_id") as String
 
 val minecraftVersion = project.property("minecraft_version") as String
-val forgeVersion = project.property("forge_version") as String
+val neoforgeVersion = project.property("neoforge_version") as String
 
 architectury {
     platformSetupLoomIde()
-    forge()
-}
-
-loom {
-    forge {
-        mixinConfig("hydraulic.mixins.json")
-    }
+    neoForge()
 }
 
 dependencies {
-    forge("net.minecraftforge:forge:${minecraftVersion}-${forgeVersion}")
+    neoForge("net.neoforged:neoforge:${neoforgeVersion}")
     api(project(path = ":shared", configuration = "namedElements"))
-    shadow(project(path = ":shared", configuration = "transformProductionForge")) {
+    shadow(project(path = ":shared", configuration = "transformProductionNeoForge")) {
         isTransitive = false
     }
 
@@ -31,7 +25,7 @@ tasks {
     remapJar {
         dependsOn(shadowJar)
         inputFile.set(shadowJar.get().archiveFile)
-        archiveBaseName.set("${modId}-forge-${minecraftVersion}")
+        archiveBaseName.set("${modId}-neoforge-${minecraftVersion}")
         archiveClassifier.set("")
         archiveVersion.set("")
     }

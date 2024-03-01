@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[47,)"
+loaderVersion="[1,)"
 license="MIT"
 [[mods]]
 modId="hydraulic"
@@ -8,15 +8,17 @@ displayName="Hydraulic"
 logoFile="hydraulic.png"
 authors="GeyserMC"
 description='''${description}'''
+[[mixins]]
+config = "hydraulic.mixins.json"
 [[dependencies.hydraulic]]
-    modId="forge"
-    mandatory=true
-    versionRange="[47,)"
+    modId="neoforge"
+    type="required"
+    versionRange="[20.4.48-beta,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.hydraulic]]
     modId="minecraft"
-    mandatory=true
+    type="required"
     versionRange="[1.20,1.21)"
     ordering="NONE"
     side="BOTH"

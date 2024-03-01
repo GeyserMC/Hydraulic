@@ -2,7 +2,7 @@ package org.geysermc.hydraulic.platform;
 
 public enum HydraulicPlatform {
     FABRIC("Fabric"),
-    FORGE("Forge");
+    NEOFORGE("NeoForge");
 
     private final String platformName;
 

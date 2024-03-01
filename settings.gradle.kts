@@ -22,8 +22,8 @@ dependencyResolutionManagement {
         // Architectury
         maven("https://maven.architectury.dev/")
 
-        // Forge
-        maven("https://maven.minecraftforge.net/")
+        // NeoForge
+        maven("https://maven.neoforged.net/releases")
 
         // Fabric
         maven("https://maven.fabricmc.net/")
@@ -55,7 +55,7 @@ pluginManagement {
         }
 
         maven("https://maven.architectury.dev/")
-        maven("https://maven.minecraftforge.net/")
+        maven("https://maven.neoforged.net/releases")
         maven("https://maven.fabricmc.net/")
     }
 
@@ -72,4 +72,4 @@ rootProject.name = "hydraulic-parent"
 
 include(":shared")
 include(":fabric")
-include(":forge")
+include(":neoforge")
