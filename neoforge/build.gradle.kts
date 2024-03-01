@@ -32,7 +32,7 @@ tasks {
     remapJar {
         dependsOn(shadowJar)
         inputFile.set(shadowJar.get().archiveFile)
-        archiveBaseName.set("${modId}-neoforge-${minecraftVersion}")
+        archiveBaseName.set("${modId}-neoforge")
         archiveClassifier.set("")
         archiveVersion.set("")
     }

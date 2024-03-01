@@ -1,0 +1,83 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '.github/ISSUE_TEMPLATE/*.yml'
+      - '.github/actions/pullrequest.yml'
+      - '.idea/copyright/*.xml' 
+      - '.gitignore'
+      - 'CONTRIBUTING.md'
+      - 'LICENSE'
+      - 'Jenkinsfile '
+      - 'README.md'
+      - 'licenseheader.txt'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository and submodules
+        # See https://github.com/actions/checkout/commits
+        uses: actions/checkout@72f2cec99f417b1a1c5e2e88945068983b7965f9
+        with:
+          submodules: recursive
+
+      - name: Validate Gradle Wrapper
+        # See https://github.com/gradle/wrapper-validation-action/commits
+        uses: gradle/wrapper-validation-action@56b90f209b02bf6d1deae490e9ef18b21a389cd4
+
+        # See https://github.com/actions/setup-java/commits
+      - uses: actions/setup-java@4075bfc1b51bf22876335ae1cd589602d60d8758
+        with:
+          java-version: 17
+          distribution: temurin
+          
+      - name: Build
+        # See https://github.com/gradle/gradle-build-action/commits
+        uses: gradle/gradle-build-action@3bfe3a46584a206fb8361cdedd0647b0c4204232
+        with:
+          arguments: build
+          gradle-home-cache-cleanup: true
+          
+      - name: Archive artifacts (Hydraulic Fabric)
+        # See https://github.com/actions/upload-artifact/commits
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
+        if: success()
+        with:
+          name: Hydraulic Fabric
+          path: fabric/build/libs/Hydraulic-Fabric.jar
+          if-no-files-found: error
+      - name: Archive artifacts (Hydraulic NeoForge)
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
+        if: success()
+        with:
+          name: Hydraulic NeoForge
+          path: neoforge/build/libs/Hydraulic-NeoForge.jar
+          if-no-files-found: error
+
+      - name: Publish to Downloads API
+        if: ${{ success() && github.repository == 'GeyserMC/Hydraulic' && github.ref_name == 'master' }}
+        shell: bash
+        env:
+          DOWNLOADS_USERNAME: ${{ vars.DOWNLOADS_USERNAME }}
+          DOWNLOADS_PRIVATE_KEY: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
+          DOWNLOADS_SERVER_IP: ${{ secrets.DOWNLOADS_SERVER_IP }}
+        run: |
+          # Save the private key to a file
+          echo "$DOWNLOADS_PRIVATE_KEY" > id_ecdsa
+          chmod 600 id_ecdsa
+          # Set the project
+          project=hydraulic
+          # Get the version from gradle.properties
+          version=$(cat gradle.properties | grep -o "^version=[0-9\\.]*" | cut -d"=" -f2)
+          # Create the build folder
+          ssh -o StrictHostKeyChecking=no -i id_ecdsa $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP mkdir -p "~/uploads/$project/$GITHUB_RUN_NUMBER/"
+          # Copy over artifacts
+          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" fabric/build/libs/Geyser-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
+          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" neoforged/build/libs/Geyser-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
+          # Run the build script
+          # Push the metadata
+          echo "{\"project\": \"$project\", \"version\": \"$version\", \"id\": $GITHUB_RUN_NUMBER, \"commit\": \"$GITHUB_SHA\"}" > metadata.json
+          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" metadata.json $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/

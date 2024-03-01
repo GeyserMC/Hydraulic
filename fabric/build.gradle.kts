@@ -27,7 +27,7 @@ tasks {
     remapJar {
         dependsOn(shadowJar)
         inputFile.set(shadowJar.get().archiveFile)
-        archiveBaseName.set("${modId}-fabric-${minecraftVersion}")
+        archiveBaseName.set("${modId}-fabric")
         archiveClassifier.set("")
         archiveVersion.set("")
     }
