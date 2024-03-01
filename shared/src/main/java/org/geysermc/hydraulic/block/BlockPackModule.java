@@ -198,7 +198,9 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                                 .identifier("geometry." + geoName)
                                 .build());
                     } else {
-                        componentsBuilder.unitCube(true);
+                        componentsBuilder.geometry(GeometryComponent.builder()
+                            .identifier("minecraft:geometry.full_block")
+                            .build());
                     }
 
                     Materials materials = context.storage().materials();
