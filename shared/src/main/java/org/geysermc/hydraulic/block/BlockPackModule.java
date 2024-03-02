@@ -369,18 +369,22 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
             String modelValue = modelName.split(":")[1];
 
-            return modelValue.replace("block/", "").replace("item/", "");
+            String type = modelValue.substring(0, modelValue.indexOf("/"));
+            String value = modelValue.substring(modelValue.indexOf("/") + 1);
 
-//            String type = modelValue.substring(0, modelValue.indexOf("/"));
-//            String value = modelValue.substring(modelValue.indexOf("/") + 1);
-//
-//            // Need to use the Bedrock value for vanilla textures
-//            Map<String, String> textures = TextureMappings.textureMappings().textures(type);
-//            if (textures != null) {
-//                return textures.getOrDefault(value, value);
-//            }
-//
-//            return value;
+            // Need to use the Bedrock value for vanilla textures
+            Map<String, String> textures = TextureMappings.textureMappings().textures(type);
+            if (textures != null) {
+                String textureName = textures.getOrDefault(value, "");
+                if (textureName.isEmpty()) {
+                    textureName = value;
+                } else {
+                    textureName = "hydraulic:" + textureName;
+                }
+                return textureName;
+            }
+
+            return value;
         }
 
         return modelName.replace("block/", "").replace("item/", "");

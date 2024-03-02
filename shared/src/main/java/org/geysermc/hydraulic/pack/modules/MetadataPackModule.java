@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic;
+package org.geysermc.hydraulic.pack.modules;
 
 import com.google.auto.service.AutoService;
 import org.geysermc.hydraulic.pack.PackModule;
@@ -23,7 +23,7 @@ public class MetadataPackModule extends PackModule<MetadataPackModule> {
             } catch (IOException ignored) { }
 
             // Copy the icon if it exists
-            // TODO Add a default icon?
+            // TODO Add a default icon, without there is just a purple and black square
             if (!context.mod().iconPath().isEmpty()) {
                 try {
                     context.pack().icon(Files.readAllBytes(context.mod().modPath().resolve(context.mod().iconPath())));

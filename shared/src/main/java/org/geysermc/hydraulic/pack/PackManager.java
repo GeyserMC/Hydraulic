@@ -38,7 +38,6 @@ public class PackManager {
     static final Set<String> IGNORED_MODS = Set.of(
             "minecraft",
             "java",
-            "hydraulic",
             "geyser-fabric",
             "geyser-forge",
             "floodgate",
