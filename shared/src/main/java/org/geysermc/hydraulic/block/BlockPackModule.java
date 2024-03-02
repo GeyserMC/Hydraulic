@@ -429,6 +429,6 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
     }
 
     private boolean isUnitCube(Key parent) {
-        return parent.equals(UNIT_CUBE_ALL_KEY) || parent.equals(UNIT_CUBE_KEY);
+        return UNIT_CUBE_ALL_KEY.equals(parent) || UNIT_CUBE_KEY.equals(parent);
     }
 }
