@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.forge.platform;
+package org.geysermc.hydraulic.neoforge.platform;
 
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class HydraulicForgeBootstrap implements HydraulicBootstrap {
+public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
 
     @Override
     public @NotNull Set<ModInfo> mods() {
