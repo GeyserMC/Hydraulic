@@ -2,13 +2,6 @@ architectury {
     common("neoforge", "fabric")
 }
 
-repositories {
-    // TODO: Remove (Temp code)
-    flatDir {
-        dirs(rootDir.path + "/libs")
-    }
-}
-
 dependencies {
     compileOnly(libs.mixin)
      compileOnly(libs.geyser.api)
