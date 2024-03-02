@@ -59,8 +59,6 @@ import java.util.Map;
 
 @AutoService(PackModule.class)
 public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
-    private static final Key UNIT_CUBE_ALL_KEY = Key.key("block/cube_all");
-    private static final Key UNIT_CUBE_KEY = Key.key("block/cube");
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
 
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
@@ -161,6 +159,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 }
             }
 
+
             List<CustomBlockPermutation> permutations = new ArrayList<>();
             CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
@@ -170,12 +169,6 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     Key key = model.key();
 
                     CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
-                            .materialInstance("*", MaterialInstance.builder()
-                                    .texture(getTextureName(key.toString()))
-                                    .renderMethod("alpha_test")
-                                    .faceDimming(true)
-                                    .ambientOcclusion(model.ambientOcclusion())
-                                    .build())
                             .transformation(new TransformationComponent(
                                     definition.variant().x(), // Rotation X
                                     definition.variant().y(), // Rotation Y
@@ -204,19 +197,58 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                             .build());
                     }
 
+
                     Materials materials = context.storage().materials();
-                    Materials.Material material = materials.material(model.key().toString());
+                    Materials.Material material = materials.material(key.toString());
                     if (material != null) {
-                        for (Map.Entry<String, String> entry : material.textures().entrySet()) {
-                            baseComponentBuilder.materialInstance(entry.getKey(), MaterialInstance.builder()
-                                            .texture(getTextureName(entry.getValue()))
-                                            .renderMethod("alpha_test")
-                                            .faceDimming(true)
-                                            .ambientOcclusion(model.ambientOcclusion())
+                        // Add a default texture, can be replaced by the below (I think)
+                        Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
+                        componentsBuilder.materialInstance("*", MaterialInstance.builder()
+                            .texture(getTextureName(firstEntry.getValue()))
+                            .renderMethod("alpha_test")
+                            .faceDimming(true)
+                            .ambientOcclusion(model.ambientOcclusion())
+                            .build());
+
+                        Map<String, String> faceMapping = getFaceMapping(model.parent());
+                        if (!faceMapping.isEmpty()) {
+                            for (Map.Entry<String, String> face : faceMapping.entrySet()) {
+                                if (!material.textures().containsKey(face.getValue())) continue;
+
+                                String textureName = material.textures().get(face.getValue());
+
+                                componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
+                                    .texture(getTextureName(textureName))
+                                    .renderMethod("alpha_test")
+                                    .faceDimming(true)
+                                    .ambientOcclusion(model.ambientOcclusion())
                                     .build());
+                            }
+                        } else {
+                            for (Map.Entry<String, String> entry : material.textures().entrySet()) {
+                                String materialKey = entry.getKey();
+
+                                // Bedrock uses "*" for the particle texture
+                                if ("particle".equals(materialKey)) {
+                                    materialKey = "*";
+                                }
+
+                                componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
+                                    .texture(getTextureName(entry.getValue()))
+                                    .renderMethod("alpha_test")
+                                    .faceDimming(true)
+                                    .ambientOcclusion(model.ambientOcclusion())
+                                    .build());
+                            }
                         }
                     } else {
-                        LOGGER.warn("Could not find material for block {}", model.key());
+                        componentsBuilder.materialInstance("*", MaterialInstance.builder()
+                            .texture(getTextureName(key.toString()))
+                            .renderMethod("alpha_test")
+                            .faceDimming(true)
+                            .ambientOcclusion(model.ambientOcclusion())
+                            .build());
+                        LOGGER.warn("Could not find material for block {}", key);
                     }
 
                     // No properties exist on this state, so there's only one
@@ -252,35 +284,6 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(BoxComponent.fullBox()) // TODO: Shapes
                     .collisionBox(BoxComponent.fullBox()); // TODO: Shapes
-
-
-            // TODO Clean this up as its duplicated code
-            Materials materials = context.storage().materials();
-            Materials.Material material = materials.material(blockLocation.toString().replace(":", ":block/"));
-            if (material != null) {
-                for (Map.Entry<String, String> entry : material.textures().entrySet()) {
-                    String key = entry.getKey();
-
-                    // Bedrock uses "*" for the particle texture
-                    if ("particle".equals(key)) {
-                        key = "*";
-                    }
-
-                    baseComponentBuilder.materialInstance(key, MaterialInstance.builder()
-                        .texture(getTextureName(entry.getValue()))
-                        .renderMethod("alpha_test")
-                        .faceDimming(true)
-                        .ambientOcclusion(true)
-                        .build());
-                }
-            } else {
-                componentsBuilder = componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                    .texture(blockLocation.toString())
-                    .renderMethod("alpha_test")
-                    .faceDimming(true)
-                    .ambientOcclusion(true)
-                    .build());
-            }
 
             builder.components(componentsBuilder.build());
 
@@ -365,16 +368,19 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
     private static String getTextureName(@NotNull String modelName) {
         if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
             String modelValue = modelName.split(":")[1];
-            String type = modelValue.substring(0, modelValue.indexOf("/"));
-            String value = modelValue.substring(modelValue.indexOf("/") + 1);
 
-            // Need to use the Bedrock value for vanilla textures
-            Map<String, String> textures = TextureMappings.textureMappings().textures(type);
-            if (textures != null) {
-                return textures.getOrDefault(value, value);
-            }
+            return modelValue.replace("block/", "").replace("item/", "");
 
-            return value;
+//            String type = modelValue.substring(0, modelValue.indexOf("/"));
+//            String value = modelValue.substring(modelValue.indexOf("/") + 1);
+//
+//            // Need to use the Bedrock value for vanilla textures
+//            Map<String, String> textures = TextureMappings.textureMappings().textures(type);
+//            if (textures != null) {
+//                return textures.getOrDefault(value, value);
+//            }
+//
+//            return value;
         }
 
         return modelName.replace("block/", "").replace("item/", "");
@@ -429,6 +435,56 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
     }
 
     private boolean isUnitCube(Key parent) {
-        return UNIT_CUBE_ALL_KEY.equals(parent) || UNIT_CUBE_KEY.equals(parent);
+        if (parent == null) {
+            return false;
+        }
+        return parent.namespace().equals("minecraft") && parent.value().startsWith("block/cube");
+    }
+
+    private Map<String, String> getFaceMapping(Key parent) {
+        // Destination <- Source
+        Map<String, String> mapping = new HashMap<>();
+//        {{
+//            put("*", "particle");
+//            put("up", "up");
+//            put("down", "down");
+//            put("north", "north");
+//            put("south", "south");
+//            put("west", "west");
+//            put("east", "east");
+//        }};
+
+        // No parent, so return empty
+        if (parent == null) {
+            return mapping;
+        }
+
+        if ("block/cube_all".equals(parent.value())) {
+            mapping.put("*", "all");
+            mapping.put("up", "all");
+            mapping.put("down", "all");
+            mapping.put("north", "all");
+            mapping.put("south", "all");
+            mapping.put("west", "all");
+            mapping.put("east", "all");
+        } else if ("block/cube_bottom_top".equals(parent.value())) {
+            mapping.put("*", "side");
+            mapping.put("up", "top");
+            mapping.put("down", "bottom");
+            mapping.put("north", "side");
+            mapping.put("south", "side");
+            mapping.put("west", "side");
+            mapping.put("east", "side");
+        } else if ("block/cube_column".equals(parent.value())) {
+            mapping.put("*", "side");
+            mapping.put("up", "end");
+            mapping.put("down", "end");
+            mapping.put("north", "side");
+            mapping.put("south", "side");
+            mapping.put("west", "side");
+            mapping.put("east", "side");
+        }
+
+        return mapping;
     }
 }
