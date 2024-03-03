@@ -6,6 +6,7 @@ import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.PackConverter;
 import org.jetbrains.annotations.NotNull;
+import team.unnamed.creative.ResourcePack;
 
 import java.nio.file.Path;
 
@@ -17,14 +18,18 @@ import java.nio.file.Path;
  */
 public class PackPostProcessContext<T extends PackModule<T>> extends PackContext<T> {
     private final PackConverter converter;
-    private final BedrockResourcePack pack;
+    private final ResourcePack javaPack;
+    private final BedrockResourcePack bedrockPack;
     private final Path path;
 
-    public PackPostProcessContext(@NotNull HydraulicImpl hydraulic, @NotNull ModInfo mod, @NotNull T module, @NotNull PackConverter converter, @NotNull BedrockResourcePack pack, @NotNull Path path) {
+    public PackPostProcessContext(@NotNull HydraulicImpl hydraulic, @NotNull ModInfo mod, @NotNull T module,
+                                  @NotNull PackConverter converter, @NotNull ResourcePack javaPack,
+                                  @NotNull BedrockResourcePack bedrockPack, @NotNull Path path) {
         super(hydraulic, mod, module);
 
         this.converter = converter;
-        this.pack = pack;
+        this.javaPack = javaPack;
+        this.bedrockPack = bedrockPack;
         this.path = path;
     }
 
@@ -39,13 +44,23 @@ public class PackPostProcessContext<T extends PackModule<T>> extends PackContext
     }
 
     /**
-     * Gets the pack.
+     * Gets the Java pack.
      *
-     * @return the pack
+     * @return the Java pack
      */
     @NotNull
-    public BedrockResourcePack pack() {
-        return this.pack;
+    public ResourcePack javaResourcePack() {
+        return this.javaPack;
+    }
+
+    /**
+     * Gets the Bedrock pack.
+     *
+     * @return the Bedrock pack
+     */
+    @NotNull
+    public BedrockResourcePack bedrockResourcePack() {
+        return this.bedrockPack;
     }
 
     /**

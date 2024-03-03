@@ -38,7 +38,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
         this.postProcess(this::postProcess);
     }
 
-    public void postProcess(@NotNull PackPostProcessContext<ArmorPackModule> context) {
+    private void postProcess(@NotNull PackPostProcessContext<ArmorPackModule> context) {
         List<ArmorItem> armorItems = context.registryValues(Registries.ITEM).stream()
                 .filter(item -> item instanceof ArmorItem)
                 .map(item -> (ArmorItem) item)
@@ -82,7 +82,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             attachable.description(description);
             armorAttachable.attachable(attachable);
 
-            context.pack().addAttachable(armorAttachable, "attachables/" + armorItemLocation.getPath() + ".json");
+            context.bedrockResourcePack().addAttachable(armorAttachable, "attachables/" + armorItemLocation.getPath() + ".json");
         }
     }
 

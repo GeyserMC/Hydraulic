@@ -14,7 +14,7 @@ public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
         this.postProcess(context -> {
             // Map all textures files as valid names
             for (Map.Entry<String, String> entry : TextureMappings.textureMappings().textures("block").entrySet()) {
-                context.pack().addBlockTexture("hydraulic:" + entry.getValue(), "textures/blocks/" + entry.getValue());
+                context.bedrockResourcePack().addBlockTexture("hydraulic:" + entry.getValue(), "textures/blocks/" + entry.getValue());
             }
         });
     }

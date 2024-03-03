@@ -6,17 +6,27 @@ import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ShearsItem;
+import net.minecraft.world.item.ShovelItem;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.Tiers;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import org.geysermc.geyser.api.util.CreativeCategory;
+import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
-import org.geysermc.pack.converter.PackConversionContext;
-import org.geysermc.pack.converter.data.TextureConversionData;
+import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
 import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.model.Model;
@@ -29,38 +39,39 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     public ItemPackModule() {
         this.listenOn(GeyserDefineCustomItemsEvent.class, ItemPackModule::onDefineCustomItems);
+
+        this.postProcess(this::postProcess);
     }
 
-    @Override
-    public void postConvert(PackConversionContext<TextureConversionData> packContext) {
-        ResourcePack assets = packContext.javaResourcePack();
-        BedrockResourcePack bedrockPack = packContext.bedrockResourcePack();
+    private void postProcess(@NotNull PackPostProcessContext<ItemPackModule> context) {
+        ResourcePack assets = context.javaResourcePack();
+        BedrockResourcePack bedrockPack = context.bedrockResourcePack();
 
-        this.postProcess(context -> {
-            List<Item> items = context.registryValues(Registries.ITEM);
+        List<Item> items = context.registryValues(Registries.ITEM);
 
-            LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod().id());
+        LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod().id());
 
-            for (Item item : items) {
-                ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
+        ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, new PackLogListener(LOGGER));
+        for (Item item : items) {
+            ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
-                Model model = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
-                if (model == null || model.textures() == null) {
-                    LOGGER.warn("Item {} has no model, skipping", itemLocation);
-                    continue;
-                }
-
-                List<ModelTexture> layers = model.textures().layers();
-                if (layers == null || layers.isEmpty()) {
-                    LOGGER.warn("Item {} has no layer0 texture, skipping", itemLocation);
-                    continue;
-                }
-
-                ModelTexture layer0 = layers.get(0);
-                String outputLoc = getOutputFromModel(context, layer0.key());
-                bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
+            Model baseModel = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
+            Model model = new ModelStitcher(provider, baseModel).stitch();
+            if (model == null || model.textures() == null) {
+                LOGGER.warn("Item {} has no item model, skipping", itemLocation);
+                continue;
             }
-        });
+
+            List<ModelTexture> layers = model.textures().layers();
+            if (layers == null || layers.isEmpty()) {
+                LOGGER.warn("Item {} has no layer0 texture, skipping", itemLocation);
+                continue;
+            }
+
+            ModelTexture layer0 = layers.get(0);
+            String outputLoc = getOutputFromModel(context, layer0.key());
+            bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
+        }
     }
 
     @Override

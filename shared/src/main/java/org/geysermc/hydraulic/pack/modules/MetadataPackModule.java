@@ -14,19 +14,19 @@ public class MetadataPackModule extends PackModule<MetadataPackModule> {
     public MetadataPackModule() {
         this.postProcess(context -> {
             // Set the pack name and description
-            context.pack().manifest().header().name(context.mod().name().trim() + " Resource Pack");
-            context.pack().manifest().header().description("Resource pack for mod " + context.mod().name().trim());
+            context.bedrockResourcePack().manifest().header().name(context.mod().name().trim() + " Resource Pack");
+            context.bedrockResourcePack().manifest().header().description("Resource pack for mod " + context.mod().name().trim());
 
             // Generate the pack uuid from the mod file
             try {
-                context.pack().manifest().header().uuid(UUID.nameUUIDFromBytes(Files.readAllBytes(context.mod().modFile())).toString());
+                context.bedrockResourcePack().manifest().header().uuid(UUID.nameUUIDFromBytes(Files.readAllBytes(context.mod().modFile())).toString());
             } catch (IOException ignored) { }
 
             // Copy the icon if it exists
             // TODO Add a default icon, without there is just a purple and black square
             if (!context.mod().iconPath().isEmpty()) {
                 try {
-                    context.pack().icon(Files.readAllBytes(context.mod().modPath().resolve(context.mod().iconPath())));
+                    context.bedrockResourcePack().icon(Files.readAllBytes(context.mod().modPath().resolve(context.mod().iconPath())));
                 } catch (IOException ignored) { }
             }
         });

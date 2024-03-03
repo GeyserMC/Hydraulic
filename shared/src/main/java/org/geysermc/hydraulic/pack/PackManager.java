@@ -4,8 +4,8 @@ import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.hydraulic.HydraulicImpl;
-import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
+import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.converter.PackConverter;
@@ -111,9 +111,9 @@ public class PackManager {
         }
 
         converter.actionListeners(actionListeners);
-        converter.postProcessor(pack -> {
+        converter.postProcessor((javaPack, bedrockPack) -> {
             for (PackModule<?> module : this.modules) {
-                PackPostProcessContext context = new PackPostProcessContext(this.hydraulic, mod, module, converter, pack, packPath);
+                PackPostProcessContext context = new PackPostProcessContext(this.hydraulic, mod, module, converter, javaPack, bedrockPack, packPath);
                 if (!module.test(context)) {
                     continue;
                 }

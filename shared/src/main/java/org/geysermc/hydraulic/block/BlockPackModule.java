@@ -3,11 +3,14 @@ package org.geysermc.hydraulic.block;
 import com.google.auto.service.AutoService;
 import net.kyori.adventure.key.Key;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -15,6 +18,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.api.block.custom.CustomBlockPermutation;
 import org.geysermc.geyser.api.block.custom.CustomBlockState;
@@ -34,11 +39,12 @@ import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
+import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.Constants;
+import org.geysermc.hydraulic.util.SingletonBlockGetter;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
-import org.geysermc.pack.converter.PackConversionContext;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.geysermc.pack.converter.converter.texture.TextureMappings;
 import org.geysermc.pack.converter.data.ModelConversionData;
@@ -61,6 +67,9 @@ import java.util.Map;
 public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
 
+    private static final float BOX_SCALE = 16.0F;
+    private static final float BOX_ORIGIN_OFFSET = 8.0F;
+
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
 
     public BlockPackModule() {
@@ -68,64 +77,64 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
         this.listenOn(GeyserDefineCustomBlocksEvent.class, this::onDefineCustomBlocks);
 
-        this.preProcess(context -> {
-            ResourcePack assets = context.pack();
-            for (team.unnamed.creative.blockstate.BlockState blockState : assets.blockStates()) {
-                this.blockStates.put(blockState.key().toString(), new StateDefinition(blockState, context.pack()));
-            }
+        this.preProcess(this::preProcess);
+        this.postProcess(this::postProcess);
+    }
 
-            ModStorage storage = context.storage();
-            if (storage.materials().materials().isEmpty()) {
-                ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, new PackLogListener(LOGGER));
+    private void preProcess(@NotNull PackPreProcessContext<BlockPackModule> context) {
+        ResourcePack assets = context.pack();
+        for (team.unnamed.creative.blockstate.BlockState blockState : assets.blockStates()) {
+            this.blockStates.put(blockState.key().toString(), new StateDefinition(blockState, context.pack()));
+        }
 
-                Materials materials = new Materials();
-                for (Model model : assets.models()) {
-                    Model stitchedModel = new ModelStitcher(provider, model).stitch();
-                    if (stitchedModel == null) {
-                        LOGGER.warn("Could not find a stitched model for block {}", model.key());
+        ModStorage storage = context.storage();
+        if (storage.materials().materials().isEmpty()) {
+            ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, new PackLogListener(LOGGER));
+
+            Materials materials = new Materials();
+            for (Model model : assets.models()) {
+                Model stitchedModel = new ModelStitcher(provider, model).stitch();
+                if (stitchedModel == null) {
+                    LOGGER.warn("Could not find a stitched model for block {}", model.key());
+                    continue;
+                }
+
+                Map<String, String> textures = new HashMap<>();
+                Map<String, ModelTexture> modelTextures = getTextures(model.textures());
+                for (Map.Entry<String, ModelTexture> entry : modelTextures.entrySet()) {
+                    ModelTexture modelTexture = getModelTexture(modelTextures, entry.getKey());
+                    if (modelTexture == null || modelTexture.key() == null) {
+                        // LOGGER.warn("Could not find a texture for key {} in model {}", entry.getKey(), model.key());
                         continue;
                     }
 
-                    Map<String, String> textures = new HashMap<>();
-                    Map<String, ModelTexture> modelTextures = getTextures(model.textures());
-                    for (Map.Entry<String, ModelTexture> entry : modelTextures.entrySet()) {
-                        ModelTexture modelTexture = getModelTexture(modelTextures, entry.getKey());
-                        if (modelTexture == null || modelTexture.key() == null) {
-                            // LOGGER.warn("Could not find a texture for key {} in model {}", entry.getKey(), model.key());
-                            continue;
-                        }
-
-                        textures.put(entry.getKey(), modelTexture.key().toString());
-                    }
-
-                    Materials.Material material = new Materials.Material(textures);
-                    materials.addMaterial(model.key().toString(), material);
+                    textures.put(entry.getKey(), modelTexture.key().toString());
                 }
 
-                storage.materials(materials);
-                storage.save();
+                Materials.Material material = new Materials.Material(textures);
+                materials.addMaterial(model.key().toString(), material);
             }
-        });
+
+            storage.materials(materials);
+            storage.save();
+        }
     }
 
-    @Override
-    public void postConvert(PackConversionContext<ModelConversionData> packContext) {
-        ResourcePack assets = packContext.javaResourcePack();
-        BedrockResourcePack bedrockPack = packContext.bedrockResourcePack();
+    private void postProcess(@NotNull PackPostProcessContext<BlockPackModule> context) {
+        ResourcePack assets = context.javaResourcePack();
+        BedrockResourcePack bedrockPack = context.bedrockResourcePack();
 
-        this.postProcess(context -> {
-            for (Texture texture : assets.textures()) {
-                Key key = texture.key();
-                String value = key.value();
+        for (Texture texture : assets.textures()) {
+            Key key = texture.key();
+            String value = key.value();
 
-                if (value.startsWith("block/")) {
-                    String cleanPath = value.replace("block/", "").replace(".png", "");
+            if (value.startsWith("block/")) {
+                String cleanPath = value.replace("block/", "").replace(".png", "");
 
-                    String outputLoc = String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + cleanPath).replace(".png", "");
-                    bedrockPack.addBlockTexture(key.namespace() + ":" + cleanPath, outputLoc);
-                }
+                String outputLoc = String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + cleanPath).replace(".png", "");
+                bedrockPack.addBlockTexture(key.namespace() + ":" + cleanPath, outputLoc);
             }
-        });
+        }
     }
 
     @Override
@@ -141,7 +150,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         for (Block block : blocks) {
             ResourceLocation blockLocation = registry.getKey(block);
             CustomBlockData.Builder builder = NonVanillaCustomBlockData.builder()
-                    .name(blockLocation.getPath())
+                    .name(/*"block." + */blockLocation.getPath()) // TODO: Separate identifier so 2D block textures work
                     .namespace(blockLocation.getNamespace())
                     .includedInCreativeInventory(true)
                     .creativeGroup("itemGroup.name.items")
@@ -159,120 +168,158 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 }
             }
 
-
             List<CustomBlockPermutation> permutations = new ArrayList<>();
             CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                 ModelDefinition definition = getModel(context.mod(), blockLocation, state);
-                if (definition != null) {
-                    Model model = definition.model();
-                    Key key = model.key();
+                if (definition == null) {
+                    continue;
+                }
 
-                    CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
-                            .transformation(new TransformationComponent(
-                                    definition.variant().x(), // Rotation X
-                                    definition.variant().y(), // Rotation Y
-                                    0, // Rotation Z
-                                    1, // Scale X
-                                    1, // Scale Y
-                                    1, // Scale Z
-                                    0, // Translation X
-                                    0, // Translation Y
-                                    0 // Translation Z
-                            ));
+                Model model = definition.model();
+                Key key = model.key();
 
-                    if (!isUnitCube(model.parent())) {
-                        String namespace = key.namespace();
-                        String value = key.value();
+                CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
+                        .transformation(new TransformationComponent(
+                                definition.variant().x(), // Rotation X
+                                definition.variant().y(), // Rotation Y
+                                0, // Rotation Z
+                                1, // Scale X
+                                1, // Scale Y
+                                1, // Scale Z
+                                0, // Translation X
+                                0, // Translation Y
+                                0 // Translation Z
+                        ));
 
-                        String fileName = value.substring(value.lastIndexOf('/') + 1);
-                        String geoName = (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + fileName;
+                if (!isUnitCube(model.parent())) {
+                    String namespace = key.namespace();
+                    String value = key.value();
 
-                        componentsBuilder.geometry(GeometryComponent.builder()
-                                .identifier("geometry." + geoName)
-                                .build());
-                    } else {
-                        componentsBuilder.geometry(GeometryComponent.builder()
+                    String fileName = value.substring(value.lastIndexOf('/') + 1);
+                    String geoName = (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + fileName;
+
+                    componentsBuilder.geometry(GeometryComponent.builder()
+                            .identifier("geometry." + geoName)
+                            .build());
+
+                    VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+                    VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+
+                    // if (!shape.isEmpty()) {
+                    //     AABB bounds = shape.bounds();
+                    //     componentsBuilder.selectionBox(new BoxComponent(
+                    //             (float) bounds.minX,
+                    //             (float) bounds.minY,
+                    //             (float) bounds.minZ,
+                    //             (float) bounds.maxX,
+                    //             (float) bounds.maxY,
+                    //             (float) bounds.maxZ
+                    //     ));
+                    // }
+
+                    if (!collisionShape.isEmpty()) {
+                        AABB collisionBounds = collisionShape.bounds();
+
+                        String id = key.toString();
+                        System.out.println("Box " + collisionBounds);
+                        componentsBuilder.selectionBox(new BoxComponent(
+                                clampBox(id, (float) (collisionBounds.minX * BOX_SCALE) - BOX_ORIGIN_OFFSET, -BOX_ORIGIN_OFFSET, BOX_ORIGIN_OFFSET),
+                                clampBox(id, (float) collisionBounds.minY * (BOX_SCALE / 2), 0, BOX_SCALE),
+                                clampBox(id, (float) (collisionBounds.minZ * BOX_SCALE) - BOX_ORIGIN_OFFSET, -BOX_ORIGIN_OFFSET, BOX_ORIGIN_OFFSET),
+                                clampBox(id, (float) collisionBounds.maxX * BOX_SCALE, 0, BOX_SCALE),
+                                clampBox(id, (float) collisionBounds.maxY * (BOX_SCALE / 2), 0, BOX_SCALE),
+                                clampBox(id, (float) collisionBounds.maxZ * BOX_SCALE, 0, BOX_SCALE)
+                        ));
+                        componentsBuilder.collisionBox(new BoxComponent(
+                                clampBox(id, (float) (collisionBounds.minX * BOX_SCALE) - BOX_ORIGIN_OFFSET, -BOX_ORIGIN_OFFSET, BOX_ORIGIN_OFFSET),
+                                clampBox(id, (float) collisionBounds.minY * (BOX_SCALE / 2), 0, BOX_SCALE),
+                                clampBox(id, (float) (collisionBounds.minZ * BOX_SCALE) - BOX_ORIGIN_OFFSET, -BOX_ORIGIN_OFFSET, BOX_ORIGIN_OFFSET),
+                                clampBox(id, (float) collisionBounds.maxX * BOX_SCALE, 0, BOX_SCALE),
+                                clampBox(id, (float) collisionBounds.maxY * (BOX_SCALE / 2), 0, BOX_SCALE),
+                                clampBox(id, (float) collisionBounds.maxZ * BOX_SCALE, 0, BOX_SCALE)
+                        ));
+                    }
+                } else {
+                    componentsBuilder.geometry(GeometryComponent.builder()
                             .identifier("minecraft:geometry.full_block")
                             .build());
-                    }
+                }
 
-
-                    Materials materials = context.storage().materials();
-                    Materials.Material material = materials.material(key.toString());
-                    if (material != null) {
-                        // Add a default texture, can be replaced by the below (I think)
-                        Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
-                        componentsBuilder.materialInstance("*", MaterialInstance.builder()
+                Materials materials = context.storage().materials();
+                Materials.Material material = materials.material(key.toString());
+                if (material != null) {
+                    // Add a default texture, can be replaced by the below (I think)
+                    Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
+                    componentsBuilder.materialInstance("*", MaterialInstance.builder()
                             .texture(getTextureName(firstEntry.getValue()))
                             .renderMethod("alpha_test")
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
                             .build());
 
-                        Map<String, String> faceMapping = getFaceMapping(model.parent());
-                        if (!faceMapping.isEmpty()) {
-                            for (Map.Entry<String, String> face : faceMapping.entrySet()) {
-                                if (!material.textures().containsKey(face.getValue())) continue;
+                    Map<String, String> faceMapping = getFaceMapping(model.parent());
+                    if (!faceMapping.isEmpty()) {
+                        for (Map.Entry<String, String> face : faceMapping.entrySet()) {
+                            if (!material.textures().containsKey(face.getValue())) continue;
 
-                                String textureName = material.textures().get(face.getValue());
+                            String textureName = material.textures().get(face.getValue());
 
-                                componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
+                            componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
                                     .texture(getTextureName(textureName))
                                     .renderMethod("alpha_test")
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
                                     .build());
+                        }
+                    } else {
+                        for (Map.Entry<String, String> entry : material.textures().entrySet()) {
+                            String materialKey = entry.getKey();
+
+                            // Bedrock uses "*" for the particle texture
+                            if ("particle".equals(materialKey)) {
+                                materialKey = "*";
                             }
-                        } else {
-                            for (Map.Entry<String, String> entry : material.textures().entrySet()) {
-                                String materialKey = entry.getKey();
 
-                                // Bedrock uses "*" for the particle texture
-                                if ("particle".equals(materialKey)) {
-                                    materialKey = "*";
-                                }
-
-                                componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
+                            componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
                                     .texture(getTextureName(entry.getValue()))
                                     .renderMethod("alpha_test")
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
                                     .build());
-                            }
                         }
-                    } else {
-                        componentsBuilder.materialInstance("*", MaterialInstance.builder()
+                    }
+                } else {
+                    componentsBuilder.materialInstance("*", MaterialInstance.builder()
                             .texture(getTextureName(key.toString()))
                             .renderMethod("alpha_test")
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
                             .build());
-                        LOGGER.warn("Could not find material for block {}", key);
-                    }
-
-                    // No properties exist on this state, so there's only one
-                    // blockstate that can exist. Update the base builder so that
-                    // the code that creates the component for the base block
-                    // persists everything we did above
-                    if (state.getProperties().isEmpty()) {
-                        baseComponentBuilder = componentsBuilder;
-                        continue;
-                    }
-
-                    List<String> conditions = new ArrayList<>();
-                    for (Property<?> property : state.getProperties()) {
-                        String propValue = state.getValue(property).toString();
-                        if (property instanceof EnumProperty<?>) {
-                            propValue = "'" + propValue + "'";
-                        }
-
-                        conditions.add(String.format(STATE_CONDITION, property.getName(), propValue));
-                    }
-
-                    String condition = String.join(" && ", conditions);
-                    permutations.add(new CustomBlockPermutation(componentsBuilder.build(), condition));
+                    LOGGER.warn("Could not find material for block {}", key);
                 }
+
+                // No properties exist on this state, so there's only one
+                // blockstate that can exist. Update the base builder so that
+                // the code that creates the component for the base block
+                // persists everything we did above
+                if (state.getProperties().isEmpty()) {
+                    baseComponentBuilder = componentsBuilder;
+                    continue;
+                }
+
+                List<String> conditions = new ArrayList<>();
+                for (Property<?> property : state.getProperties()) {
+                    String propValue = state.getValue(property).toString();
+                    if (property instanceof EnumProperty<?>) {
+                        propValue = "'" + propValue + "'";
+                    }
+
+                    conditions.add(String.format(STATE_CONDITION, property.getName(), propValue));
+                }
+
+                String condition = String.join(" && ", conditions);
+                permutations.add(new CustomBlockPermutation(componentsBuilder.build(), condition));
             }
 
             builder.permutations(permutations);
@@ -313,18 +360,26 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 };
 
                 CustomBlockState customBlockState = stateBuilder.build();
-                event.registerOverride(JavaBlockState.builder()
-                                .identifier(BlockStateParser.serialize(state))
-                                .javaId(Block.getId(state))
-                                .blockHardness(block.defaultDestroyTime()) // TODO: Check
-                                .hasBlockEntity(state.hasBlockEntity())
-                                .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
-                                .collision(new JavaBoundingBox[0]) // TODO: VoxelShape -> BoundingBox
-                                .stateGroupId(blockId)
-                                .pistonBehavior(pistonBehavior.name())
-                                .build(),
-                        customBlockState
-                );
+                JavaBlockState.Builder javaBlockStateBuilder = JavaBlockState.builder()
+                        .identifier(BlockStateParser.serialize(state))
+                        .javaId(Block.getId(state))
+                        .blockHardness(block.defaultDestroyTime()) // TODO: Check
+                        .hasBlockEntity(state.hasBlockEntity())
+                        .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
+                        .stateGroupId(blockId)
+                        .pistonBehavior(pistonBehavior.name());
+
+                VoxelShape shape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+                List<AABB> aabbs = shape.toAabbs();
+                JavaBoundingBox[] bbs = new JavaBoundingBox[aabbs.size()];
+                for (int i = 0; i < aabbs.size(); i++) {
+                    AABB aabb = aabbs.get(i);
+                    bbs[i] = new JavaBoundingBox(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ);
+                }
+
+                javaBlockStateBuilder.collision(bbs);
+
+                event.registerOverride(javaBlockStateBuilder.build(), customBlockState);
             }
         }
     }
@@ -361,6 +416,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         }
 
         // TODO: Multipart states
+        LOGGER.warn("Missing multipart state conversion for block {} {}", blockLocation, state);
 
         return null;
     }
@@ -490,5 +546,19 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         }
 
         return mapping;
+    }
+
+    public static float clampBox(String key, float value, float min, float max) {
+        if (value < min) {
+            LOGGER.warn("Collision box for {} value {} is less than min {}", key, value, min);
+            return min;
+        }
+
+        if (value > max) {
+            LOGGER.warn("Collision box for {} value {} is greater than max {}", key, value, max);
+            return max;
+        }
+
+        return value;
     }
 }
