@@ -501,6 +501,13 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         return parent.namespace().equals("minecraft") && parent.value().startsWith("block/cube");
     }
 
+    /**
+     * Get the face mapping for the given parent model.
+     * This is due to some cube models having texture names bedrock doesn't understand.
+     *
+     * @param parent The parent model
+     * @return The face mapping if any
+     */
     private Map<String, String> getFaceMapping(Key parent) {
         // Destination <- Source
         Map<String, String> mapping = new HashMap<>();
@@ -521,12 +528,6 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
         if ("block/cube_all".equals(parent.value())) {
             mapping.put("*", "all");
-            mapping.put("up", "all");
-            mapping.put("down", "all");
-            mapping.put("north", "all");
-            mapping.put("south", "all");
-            mapping.put("west", "all");
-            mapping.put("east", "all");
         } else if ("block/cube_bottom_top".equals(parent.value())) {
             mapping.put("*", "side");
             mapping.put("up", "top");

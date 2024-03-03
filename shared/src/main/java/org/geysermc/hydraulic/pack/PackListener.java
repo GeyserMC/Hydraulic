@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.mojang.logging.LogUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.geysermc.event.subscribe.Subscribe;
-import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -38,8 +38,7 @@ public class PackListener {
 
     @Subscribe
     public void onLoadResourcePacks(GeyserLoadResourcePacksEvent event) {
-        // TODO: Add this to Geyser API
-        Path packsPath = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("packs");
+        Path packsPath = GeyserApi.api().packDirectory();
 
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
         for (ModInfo mod : this.hydraulic.mods()) {
