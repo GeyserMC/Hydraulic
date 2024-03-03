@@ -8,9 +8,7 @@ import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.util.StringRepresentable;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -19,6 +17,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.api.block.custom.CustomBlockPermutation;
@@ -34,6 +33,7 @@ import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBoundingBox;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.level.physics.PistonBehavior;
+import org.geysermc.geyser.util.MathUtils;
 import org.geysermc.hydraulic.pack.ConvertablePackModule;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
@@ -206,40 +206,8 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
 
-                    // if (!shape.isEmpty()) {
-                    //     AABB bounds = shape.bounds();
-                    //     componentsBuilder.selectionBox(new BoxComponent(
-                    //             (float) bounds.minX,
-                    //             (float) bounds.minY,
-                    //             (float) bounds.minZ,
-                    //             (float) bounds.maxX,
-                    //             (float) bounds.maxY,
-                    //             (float) bounds.maxZ
-                    //     ));
-                    // }
-
-                    if (!collisionShape.isEmpty()) {
-                        AABB collisionBounds = collisionShape.bounds();
-
-                        String id = key.toString();
-                        System.out.println("Box " + collisionBounds);
-                        componentsBuilder.selectionBox(new BoxComponent(
-                                clampBox(id, (float) (collisionBounds.minX * BOX_SCALE) - BOX_ORIGIN_OFFSET, -BOX_ORIGIN_OFFSET, BOX_ORIGIN_OFFSET),
-                                clampBox(id, (float) collisionBounds.minY * (BOX_SCALE / 2), 0, BOX_SCALE),
-                                clampBox(id, (float) (collisionBounds.minZ * BOX_SCALE) - BOX_ORIGIN_OFFSET, -BOX_ORIGIN_OFFSET, BOX_ORIGIN_OFFSET),
-                                clampBox(id, (float) collisionBounds.maxX * BOX_SCALE, 0, BOX_SCALE),
-                                clampBox(id, (float) collisionBounds.maxY * (BOX_SCALE / 2), 0, BOX_SCALE),
-                                clampBox(id, (float) collisionBounds.maxZ * BOX_SCALE, 0, BOX_SCALE)
-                        ));
-                        componentsBuilder.collisionBox(new BoxComponent(
-                                clampBox(id, (float) (collisionBounds.minX * BOX_SCALE) - BOX_ORIGIN_OFFSET, -BOX_ORIGIN_OFFSET, BOX_ORIGIN_OFFSET),
-                                clampBox(id, (float) collisionBounds.minY * (BOX_SCALE / 2), 0, BOX_SCALE),
-                                clampBox(id, (float) (collisionBounds.minZ * BOX_SCALE) - BOX_ORIGIN_OFFSET, -BOX_ORIGIN_OFFSET, BOX_ORIGIN_OFFSET),
-                                clampBox(id, (float) collisionBounds.maxX * BOX_SCALE, 0, BOX_SCALE),
-                                clampBox(id, (float) collisionBounds.maxY * (BOX_SCALE / 2), 0, BOX_SCALE),
-                                clampBox(id, (float) collisionBounds.maxZ * BOX_SCALE, 0, BOX_SCALE)
-                        ));
-                    }
+                    componentsBuilder.selectionBox(createBoxComponent(shape));
+                    componentsBuilder.collisionBox(createBoxComponent(collisionShape));
                 } else {
                     componentsBuilder.geometry(GeometryComponent.builder()
                             .identifier("minecraft:geometry.full_block")
@@ -416,7 +384,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         }
 
         // TODO: Multipart states
-        LOGGER.warn("Missing multipart state conversion for block {} {}", blockLocation, state);
+        // LOGGER.warn("Missing multipart state conversion for block {} {}", blockLocation, state);
 
         return null;
     }
@@ -549,17 +517,46 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         return mapping;
     }
 
-    public static float clampBox(String key, float value, float min, float max) {
-        if (value < min) {
-            LOGGER.warn("Collision box for {} value {} is less than min {}", key, value, min);
-            return min;
+    private static BoxComponent createBoxComponent(VoxelShape shape) {
+        if (shape.isEmpty()) {
+            return BoxComponent.emptyBox();
         }
 
-        if (value > max) {
-            LOGGER.warn("Collision box for {} value {} is greater than max {}", key, value, max);
-            return max;
-        }
+        float minX = 5;
+        float minY = 5;
+        float minZ = 5;
+        float maxX = -5;
+        float maxY = -5;
+        float maxZ = -5;
+        for (AABB boundingBox : shape.toAabbs()) {
+            double offsetX = boundingBox.getXsize() * 0.5;
+            double offsetY = boundingBox.getYsize() * 0.5;
+            double offsetZ = boundingBox.getZsize() * 0.5;
 
-        return value;
+            Vec3 center = boundingBox.getCenter();
+
+            minX = Math.min(minX, (float) (center.x() - offsetX));
+            minY = Math.min(minY, (float) (center.y() - offsetY));
+            minZ = Math.min(minZ, (float) (center.z() - offsetZ));
+
+            maxX = Math.max(maxX, (float) (center.x() + offsetX));
+            maxY = Math.max(maxY, (float) (center.y() + offsetY));
+            maxZ = Math.max(maxZ, (float) (center.z() + offsetZ));
+        }
+        minX = MathUtils.clamp(minX, 0, 1);
+        minY = MathUtils.clamp(minY, 0, 1);
+        minZ = MathUtils.clamp(minZ, 0, 1);
+        maxX = MathUtils.clamp(maxX, 0, 1);
+        maxY = MathUtils.clamp(maxY, 0, 1);
+        maxZ = MathUtils.clamp(maxZ, 0, 1);
+
+        return new BoxComponent(
+                16 * (1 - maxX) - 8, // For some odd reason X is mirrored on Bedrock
+                16 * minY,
+                16 * minZ - 8,
+                16 * (maxX - minX),
+                16 * (maxY - minY),
+                16 * (maxZ - minZ)
+        );
     }
 }

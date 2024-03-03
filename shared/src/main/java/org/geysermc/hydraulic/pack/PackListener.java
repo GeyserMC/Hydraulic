@@ -47,7 +47,7 @@ public class PackListener {
             }
 
             Path packPath = packsPath.resolve(mod.id() + ".zip");
-            if (true || !event.resourcePacks().contains(packPath) || checkNeedsConversion(mod, packPath)) {
+            if (!event.resourcePacks().contains(packPath) || checkNeedsConversion(mod, packPath)) {
                 packsToLoad.put(mod.id(), Pair.of(mod, packPath));
             }
         }
