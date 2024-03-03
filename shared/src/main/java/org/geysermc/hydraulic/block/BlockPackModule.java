@@ -51,7 +51,9 @@ import org.geysermc.pack.converter.data.ModelConversionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import team.unnamed.creative.ResourcePack;
+import team.unnamed.creative.blockstate.Condition;
 import team.unnamed.creative.blockstate.MultiVariant;
+import team.unnamed.creative.blockstate.Selector;
 import team.unnamed.creative.blockstate.Variant;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
@@ -62,6 +64,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @AutoService(PackModule.class)
 public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
@@ -280,7 +283,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 for (Property<?> property : state.getProperties()) {
                     String propValue = state.getValue(property).toString();
                     if (property instanceof EnumProperty<?>) {
-                        propValue = "'" + propValue + "'";
+                        propValue = "'" + propValue.toLowerCase() + "'";
                     }
 
                     conditions.add(String.format(STATE_CONDITION, property.getName(), propValue));
@@ -369,6 +372,17 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             multiVariant = packState.variants().get("");
         }
 
+        // Get the default multipart variant if we have no match
+        // TODO: Multipart states, this is temporary as we dont parse the condition yet
+        if (multiVariant == null) {
+            Optional<Selector> selector = packState.multipart().stream().filter(multipart -> multipart.condition() == Condition.NONE).findFirst();
+            if (selector.isPresent()) {
+                multiVariant = selector.get().variant();
+            }
+
+            // LOGGER.warn("Missing multipart state conversion for block {} {}", blockLocation, state);
+        }
+
         // We have a match! Now we need to find the model
         if (multiVariant != null && !multiVariant.variants().isEmpty()) {
             // TODO: Handle multiple variants?
@@ -382,9 +396,6 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 return new ModelDefinition(model, variant);
             }
         }
-
-        // TODO: Multipart states
-        // LOGGER.warn("Missing multipart state conversion for block {} {}", blockLocation, state);
 
         return null;
     }
@@ -417,7 +428,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
     private static MultiVariant matchState(@NotNull BlockState state, @NotNull Map<String, MultiVariant> variants) {
         List<String> properties = new ArrayList<>();
         for (Property<?> property : state.getProperties()) {
-            properties.add(property.getName() + "=" + state.getValue(property));
+            properties.add(property.getName() + "=" + state.getValue(property).toString().toLowerCase());
         }
 
         for (Map.Entry<String, MultiVariant> entry : variants.entrySet()) {
