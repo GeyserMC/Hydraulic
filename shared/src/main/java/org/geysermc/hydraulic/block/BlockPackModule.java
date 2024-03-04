@@ -70,9 +70,6 @@ import java.util.Optional;
 public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
 
-    private static final float BOX_SCALE = 16.0F;
-    private static final float BOX_ORIGIN_OFFSET = 8.0F;
-
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
 
     public BlockPackModule() {
@@ -206,6 +203,8 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                             .identifier("geometry." + geoName)
                             .build());
 
+                    // TODO: This is not fully correct. On Bedrock, the shape rotates with
+                    //       the block, so the collision box will need to be rotated back here
                     VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
 
@@ -295,13 +294,17 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
             builder.permutations(permutations);
 
+            BlockState defaultState = block.defaultBlockState();
+            VoxelShape shape = defaultState.getShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
+            VoxelShape collisionShape = defaultState.getCollisionShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
+
             CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
                     .displayName("%" + block.getDescriptionId())
                     .friction(block.getFriction())
                     .destructibleByMining(block.defaultDestroyTime()) // TODO: Check
                     // .unitCube(true) // TODO: Geometry conversion
-                    .selectionBox(BoxComponent.fullBox()) // TODO: Shapes
-                    .collisionBox(BoxComponent.fullBox()); // TODO: Shapes
+                    .selectionBox(createBoxComponent(shape))
+                    .collisionBox(createBoxComponent(collisionShape));
 
             builder.components(componentsBuilder.build());
 
@@ -340,8 +343,8 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                         .stateGroupId(blockId)
                         .pistonBehavior(pistonBehavior.name());
 
-                VoxelShape shape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
-                List<AABB> aabbs = shape.toAabbs();
+                /*
+                List<AABB> aabbs = collisionShape.toAabbs();
                 JavaBoundingBox[] bbs = new JavaBoundingBox[aabbs.size()];
                 for (int i = 0; i < aabbs.size(); i++) {
                     AABB aabb = aabbs.get(i);
@@ -349,6 +352,8 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 }
 
                 javaBlockStateBuilder.collision(bbs);
+                 */
+                javaBlockStateBuilder.collision(new JavaBoundingBox[0]); // TODO
 
                 event.registerOverride(javaBlockStateBuilder.build(), customBlockState);
             }
@@ -463,8 +468,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
     }
 
     private static Map<String, ModelTexture> getTextures(@NotNull ModelTextures modelTextures) {
-        Map<String, ModelTexture> textures = new HashMap<>();
-        textures.putAll(modelTextures.variables());
+        Map<String, ModelTexture> textures = new HashMap<>(modelTextures.variables());
         textures.put("particle", modelTextures.particle());
         for (int i = 0; i < modelTextures.layers().size(); i++) {
             textures.put("layer" + i, modelTextures.layers().get(i));

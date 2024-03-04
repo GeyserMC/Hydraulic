@@ -3,8 +3,6 @@ package org.geysermc.hydraulic.mixin.ext;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
-import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
-import org.geysermc.geyser.item.type.Item;
 import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.inventory.item.ItemTranslator;
@@ -13,9 +11,7 @@ import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 @Mixin(value = ItemTranslator.class, remap = false)
 public class ItemTranslatorMixin {
