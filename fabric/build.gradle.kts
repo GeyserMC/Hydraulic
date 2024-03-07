@@ -21,6 +21,8 @@ dependencies {
     compileOnly(libs.geyser.core) {
         exclude(group = "io.netty")
     }
+
+    shadow(libs.pack.converter)
 }
 
 tasks {

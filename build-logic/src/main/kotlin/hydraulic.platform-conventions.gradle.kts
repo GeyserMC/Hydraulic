@@ -36,9 +36,4 @@ tasks {
 dependencies {
     minecraft("com.mojang:minecraft:$minecraftVersion")
     mappings(loom.officialMojangMappings())
-
-    // Can't use the gradle libs feature here because
-    // this is part of the composite build
-    implementation("com.github.GeyserMC:PackConverter:da7f9116ff")
-    shadow("com.github.GeyserMC:PackConverter:da7f9116ff")
 }
