@@ -11,8 +11,6 @@ dependencies {
 
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)
-
-    implementation(libs.pack.converter)
 }
 
 // TODO: WTF is calling this task?

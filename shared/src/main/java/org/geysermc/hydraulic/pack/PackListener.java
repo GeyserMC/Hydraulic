@@ -78,8 +78,8 @@ public class PackListener {
      * @return {@code true} if the pack needs to be converted.
      */
     private boolean checkNeedsConversion(ModInfo mod, Path packPath) {
-        String modUUID = "";
-        String packUUID = "";
+        String modUUID;
+        String packUUID;
 
         try {
             modUUID = UUID.nameUUIDFromBytes(Files.readAllBytes(mod.modFile())).toString();
