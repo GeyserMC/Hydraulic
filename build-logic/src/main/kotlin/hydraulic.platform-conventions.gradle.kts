@@ -39,6 +39,8 @@ dependencies {
 
     // Can't use the gradle libs feature here because
     // this is part of the composite build
-    implementation("org.geysermc:converter:3.0-SNAPSHOT")
-    shadow("org.geysermc:converter:3.0-SNAPSHOT")
+    implementation("org.geysermc.pack:converter:3.0-SNAPSHOT") {
+        setChanging(true)
+    }
+    shadow("org.geysermc.pack:converter:3.0-SNAPSHOT")
 }

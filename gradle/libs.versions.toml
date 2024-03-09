@@ -13,7 +13,7 @@ mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }
 geyser-api = { group = "org.geysermc.geyser", name = "api", version.ref = "geyser" }
 geyser-core = { group = "org.geysermc.geyser", name = "core", version.ref = "geyser" }
 auto-service = { group = "com.google.auto.service", name = "auto-service", version.ref = "auto-service" }
-pack-converter = { group = "org.geysermc", name = "converter", version.ref = "pack-converter" }
+pack-converter = { group = "org.geysermc.pack", name = "converter", version.ref = "pack-converter" }
 indra = { group = "net.kyori", name  = "indra-common", version.ref = "indra" }
 shadow = { group = "com.github.johnrengelman", name = "shadow", version.ref = "shadow" }
 architectury-plugin = { group = "architectury-plugin", name = "architectury-plugin.gradle.plugin", version.ref = "architectury-plugin" }
