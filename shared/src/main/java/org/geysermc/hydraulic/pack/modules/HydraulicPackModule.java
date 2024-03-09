@@ -12,9 +12,14 @@ import java.util.Map;
 public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
     public HydraulicPackModule() {
         this.postProcess(context -> {
-            // Map all textures files as valid names
+            // Map all block textures files as valid names
             for (Map.Entry<String, String> entry : TextureMappings.textureMappings().textures("block").entrySet()) {
                 context.bedrockResourcePack().addBlockTexture("hydraulic:" + entry.getValue(), "textures/blocks/" + entry.getValue());
+            }
+
+            // Map all item textures files as valid names
+            for (Map.Entry<String, String> entry : TextureMappings.textureMappings().textures("item").entrySet()) {
+                context.bedrockResourcePack().addItemTexture("hydraulic:" + entry.getValue(), "textures/items/" + entry.getValue());
             }
         });
     }

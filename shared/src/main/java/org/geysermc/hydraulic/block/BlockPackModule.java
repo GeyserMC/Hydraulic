@@ -43,6 +43,7 @@ import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.Constants;
+import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.util.SingletonBlockGetter;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
@@ -222,7 +223,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     // Add a default texture, can be replaced by the below (I think)
                     Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
                     componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(getTextureName(firstEntry.getValue()))
+                            .texture(PackUtil.getTextureName(firstEntry.getValue()))
                             .renderMethod("alpha_test")
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
@@ -236,7 +237,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                             String textureName = material.textures().get(face.getValue());
 
                             componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
-                                    .texture(getTextureName(textureName))
+                                    .texture(PackUtil.getTextureName(textureName))
                                     .renderMethod("alpha_test")
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
@@ -252,7 +253,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                             }
 
                             componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
-                                    .texture(getTextureName(entry.getValue()))
+                                    .texture(PackUtil.getTextureName(entry.getValue()))
                                     .renderMethod("alpha_test")
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
@@ -261,7 +262,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     }
                 } else {
                     componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(getTextureName(key.toString()))
+                            .texture(PackUtil.getTextureName(key.toString()))
                             .renderMethod("alpha_test")
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
@@ -403,31 +404,6 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         }
 
         return null;
-    }
-
-    private static String getTextureName(@NotNull String modelName) {
-        if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
-            String modelValue = modelName.split(":")[1];
-
-            String type = modelValue.substring(0, modelValue.indexOf("/"));
-            String value = modelValue.substring(modelValue.indexOf("/") + 1);
-
-            // Need to use the Bedrock value for vanilla textures
-            Map<String, String> textures = TextureMappings.textureMappings().textures(type);
-            if (textures != null) {
-                String textureName = textures.getOrDefault(value, "");
-                if (textureName.isEmpty()) {
-                    textureName = value;
-                } else {
-                    textureName = "hydraulic:" + textureName;
-                }
-                return textureName;
-            }
-
-            return value;
-        }
-
-        return modelName.replace("block/", "").replace("item/", "");
     }
 
     private static MultiVariant matchState(@NotNull BlockState state, @NotNull Map<String, MultiVariant> variants) {

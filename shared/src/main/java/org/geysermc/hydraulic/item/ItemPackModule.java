@@ -26,6 +26,7 @@ import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
+import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
@@ -34,11 +35,14 @@ import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
     private final List<String> itemsWith2dIcon = new ArrayList<>();
+    private final Map<String, String> itemBuiltinTexture = new HashMap<>();
 
     public ItemPackModule() {
         this.listenOn(GeyserDefineCustomItemsEvent.class, this::onDefineCustomItems);
@@ -54,6 +58,29 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             // If the parent is item/generated, it's a 2D icon
             if (model.parent() != null && model.parent().value().equals("item/generated")) {
                 itemsWith2dIcon.add(model.key().toString().replace("item/", ""));
+            }
+        }
+
+        List<Item> items = context.registryValues(Registries.ITEM);
+        ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, new PackLogListener(LOGGER));
+        for (Item item : items) {
+            ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
+
+            Model baseModel = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
+            Model model = new ModelStitcher(provider, baseModel).stitch();
+            if (model == null || model.textures() == null) {
+                continue;
+            }
+
+            List<ModelTexture> layers = model.textures().layers();
+            if (layers == null || layers.isEmpty()) {
+                continue;
+            }
+
+            ModelTexture layer0 = layers.get(0);
+
+            if (layer0.key().namespace().equals(Key.MINECRAFT_NAMESPACE)) {
+                itemBuiltinTexture.put(itemLocation.toString(), PackUtil.getTextureName(layer0.key().toString()));
             }
         }
     }
@@ -118,6 +145,11 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 .creativeGroup("itemGroup.name.items")
                 .maxDamage(item.getMaxDamage())
                 .stackSize(item.getMaxStackSize());
+
+            // Allow minecraft namespace texture to be used (remapped as hydraulic)
+            if (itemBuiltinTexture.containsKey(itemLocation.toString())) {
+                customItemBuilder.icon(itemBuiltinTexture.get(itemLocation.toString()));
+            }
 
             // Enchantment glint by default
             if (item.isFoil(item.getDefaultInstance())) {

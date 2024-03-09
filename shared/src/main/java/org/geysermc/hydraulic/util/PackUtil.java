@@ -1,14 +1,17 @@
 package org.geysermc.hydraulic.util;
 
+import net.kyori.adventure.key.Key;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.bedrock.resource.Manifest;
 import org.geysermc.pack.bedrock.resource.manifest.Header;
 import org.geysermc.pack.bedrock.resource.manifest.Modules;
+import org.geysermc.pack.converter.converter.texture.TextureMappings;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -47,5 +50,30 @@ public class PackUtil {
         BedrockResourcePack pack = new BedrockResourcePack(packPack);
         pack.manifest(manifest);
         return pack;
+    }
+
+    public static String getTextureName(@NotNull String modelName) {
+        if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
+            String modelValue = modelName.split(":")[1];
+
+            String type = modelValue.substring(0, modelValue.indexOf("/"));
+            String value = modelValue.substring(modelValue.indexOf("/") + 1);
+
+            // Need to use the Bedrock value for vanilla textures
+            Map<String, String> textures = TextureMappings.textureMappings().textures(type);
+            if (textures != null) {
+                String textureName = textures.getOrDefault(value, "");
+                if (textureName.isEmpty()) {
+                    textureName = value;
+                } else {
+                    textureName = "hydraulic:" + textureName;
+                }
+                return textureName;
+            }
+
+            return value;
+        }
+
+        return modelName.replace("block/", "").replace("item/", "");
     }
 }
