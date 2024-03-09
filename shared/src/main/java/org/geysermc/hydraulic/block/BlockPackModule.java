@@ -101,7 +101,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 }
 
                 Map<String, String> textures = new HashMap<>();
-                Map<String, ModelTexture> modelTextures = getTextures(model.textures());
+                Map<String, ModelTexture> modelTextures = getTextures(stitchedModel.textures());
                 for (Map.Entry<String, ModelTexture> entry : modelTextures.entrySet()) {
                     ModelTexture modelTexture = getModelTexture(modelTextures, entry.getKey());
                     if (modelTexture == null || modelTexture.key() == null) {
