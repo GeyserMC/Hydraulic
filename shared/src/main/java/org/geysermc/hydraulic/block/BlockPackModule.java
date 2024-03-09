@@ -150,7 +150,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         for (Block block : blocks) {
             ResourceLocation blockLocation = registry.getKey(block);
             CustomBlockData.Builder builder = NonVanillaCustomBlockData.builder()
-                    .name(/*"block." + */blockLocation.getPath()) // TODO: Separate identifier so 2D block textures work
+                    .name(blockLocation.getPath())
                     .namespace(blockLocation.getNamespace())
                     .includedInCreativeInventory(true)
                     .creativeGroup("itemGroup.name.items")

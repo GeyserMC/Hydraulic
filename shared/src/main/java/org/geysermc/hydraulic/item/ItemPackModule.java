@@ -25,6 +25,7 @@ import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
+import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
@@ -32,15 +33,29 @@ import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
+    private final List<String> itemsWith2dIcon = new ArrayList<>();
 
     public ItemPackModule() {
-        this.listenOn(GeyserDefineCustomItemsEvent.class, ItemPackModule::onDefineCustomItems);
+        this.listenOn(GeyserDefineCustomItemsEvent.class, this::onDefineCustomItems);
 
+        this.preProcess(this::preProcess);
         this.postProcess(this::postProcess);
+    }
+
+    private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
+        ResourcePack assets = context.pack();
+
+        for (Model model : assets.models()) {
+            // If the parent is item/generated, it's a 2D icon
+            if (model.parent() != null && model.parent().value().equals("item/generated")) {
+                itemsWith2dIcon.add(model.key().toString().replace("item/", ""));
+            }
+        }
     }
 
     private void postProcess(@NotNull PackPostProcessContext<ItemPackModule> context) {
@@ -79,17 +94,21 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         return context.registryValues(Registries.ITEM).size() > 0;
     }
 
-    private static void onDefineCustomItems(PackEventContext<GeyserDefineCustomItemsEvent, ItemPackModule> context) {
+    private void onDefineCustomItems(PackEventContext<GeyserDefineCustomItemsEvent, ItemPackModule> context) {
         GeyserDefineCustomItemsEvent event = context.event();
         List<Item> items = context.registryValues(Registries.ITEM);
 
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;
         for (Item item : items) {
             ResourceLocation itemLocation = registry.getKey(item);
+
+            // Check if the item has a 2D icon
+            // TODO Work out why right click doesn't animate
+            boolean flatIcon = itemsWith2dIcon.contains(itemLocation.toString());
             NonVanillaCustomItemData.Builder customItemBuilder = NonVanillaCustomItemData.builder()
                 .name(itemLocation.getPath())
                 .displayName("%" + item.getDescriptionId())
-                .identifier(itemLocation.toString())
+                .identifier(itemLocation.getNamespace() + ":" + (flatIcon ? "item." : "") + itemLocation.getPath())
                 .icon(itemLocation.toString())
                 .javaId(registry.getId(item))
                 .stackSize(item.getMaxStackSize())
