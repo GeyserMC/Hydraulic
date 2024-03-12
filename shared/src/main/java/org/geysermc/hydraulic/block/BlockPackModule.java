@@ -47,7 +47,6 @@ import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.util.SingletonBlockGetter;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
-import org.geysermc.pack.converter.converter.texture.TextureMappings;
 import org.geysermc.pack.converter.data.ModelConversionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -140,7 +139,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
     @Override
     public boolean test(@NotNull PackPostProcessContext<BlockPackModule> context) {
-        return context.registryValues(Registries.BLOCK).size() > 0;
+        return !context.registryValues(Registries.BLOCK).isEmpty();
     }
 
     private void onDefineCustomBlocks(PackEventContext<GeyserDefineCustomBlocksEvent, BlockPackModule> context) {

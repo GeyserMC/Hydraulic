@@ -67,6 +67,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
             Model baseModel = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
+            if (baseModel == null) {
+                continue;
+            }
             Model model = new ModelStitcher(provider, baseModel).stitch();
             if (model == null || model.textures() == null) {
                 continue;
@@ -98,6 +101,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
             Model baseModel = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
+            if (baseModel == null) {
+                LOGGER.warn("Item {} has no item model, skipping", itemLocation);
+                continue;
+            }
             Model model = new ModelStitcher(provider, baseModel).stitch();
             if (model == null || model.textures() == null) {
                 LOGGER.warn("Item {} has no item model, skipping", itemLocation);
@@ -118,7 +125,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     @Override
     public boolean test(@NotNull PackPostProcessContext<ItemPackModule> context) {
-        return context.registryValues(Registries.ITEM).size() > 0;
+        return !context.registryValues(Registries.ITEM).isEmpty();
     }
 
     private void onDefineCustomItems(PackEventContext<GeyserDefineCustomItemsEvent, ItemPackModule> context) {
