@@ -37,7 +37,7 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
         return (container.getMetadata().getId().startsWith("fabric") && container.getMetadata().containsCustomValue("fabric-api:module-lifecycle"))
             || container.getMetadata().getId().equals("fabricloader")
             || container.getMetadata().getId().equals("fabric-api")
-            || !container.getContainingMod().isEmpty();
+            || container.getContainingMod().isPresent();
     }
 
     @Override

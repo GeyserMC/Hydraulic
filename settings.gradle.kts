@@ -57,6 +57,9 @@ pluginManagement {
         maven("https://maven.architectury.dev/")
         maven("https://maven.neoforged.net/releases")
         maven("https://maven.fabricmc.net/")
+
+        // Java pack library
+        maven("https://repo.unnamed.team/repository/unnamed-public/")
     }
 
     plugins {

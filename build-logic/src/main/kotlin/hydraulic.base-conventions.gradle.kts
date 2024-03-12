@@ -24,7 +24,6 @@ indra {
 
 tasks {
     processResources {
-        // Spigot, BungeeCord, Velocity, Sponge, Fabric
         filesMatching(listOf("fabric.mod.json", "hydraulic.mixins.json", "META-INF/mods.toml")) {
             expand(
                 "id" to "hydraulic",

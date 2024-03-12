@@ -9,10 +9,11 @@ dependencies {
         exclude(group = "io.netty")
     }
 
+    api(libs.pack.converter)
+
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)
-}
 
-// TODO: WTF is calling this task?
-tasks.create("prepareWorkspace") {
+    // Only here to suppress "unknown enum constant EnvType.CLIENT" warnings.
+    compileOnly(libs.fabric.loader)
 }
