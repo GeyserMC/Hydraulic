@@ -216,6 +216,10 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                             .build());
                 }
 
+                // TODO: Work this out based on block state/texture? as this isn't perfect
+                // https://wiki.bedrock.dev/blocks/block-components.html#render-methods
+                String renderMethod = state.canOcclude() ? "opaque" : "blend";
+
                 Materials materials = context.storage().materials();
                 Materials.Material material = materials.material(key.toString());
                 if (material != null) {
@@ -223,7 +227,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
                     componentsBuilder.materialInstance("*", MaterialInstance.builder()
                             .texture(PackUtil.getTextureName(firstEntry.getValue()))
-                            .renderMethod("alpha_test")
+                            .renderMethod(renderMethod)
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
                             .build());
@@ -237,7 +241,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
                             componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
                                     .texture(PackUtil.getTextureName(textureName))
-                                    .renderMethod("alpha_test")
+                                    .renderMethod(renderMethod)
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
                                     .build());
@@ -253,7 +257,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
                             componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
                                     .texture(PackUtil.getTextureName(entry.getValue()))
-                                    .renderMethod("alpha_test")
+                                    .renderMethod(renderMethod)
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
                                     .build());
@@ -262,7 +266,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 } else {
                     componentsBuilder.materialInstance("*", MaterialInstance.builder()
                             .texture(PackUtil.getTextureName(key.toString()))
-                            .renderMethod("alpha_test")
+                            .renderMethod(renderMethod)
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
                             .build());
