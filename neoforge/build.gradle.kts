@@ -3,6 +3,13 @@
 val modId = project.property("mod_id") as String
 
 provided("com.google.code.gson", "gson")
+provided("com.nukkitx.fastutil", "fastutil-common")
+provided("com.nukkitx.fastutil", "fastutil-int-common")
+provided("com.nukkitx.fastutil", "fastutil-int-object-maps")
+provided("com.nukkitx.fastutil", "fastutil-int-sets")
+provided("com.nukkitx.fastutil", "fastutil-object-common")
+provided("com.nukkitx.fastutil", "fastutil-object-sets")
+provided("org.jetbrains", "annotations")
 
 architectury {
     platformSetupLoomIde()

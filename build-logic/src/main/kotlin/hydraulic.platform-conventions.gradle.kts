@@ -40,8 +40,8 @@ tasks {
 afterEvaluate {
     val providedDependenciesSet = getProvidedDependenciesForProject(project.name)
     configurations["includeTransitive"].resolvedConfiguration.resolvedArtifacts.forEach { dep ->
-        if (!providedDependenciesSet!!.contains("$dep.moduleVersion.id.group:$dep.moduleVersion.id.name")) {
-            println("Including dependency via JiJ: ${dep.moduleVersion.id}") // Use println for debug output
+        if (!providedDependenciesSet!!.contains("${dep.moduleVersion.id.group}:${dep.moduleVersion.id.name}")) {
+            println("Including dependency via JiJ: ${dep.moduleVersion.id}")
             dependencies.add("include", dep.moduleVersion.id.toString())
         } else {
             println("Not including ${dep.id} as it is already provided on the ${project.name} platform!")
