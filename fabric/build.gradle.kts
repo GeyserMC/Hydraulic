@@ -33,13 +33,6 @@ tasks {
     }
 }
 
-beforeEvaluate {
-    configurations["includeTransitive"].resolvedConfiguration.resolvedArtifacts.forEach { dep ->
-        println("Adding dependency to configuration include: ${dep.moduleVersion.id}") // Use println for debug output
-        dependencies.include(dep)
-    }
-}
-
 dependencies {
     modImplementation(libs.fabric.loader)
     modApi(libs.fabric.api)
@@ -50,5 +43,6 @@ dependencies {
         isTransitive = false
     }
 
+    modRuntimeOnly(libs.pack.converter)
     includeTransitive(libs.pack.converter)
 }
