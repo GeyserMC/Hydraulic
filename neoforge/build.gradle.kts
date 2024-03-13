@@ -1,11 +1,30 @@
+@file:Suppress("UnstableApiUsage")
+
 val modId = project.property("mod_id") as String
 
-val minecraftVersion = project.property("minecraft_version") as String
-val neoforgeVersion = project.property("neoforge_version") as String
+provided("org.jetbrains", "annotations")
+provided("commons-io", "commons-io")
+
+// TODO fix geyser-side: kyori is currently provided by Geyser
+provided("net.kyori","adventure-text-serializer-gson")
+provided("net.kyori", "adventure-text-serializer-json")
+provided("net.kyori", "adventure-text-serializer-legacy")
+provided("net.kyori", "adventure-api")
 
 architectury {
     platformSetupLoomIde()
     neoForge()
+}
+
+val common: Configuration by configurations.creating
+// Without this, the mixin config isn't read properly with the runServer neoforge task
+val developmentNeoForge: Configuration = configurations.getByName("developmentNeoForge")
+val includeTransitive: Configuration = configurations.getByName("includeTransitive")
+
+configurations {
+    compileClasspath.get().extendsFrom(configurations["common"])
+    runtimeClasspath.get().extendsFrom(configurations["common"])
+    developmentNeoForge.extendsFrom(configurations["common"])
 }
 
 dependencies {
@@ -16,16 +35,17 @@ dependencies {
         }
     }
 
-    neoForge("net.neoforged:neoforge:${neoforgeVersion}")
-    api(project(path = ":shared", configuration = "namedElements"))
-    shadow(project(path = ":shared", configuration = "transformProductionNeoForge")) {
-        isTransitive = false
-    }
-
+    common(project(":shared", configuration = "namedElements")) { isTransitive = false }
+    neoForge(libs.neoforge)
     compileOnly(libs.geyser.api)
-    compileOnly(libs.geyser.core) {
-        exclude(group = "io.netty")
-    }
+
+    shadow(project(path = ":shared", configuration = "transformProductionNeoForge")) { isTransitive = false }
+
+    includeTransitive(libs.pack.converter)
+
+    // TODO: properly add converter dependency to neoforge's runtime path
+    // Currently, it causes about a dozen conflicts. Only needed for the runServer task
+    forgeRuntimeLibrary(libs.pack.converter)
 }
 
 tasks {

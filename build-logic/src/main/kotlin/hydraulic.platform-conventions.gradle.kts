@@ -5,6 +5,15 @@ plugins {
     id("dev.architectury.loom")
 }
 
+// These are provided by Minecraft already, no need to include em
+provided("com.google.code.gson", "gson")
+provided("com.nukkitx.fastutil", "fastutil-common")
+provided("com.nukkitx.fastutil", "fastutil-int-common")
+provided("com.nukkitx.fastutil", "fastutil-int-object-maps")
+provided("com.nukkitx.fastutil", "fastutil-int-sets")
+provided("com.nukkitx.fastutil", "fastutil-object-common")
+provided("com.nukkitx.fastutil", "fastutil-object-sets")
+
 val minecraftVersion = project.property("minecraft_version") as String
 
 architectury {
@@ -13,6 +22,10 @@ architectury {
 
 loom {
     silentMojangMappingsLicense()
+}
+
+configurations {
+    create("includeTransitive").isTransitive = true
 }
 
 tasks {
@@ -33,14 +46,19 @@ tasks {
     }
 }
 
+afterEvaluate {
+    val providedDependenciesSet = getProvidedDependenciesForProject(project.name)
+    configurations["includeTransitive"].resolvedConfiguration.resolvedArtifacts.forEach { dep ->
+        if (!providedDependenciesSet!!.contains("${dep.moduleVersion.id.group}:${dep.moduleVersion.id.name}")) {
+            println("Including dependency via JiJ: ${dep.moduleVersion.id}")
+            dependencies.add("include", dep.moduleVersion.id.toString())
+        } else {
+            println("Not including ${dep.id} as it is already provided on the ${project.name} platform!")
+        }
+    }
+}
+
 dependencies {
     minecraft("com.mojang:minecraft:$minecraftVersion")
     mappings(loom.officialMojangMappings())
-
-    // Can't use the gradle libs feature here because
-    // this is part of the composite build
-    implementation("org.geysermc.pack:converter:3.0-SNAPSHOT") {
-        setChanging(true)
-    }
-    shadow("org.geysermc.pack:converter:3.0-SNAPSHOT")
 }

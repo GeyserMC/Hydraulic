@@ -1,26 +1,18 @@
 val modId = project.property("mod_id") as String
-val minecraftVersion = project.property("minecraft_version") as String
-
-val fabricVersion = project.property("fabric_version") as String
-val fabricLoaderVersion = project.property("fabric_loader_version") as String
 
 architectury {
     platformSetupLoomIde()
     fabric()
 }
 
-dependencies {
-    modImplementation("net.fabricmc:fabric-loader:${fabricLoaderVersion}")
-    modApi("net.fabricmc.fabric-api:fabric-api:${fabricVersion}")
-    api(project(path = ":shared", configuration = "namedElements"))
-    shadow(project(path = ":shared", configuration = "transformProductionFabric")) {
-        isTransitive = false
-    }
+val common: Configuration by configurations.creating
+val developmentFabric: Configuration = configurations.getByName("developmentFabric")
+val includeTransitive: Configuration = configurations.getByName("includeTransitive")
 
-    compileOnly(libs.geyser.api)
-    compileOnly(libs.geyser.core) {
-        exclude(group = "io.netty")
-    }
+configurations {
+    compileClasspath.get().extendsFrom(configurations["common"])
+    runtimeClasspath.get().extendsFrom(configurations["common"])
+    developmentFabric.extendsFrom(configurations["common"])
 }
 
 tasks {
@@ -39,4 +31,18 @@ tasks {
     jar {
         archiveClassifier.set("dev")
     }
+}
+
+dependencies {
+    modImplementation(libs.fabric.loader)
+    modApi(libs.fabric.api)
+    common(project(":shared", configuration = "namedElements")) { isTransitive = false }
+    compileOnly(libs.geyser.api)
+
+    shadow(project(path = ":shared", configuration = "transformProductionFabric")) {
+        isTransitive = false
+    }
+
+    modRuntimeOnly(libs.pack.converter)
+    includeTransitive(libs.pack.converter)
 }
