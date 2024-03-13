@@ -20,7 +20,7 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
                         modInfo.getModId(),
                         modInfo.getVersion().toString(),
                         modInfo.getDisplayName(),
-                        modInfo.getOwningFile().getFile().getFilePath(), // Confirm this will work with the .resolve calls used
+                        modInfo.getOwningFile().getFile().getSecureJar().getRootPath(),
                         modInfo.getOwningFile().getFile().getFilePath(),
                         modInfo.getLogoFile().orElse("")
                 )
@@ -34,7 +34,7 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
                         container.getModId(),
                         container.getModInfo().getVersion().toString(),
                         container.getModInfo().getDisplayName(),
-                        container.getModInfo().getOwningFile().getFile().getFilePath(), // Confirm this will work with the .resolve calls used
+                        container.getModInfo().getOwningFile().getFile().getSecureJar().getRootPath(),
                         container.getModInfo().getOwningFile().getFile().getFilePath(),
                         container.getModInfo().getLogoFile().orElse("")
                 )

@@ -1,7 +1,5 @@
 val modId = project.property("mod_id") as String
 
-provided("com.google.code.gson", "gson")
-
 architectury {
     platformSetupLoomIde()
     fabric()

@@ -2,14 +2,14 @@
 
 val modId = project.property("mod_id") as String
 
-provided("com.google.code.gson", "gson")
-provided("com.nukkitx.fastutil", "fastutil-common")
-provided("com.nukkitx.fastutil", "fastutil-int-common")
-provided("com.nukkitx.fastutil", "fastutil-int-object-maps")
-provided("com.nukkitx.fastutil", "fastutil-int-sets")
-provided("com.nukkitx.fastutil", "fastutil-object-common")
-provided("com.nukkitx.fastutil", "fastutil-object-sets")
 provided("org.jetbrains", "annotations")
+provided("commons-io", "commons-io")
+
+// TODO fix geyser-side: kyori is currently provided by Geyser
+provided("net.kyori","adventure-text-serializer-gson")
+provided("net.kyori", "adventure-text-serializer-json")
+provided("net.kyori", "adventure-text-serializer-legacy")
+provided("net.kyori", "adventure-api")
 
 architectury {
     platformSetupLoomIde()
