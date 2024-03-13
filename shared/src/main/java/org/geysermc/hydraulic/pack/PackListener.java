@@ -8,6 +8,7 @@ import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.Manifest;
 import org.slf4j.Logger;
 
@@ -78,16 +79,10 @@ public class PackListener {
      * @return {@code true} if the pack needs to be converted.
      */
     private boolean checkNeedsConversion(ModInfo mod, Path packPath) {
-        String modUUID;
-        String packUUID;
-
-        try {
-            modUUID = UUID.nameUUIDFromBytes(Files.readAllBytes(mod.modFile())).toString();
-        } catch (IOException e) {
-            return true;
-        }
+        String modUUID = PackUtil.getModUUID(mod.modFile());
 
         // Read the uuid from the pack manifest
+        String packUUID;
         try {
             ZipFile zip = new ZipFile(packPath.toFile());
             try (InputStream inputStream = zip.getInputStream(zip.getEntry("manifest.json"))){

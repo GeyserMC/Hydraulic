@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.util;
 
+import com.mojang.logging.LogUtils;
 import net.kyori.adventure.key.Key;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
@@ -8,7 +9,10 @@ import org.geysermc.pack.bedrock.resource.manifest.Header;
 import org.geysermc.pack.bedrock.resource.manifest.Modules;
 import org.geysermc.pack.converter.converter.texture.TextureMappings;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +22,7 @@ import java.util.UUID;
  * Utility class for packs.
  */
 public class PackUtil {
+    protected static Logger LOGGER = LogUtils.getLogger();
     private static final int FORMAT_VERSION = 2;
 
     /**
@@ -75,5 +80,21 @@ public class PackUtil {
         }
 
         return modelName.replace("block/", "").replace("item/", "");
+    }
+
+    /**
+     * Generate a UUID from the mod file to use as the pack UUID.
+     *
+     * @param modFile The mod file to generate the UUID from.
+     * @return The generated UUID.
+     */
+    public static String getModUUID(@NotNull Path modFile) {
+        try {
+            return UUID.nameUUIDFromBytes(Files.readAllBytes(modFile)).toString();
+        } catch (IOException e) {
+            // Fall back to the file name, should only happen in dev environments
+            LOGGER.warn("Failed to read mod file for UUID generation, falling back to file path: {}", modFile);
+            return UUID.nameUUIDFromBytes(modFile.toString().getBytes()).toString();
+        }
     }
 }
