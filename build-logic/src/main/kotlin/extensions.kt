@@ -19,12 +19,8 @@ fun Project.provided(dependency: MinimalExternalModuleDependency) =
 fun Project.provided(provider: Provider<MinimalExternalModuleDependency>) =
     provided(provider.get())
 
-fun getProvidedDependenciesForProject(projectName: String): Set<String>? {
-    return if (providedDependencies.containsKey(projectName)) {
-        providedDependencies[projectName]
-    } else {
-        mutableSetOf()
-    }
+fun getProvidedDependenciesForProject(projectName: String): Set<String> {
+    return providedDependencies.getOrDefault(projectName, emptySet()).toSet()
 }
 
 private fun calcExclusion(section: String, bit: Int, excludedOn: Int): String =

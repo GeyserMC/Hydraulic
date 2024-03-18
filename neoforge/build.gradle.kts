@@ -5,12 +5,6 @@ val modId = project.property("mod_id") as String
 provided("org.jetbrains", "annotations")
 provided("commons-io", "commons-io")
 
-// TODO fix geyser-side: kyori is currently provided by Geyser
-provided("net.kyori","adventure-text-serializer-gson")
-provided("net.kyori", "adventure-text-serializer-json")
-provided("net.kyori", "adventure-text-serializer-legacy")
-provided("net.kyori", "adventure-api")
-
 architectury {
     platformSetupLoomIde()
     neoForge()
@@ -41,11 +35,9 @@ dependencies {
 
     shadow(project(path = ":shared", configuration = "transformProductionNeoForge")) { isTransitive = false }
 
+    // TODO fix neoforge runServer task
+    modRuntimeOnly(libs.pack.converter)
     includeTransitive(libs.pack.converter)
-
-    // TODO: properly add converter dependency to neoforge's runtime path
-    // Currently, it causes about a dozen conflicts. Only needed for the runServer task
-    forgeRuntimeLibrary(libs.pack.converter)
 }
 
 tasks {
