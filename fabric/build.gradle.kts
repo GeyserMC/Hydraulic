@@ -46,3 +46,11 @@ dependencies {
     modRuntimeOnly(libs.pack.converter)
     includeTransitive(libs.pack.converter)
 }
+
+sourceSets {
+    main {
+        resources {
+            srcDirs(project(":shared").sourceSets["main"].resources.srcDirs)
+        }
+    }
+}
