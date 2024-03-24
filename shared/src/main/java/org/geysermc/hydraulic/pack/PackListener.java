@@ -45,6 +45,11 @@ public class PackListener {
                 continue;
             }
 
+            // Ignore generated mods
+            if (mod.id().startsWith("generated_")) {
+                continue;
+            }
+
             Path packPath = packsPath.resolve(mod.id() + ".zip");
             if (!event.resourcePacks().contains(packPath) || checkNeedsConversion(mod, packPath)) {
                 packsToLoad.put(mod.id(), Pair.of(mod, packPath));
