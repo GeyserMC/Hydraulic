@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.neoforge.platform;
 
+import com.google.common.base.Suppliers;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
@@ -8,37 +9,40 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
-import java.util.Set;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
-
-    @Override
-    public @NotNull Set<ModInfo> mods() {
-        return ModList.get().getMods().stream().map(modInfo ->
-                new ModInfo(
-                        modInfo.getModId(),
-                        modInfo.getVersion().toString(),
-                        modInfo.getDisplayName(),
-                        modInfo.getOwningFile().getFile().getSecureJar().getRootPath(),
-                        modInfo.getOwningFile().getFile().getFilePath(),
-                        modInfo.getLogoFile().orElse("")
-                )
-        ).collect(Collectors.toUnmodifiableSet());
-    }
+    private final Supplier<Map<String, ModInfo>> modsList = Suppliers.memoize(() ->
+        ModList.get()
+            .getMods()
+            .stream()
+            .map(mod -> {
+                final Path modPath = mod.getOwningFile().getFile().getSecureJar().getPrimaryPath();
+                return new ModInfo(
+                    mod.getModId(),
+                    mod.getNamespace(),
+                    mod.getDisplayName(),
+                    mod.getVersion().toString(),
+                    mod.getLogoFile().map(modPath::resolve).orElse(null),
+                    List.of(modPath)
+                );
+            })
+            .collect(Collectors.toUnmodifiableMap(ModInfo::id, Function.identity()))
+    );
 
     @Override
     public @Nullable ModInfo mod(@NotNull String modName) {
-        return ModList.get().getModContainerById(modName).map(container ->
-                new ModInfo(
-                        container.getModId(),
-                        container.getModInfo().getVersion().toString(),
-                        container.getModInfo().getDisplayName(),
-                        container.getModInfo().getOwningFile().getFile().getSecureJar().getRootPath(),
-                        container.getModInfo().getOwningFile().getFile().getFilePath(),
-                        container.getModInfo().getLogoFile().orElse("")
-                )
-        ).orElse(null);
+        return modsList.get().get(modName);
+    }
+
+    @Override
+    public @NotNull Collection<ModInfo> mods() {
+        return modsList.get().values();
     }
 
     @Override

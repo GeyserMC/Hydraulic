@@ -13,9 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Main class of the Hydraulic mod.
@@ -58,7 +58,7 @@ public class HydraulicImpl implements EventRegistrar {
      * @return the mods loaded on this platform
      */
     @NotNull
-    public Set<ModInfo> mods() {
+    public Collection<ModInfo> mods() {
         return this.bootstrap.mods();
     }
 

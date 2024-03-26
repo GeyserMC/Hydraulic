@@ -1,23 +1,33 @@
 package org.geysermc.hydraulic.platform.mod;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 
-/**
- * Represents info about a mod.
- *
- * @param id the mod's ID
- * @param version the mod's version
- * @param name the mod's name
- * @param modPath the mod's path
- */
 public record ModInfo(
-        @NotNull String id,
-        @NotNull String version,
-        @NotNull String name,
-        @NotNull Path modPath,
-        @NotNull Path modFile,
-        @NotNull String iconPath
+    @NotNull String id,
+    @NotNull String namespace,
+    @NotNull String name,
+    @NotNull String version,
+    @Nullable Path iconPath,
+    @NotNull Collection<Path> roots
 ) {
+    @Nullable
+    public Path resolveFile(String file) {
+        for (final Path path : roots) {
+            final Path resolved = path.resolve(file.replace("/", path.getFileSystem().getSeparator()));
+            if (Files.isRegularFile(resolved)) {
+                return resolved;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
 }

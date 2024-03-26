@@ -57,7 +57,7 @@ public class PackListener {
 
         LOGGER.info("Found {} packs to convert!", packsToLoad.size());
 
-        for (Map.Entry<String, Pair<ModInfo, Path>> entry : packsToLoad.entrySet()) {
+        for (var entry : packsToLoad.entrySet()) {
             try {
                 if (this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight())) {
                     event.resourcePacks().add(entry.getValue().getRight());
@@ -77,20 +77,19 @@ public class PackListener {
      * @return {@code true} if the pack needs to be converted.
      */
     private boolean checkNeedsConversion(ModInfo mod, Path packPath) {
-        String modUUID = PackUtil.getModUUID(mod.modFile());
-
         // Read the uuid from the pack manifest
         String packUUID;
-        try {
+        try (
             ZipFile zip = new ZipFile(packPath.toFile());
-            try (InputStream inputStream = zip.getInputStream(zip.getEntry("manifest.json"))){
-                try(InputStreamReader inputStreamReader = new InputStreamReader(inputStream)) {
-                    packUUID = GSON.fromJson(inputStreamReader, Manifest.class).header().uuid();
-                }
-            }
+            InputStream inputStream = zip.getInputStream(zip.getEntry("manifest.json"));
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream)
+        ) {
+            packUUID = GSON.fromJson(inputStreamReader, Manifest.class).header().uuid();
         } catch (IOException e) {
             return true;
         }
+
+        String modUUID = PackUtil.getModUUID(mod.roots()).toString();
 
         return !modUUID.equals(packUUID);
     }

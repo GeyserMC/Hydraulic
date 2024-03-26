@@ -5,20 +5,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
-import java.util.Set;
+import java.util.Collection;
 
 /**
  * Represents the bootstrap of a platform.
  */
 public interface HydraulicBootstrap {
-
     /**
      * Gets all the mods loaded on this platform.
      *
      * @return the mods loaded on this platform
      */
     @NotNull
-    Set<ModInfo> mods();
+    Collection<ModInfo> mods();
 
     /**
      * Gets the mod with the specified name, or null if not found.

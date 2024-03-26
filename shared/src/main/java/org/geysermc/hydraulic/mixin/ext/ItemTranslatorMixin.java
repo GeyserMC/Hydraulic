@@ -16,12 +16,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = ItemTranslator.class, remap = false)
 public class ItemTranslatorMixin {
 
+    // TODO: Use ModifyReturnValue and use a namespace lookup instead of assuming mod ID = namespace (it might not on NeoForge)
     @Inject(
             method = "translateDisplayProperties(Lorg/geysermc/geyser/session/GeyserSession;Lcom/github/steveice10/opennbt/tag/builtin/CompoundTag;Lorg/geysermc/geyser/registry/type/ItemMapping;C)Lcom/github/steveice10/opennbt/tag/builtin/CompoundTag;",
             at = @At("RETURN"),
             cancellable = true
     )
     private static void translateDisplayProperties(GeyserSession session, CompoundTag tag, ItemMapping mapping, char translationColor, CallbackInfoReturnable<CompoundTag> ci) {
+        if (true) return;
         CompoundTag newNbt = tag;
         if (newNbt == null) {
             newNbt = new CompoundTag("nbt");

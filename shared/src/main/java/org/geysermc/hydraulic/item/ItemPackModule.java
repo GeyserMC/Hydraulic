@@ -52,9 +52,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
     }
 
     private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
-        ResourcePack assets = context.pack();
-
-        for (Model model : assets.models()) {
+        for (Model model : context.assets(ResourcePack::models)) {
             // If the parent is item/generated, it's a 2D icon
             if (model.parent() != null && model.parent().value().equals("item/generated")) {
                 itemsWith2dIcon.add(model.key().toString().replace("item/", ""));
@@ -62,15 +60,14 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         }
 
         List<Item> items = context.registryValues(Registries.ITEM);
-        ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, new PackLogListener(LOGGER));
         for (Item item : items) {
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
-            Model baseModel = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
+            Model baseModel = context.modelProvider().model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
             if (baseModel == null) {
                 continue;
             }
-            Model model = new ModelStitcher(provider, baseModel).stitch();
+            Model model = new ModelStitcher(context.modelProvider(), baseModel).stitch();
             if (model == null || model.textures() == null) {
                 continue;
             }

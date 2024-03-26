@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.pack;
 
+import com.google.common.collect.Maps;
 import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
 import org.geysermc.geyser.api.GeyserApi;
@@ -7,25 +8,34 @@ import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
+import org.geysermc.hydraulic.pack.converter.CustomModelConverter;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.converter.PackConverter;
 import org.geysermc.pack.converter.converter.ActionListener;
-import org.geysermc.pack.converter.converter.Converters;
+import org.geysermc.pack.converter.converter.Converter;
+import org.geysermc.pack.converter.converter.model.ModelConverter;
+import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.geysermc.pack.converter.data.ConversionData;
+import org.geysermc.pack.converter.util.LogListener;
 import org.geysermc.pack.converter.util.NioDirectoryFileTreeReader;
+import org.geysermc.pack.converter.util.VanillaPackProvider;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import team.unnamed.creative.ResourcePack;
+import team.unnamed.creative.model.Model;
 import team.unnamed.creative.serialize.minecraft.MinecraftResourcePackReader;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Manages packs within Hydraulic. Most of the pack conversion
@@ -48,6 +58,8 @@ public class PackManager {
     private final HydraulicImpl hydraulic;
     private final List<PackModule<?>> modules = new ArrayList<>();
 
+    private ModelStitcher.Provider modelProvider;
+
     public PackManager(HydraulicImpl hydraulic) {
         this.hydraulic = hydraulic;
     }
@@ -56,6 +68,19 @@ public class PackManager {
      * Initializes the pack manager.
      */
     public void initialize() {
+        final Collection<ModInfo> mods = this.hydraulic.mods();
+        final Map<String, List<ResourcePack>> modPacks = Maps.newHashMapWithExpectedSize(mods.size());
+        for (final ModInfo mod : mods) {
+            modPacks.put(
+                mod.id(),
+                mod.roots()
+                    .stream()
+                    .map(path -> MinecraftResourcePackReader.minecraft().read(NioDirectoryFileTreeReader.read(path)))
+                    .toList()
+            );
+        }
+        modelProvider = createModelProvider(mods, modPacks, new PackLogListener(LOGGER));
+
         for (PackModule<?> module : ServiceLoader.load(PackModule.class)) {
             this.modules.add(module);
 
@@ -64,17 +89,16 @@ public class PackManager {
                 GeyserApi.api().eventBus().subscribe(this.hydraulic, eventClass, this::callEvents);
             });
 
-            for (ModInfo mod : this.hydraulic.mods()) {
+            for (ModInfo mod : mods) {
                 if (IGNORED_MODS.contains(mod.id())) {
                     continue;
                 }
 
                 if (module.hasPreProcessors()) {
                     try {
-                        ResourcePack pack = MinecraftResourcePackReader.minecraft().read(NioDirectoryFileTreeReader.read(mod.modPath()));
-
-                        PackPreProcessContext context = new PackPreProcessContext(this.hydraulic, mod, module, pack);
-                        module.preProcess0(context);
+                        module.preProcess0(new PackPreProcessContext(
+                            this.hydraulic, mod, module, modPacks.get(mod.id()), modelProvider
+                        ));
                     } catch (Throwable t) {
                         LOGGER.error("Failed to pre-process mod {} for module {}", mod.id(), module.getClass().getSimpleName(), t);
                     }
@@ -97,10 +121,9 @@ public class PackManager {
     boolean createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
         PackConverter converter = new PackConverter()
                 .logListener(new PackLogListener(LOGGER))
-                .converters(Converters.defaultConverters())
-                .input(mod.modPath(), false)
+                .converters(createPackConverters())
                 .output(packPath)
-                .textureSubdirectory(mod.id());
+                .textureSubdirectory(mod.namespace());
 
         Map<Class<ConversionData>, List<ActionListener<ConversionData>>> actionListeners = new IdentityHashMap<>();
         for (PackModule<?> module : this.modules) {
@@ -123,7 +146,9 @@ public class PackManager {
         });
 
         try {
-            converter.convert();
+            for (final Path root : mod.roots()) {
+                converter.input(root, false).convert();
+            }
         } catch (IOException ex) {
             LOGGER.error("Failed to convert mod {} to pack", mod.id(), ex);
             return false;
@@ -141,6 +166,20 @@ public class PackManager {
         return true;
     }
 
+    private List<? extends Converter<?>> createPackConverters() {
+        return ServiceLoader.load(Converter.class)
+            .stream()
+            .map(ServiceLoader.Provider::get)
+            .map(c -> (Converter<?>)c)
+            .filter(Predicate.not(Converter::isExperimental))
+            .map(converter ->
+                converter instanceof ModelConverter && modelProvider != null
+                    ? new CustomModelConverter(modelProvider)
+                    : converter
+            )
+            .toList();
+    }
+
     private void callEvents(@NotNull Event event) {
         for (ModInfo mod : this.hydraulic.mods()) {
             if (IGNORED_MODS.contains(mod.id())) {
@@ -156,5 +195,32 @@ public class PackManager {
         for (PackModule<?> module : this.modules) {
             module.call(event.getClass(), new PackEventContext(this.hydraulic, mod, module, event));
         }
+    }
+
+    // Based off of ModelStitcher.vanillaProvider
+    private static ModelStitcher.Provider createModelProvider(
+        Collection<ModInfo> mods,
+        Map<String, List<ResourcePack>> modPacks,
+        LogListener log
+    ) {
+        final List<ResourcePack> flattenedPacks = mods.stream()
+            .map(ModInfo::id)
+            .map(modPacks::get)
+            .flatMap(List::stream)
+            .toList();
+
+        Path vanillaPackPath = Paths.get("vanilla-pack.zip");
+        VanillaPackProvider.create(vanillaPackPath, log);
+        ResourcePack vanillaResourcePack = MinecraftResourcePackReader.minecraft().readFromZipFile(vanillaPackPath);
+
+        return key -> {
+            for (final ResourcePack pack : flattenedPacks) {
+                final Model model = pack.model(key);
+                if (model != null) {
+                    return model;
+                }
+            }
+            return vanillaResourcePack.model(key);
+        };
     }
 }

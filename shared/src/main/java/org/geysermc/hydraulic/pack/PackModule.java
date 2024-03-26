@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  * @param <T> the pack module
  */
 public abstract class PackModule<T extends PackModule<T>> {
-    protected static Logger LOGGER = LogUtils.getLogger();
+    protected static final Logger LOGGER = LogUtils.getLogger();
 
     private final Map<Class<? extends Event>, List<Consumer<PackEventContext<?, T>>>> eventListeners = new HashMap<>();
 
