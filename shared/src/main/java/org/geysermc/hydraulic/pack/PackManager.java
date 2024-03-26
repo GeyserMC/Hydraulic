@@ -1,7 +1,13 @@
 package org.geysermc.hydraulic.pack;
 
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import com.mojang.logging.LogUtils;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import org.apache.commons.io.function.IOStream;
 import org.geysermc.event.Event;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.hydraulic.HydraulicImpl;
@@ -26,6 +32,7 @@ import team.unnamed.creative.model.Model;
 import team.unnamed.creative.serialize.minecraft.MinecraftResourcePackReader;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -36,6 +43,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Manages packs within Hydraulic. Most of the pack conversion
@@ -58,6 +66,10 @@ public class PackManager {
     private final HydraulicImpl hydraulic;
     private final List<PackModule<?>> modules = new ArrayList<>();
 
+    private final ListMultimap<String, ModInfo> namespacesToMods = MultimapBuilder.hashKeys().arrayListValues(1).build();
+    private final ListMultimap<String, ResourceLocation> modsToBlocks = MultimapBuilder.hashKeys().arrayListValues().build();
+    private final ListMultimap<String, ResourceLocation> modsToItems = MultimapBuilder.hashKeys().arrayListValues().build();
+
     private ModelStitcher.Provider modelProvider;
 
     public PackManager(HydraulicImpl hydraulic) {
@@ -68,6 +80,8 @@ public class PackManager {
      * Initializes the pack manager.
      */
     public void initialize() {
+        initializeModLookups();
+
         final Collection<ModInfo> mods = this.hydraulic.mods();
         final Map<String, List<ResourcePack>> modPacks = Maps.newHashMapWithExpectedSize(mods.size());
         for (final ModInfo mod : mods) {
@@ -197,6 +211,56 @@ public class PackManager {
         }
     }
 
+    private void initializeModLookups() {
+        final Multimap<String, ModInfo> namespacesToMods = this.namespacesToMods;
+        namespacesToMods.clear();
+        for (final ModInfo mod : hydraulic.mods()) {
+            for (final Path root : mod.roots()) {
+                final Path assets = root.resolve("assets");
+                if (!Files.isDirectory(assets)) continue;
+                try (Stream<Path> stream = Files.list(assets)) {
+                    IOStream.adapt(stream)
+                        .filter(Files::isDirectory)
+                        .unwrap()
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .filter(namespace -> !namespace.equals("minecraft"))
+                        .forEach(namespace -> namespacesToMods.put(namespace, mod));
+                } catch (IOException e) {
+                    LOGGER.error("Failed to list namespaces for mod {}", mod.id(), e);
+                }
+            }
+        }
+
+        final Multimap<String, ResourceLocation> modsToBlocks = this.modsToBlocks;
+        modsToBlocks.clear();
+        blocksLoop:
+        for (final ResourceLocation block : BuiltInRegistries.BLOCK.keySet()) {
+            if (block.getNamespace().equals("minecraft")) continue;
+            for (final ModInfo mod : namespacesToMods.get(block.getNamespace())) {
+                final Path checkFile = mod.resolveFile("assets/" + block.getNamespace() + "/blockstates/" + block.getPath() + ".json");
+                if (checkFile != null) {
+                    modsToBlocks.put(mod.id(), block);
+                    continue blocksLoop;
+                }
+            }
+        }
+
+        final Multimap<String, ResourceLocation> modsToItems = this.modsToItems;
+        modsToItems.clear();
+        itemsLoop:
+        for (final ResourceLocation item : BuiltInRegistries.ITEM.keySet()) {
+            if (item.getNamespace().equals("minecraft")) continue;
+            for (final ModInfo mod : namespacesToMods.get(item.getNamespace())) {
+                final Path checkFile = mod.resolveFile("assets/" + item.getNamespace() + "/models/item/" + item.getPath() + ".json");
+                if (checkFile != null) {
+                    modsToItems.put(mod.id(), item);
+                    continue itemsLoop;
+                }
+            }
+        }
+    }
+
     // Based off of ModelStitcher.vanillaProvider
     private static ModelStitcher.Provider createModelProvider(
         Collection<ModInfo> mods,
@@ -222,5 +286,17 @@ public class PackManager {
             }
             return vanillaResourcePack.model(key);
         };
+    }
+
+    public ListMultimap<String, ModInfo> getNamespacesToMods() {
+        return namespacesToMods;
+    }
+
+    public ListMultimap<String, ResourceLocation> getModsToBlocks() {
+        return modsToBlocks;
+    }
+
+    public ListMultimap<String, ResourceLocation> getModsToItems() {
+        return modsToItems;
     }
 }

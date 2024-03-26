@@ -27,6 +27,11 @@ public record ModInfo(
     }
 
     @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ModInfo other && id.equals(other.id);
+    }
+
+    @Override
     public int hashCode() {
         return id.hashCode();
     }

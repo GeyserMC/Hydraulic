@@ -133,4 +133,8 @@ public class HydraulicImpl implements EventRegistrar {
 
         return instance;
     }
+
+    public PackManager getPackManager() {
+        return packManager;
+    }
 }

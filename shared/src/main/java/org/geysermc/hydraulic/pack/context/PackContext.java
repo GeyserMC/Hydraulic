@@ -1,7 +1,10 @@
 package org.geysermc.hydraulic.pack.context;
 
+import com.google.common.collect.Lists;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -9,7 +12,6 @@ import org.geysermc.hydraulic.storage.ModStorage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Represents the context of a pack.
@@ -67,12 +69,22 @@ public class PackContext<T extends PackModule<T>> {
      * @param <V> the type of the registry
      */
     @NotNull
-    public <V> List<V> registryValues(@NotNull ResourceKey<Registry<V>> key) {
+    @SuppressWarnings("RedundantCast")
+    public <V> List<V> registryValues(@NotNull ResourceKey<? extends Registry<V>> key) {
         Registry<V> registry = this.hydraulic.server().registryAccess().registryOrThrow(key);
-        return registry.entrySet().stream()
-                .filter(entry -> entry.getKey().location().getNamespace().equals(this.mod.id()))
-                .map(Map.Entry::getValue)
-                .toList();
+        final List<ResourceLocation> locations;
+        if ((ResourceKey<?>)key == Registries.BLOCK) {
+            locations = hydraulic.getPackManager()
+                .getModsToBlocks()
+                .get(mod.id());
+        } else if ((ResourceKey<?>)key == Registries.ITEM) {
+            locations = hydraulic.getPackManager()
+                .getModsToItems()
+                .get(mod.id());
+        } else {
+            locations = List.of();
+        }
+        return Lists.transform(locations, registry::get);
     }
 }
 

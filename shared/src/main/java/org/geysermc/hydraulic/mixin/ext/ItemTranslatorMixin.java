@@ -13,17 +13,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.List;
+
 @Mixin(value = ItemTranslator.class, remap = false)
 public class ItemTranslatorMixin {
 
-    // TODO: Use ModifyReturnValue and use a namespace lookup instead of assuming mod ID = namespace (it might not on NeoForge)
     @Inject(
             method = "translateDisplayProperties(Lorg/geysermc/geyser/session/GeyserSession;Lcom/github/steveice10/opennbt/tag/builtin/CompoundTag;Lorg/geysermc/geyser/registry/type/ItemMapping;C)Lcom/github/steveice10/opennbt/tag/builtin/CompoundTag;",
             at = @At("RETURN"),
             cancellable = true
     )
     private static void translateDisplayProperties(GeyserSession session, CompoundTag tag, ItemMapping mapping, char translationColor, CallbackInfoReturnable<CompoundTag> ci) {
-        if (true) return;
         CompoundTag newNbt = tag;
         if (newNbt == null) {
             newNbt = new CompoundTag("nbt");
@@ -46,11 +46,8 @@ public class ItemTranslatorMixin {
 
         // Get the mod name from the identifier
         String modId = identifier.substring(0, identifier.indexOf(":"));
-        ModInfo mod = HydraulicImpl.instance().mod(modId);
-        String modName = "Minecraft";
-        if (mod != null) {
-            modName = mod.name();
-        }
+        List<ModInfo> mods = HydraulicImpl.instance().getPackManager().getNamespacesToMods().get(modId);
+        String modName = !mods.isEmpty() ? mods.get(0).name() : "Minecraft";
 
         listTag.add(new StringTag("", "§r§9§o" + modName));
         compoundTag.put(listTag);
