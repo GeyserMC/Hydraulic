@@ -1,5 +1,6 @@
 [versions]
 mixin = "0.8.5"
+mixinextras = "0.3.5"
 geyser = "2.2.2-SNAPSHOT"
 auto-service = "1.0.1"
 pack-converter = "3.1-SNAPSHOT"
@@ -18,6 +19,7 @@ neoforge-version = "20.4.48-beta"
 
 [libraries]
 mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }
+mixinextras = { module = "io.github.llamalad7:mixinextras-common", version.ref = "mixinextras" }
 geyser-api = { group = "org.geysermc.geyser", name = "api", version.ref = "geyser" }
 geyser-core = { group = "org.geysermc.geyser", name = "core", version.ref = "geyser" }
 geyser-fabric = { group = "org.geysermc.geyser", name = "fabric", version.ref = "geyser" }
