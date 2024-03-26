@@ -22,7 +22,7 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
             .getMods()
             .stream()
             .map(mod -> {
-                final Path modPath = mod.getOwningFile().getFile().getSecureJar().getPrimaryPath();
+                final Path modPath = mod.getOwningFile().getFile().getSecureJar().getRootPath();
                 return new ModInfo(
                     mod.getModId(),
                     mod.getNamespace(),
