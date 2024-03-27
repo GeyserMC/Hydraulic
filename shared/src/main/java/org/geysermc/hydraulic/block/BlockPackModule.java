@@ -313,7 +313,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             builder.components(componentsBuilder.build());
 
             CustomBlockData blockData = builder.build();
-            event.register(blockData);
+            try {
+                event.register(blockData);
+            } catch (IllegalArgumentException e) {
+                LOGGER.error("Failed to register block {}", blockLocation, e.getMessage());
+                continue;
+            }
 
             int blockId = registry.getId(block);
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
