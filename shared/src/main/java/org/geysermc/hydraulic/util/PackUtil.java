@@ -1,5 +1,7 @@
 package org.geysermc.hydraulic.util;
 
+import com.google.common.hash.Hashing;
+import com.google.common.hash.HashingOutputStream;
 import com.mojang.logging.LogUtils;
 import net.kyori.adventure.key.Key;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -12,17 +14,21 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Utility class for packs.
  */
 public class PackUtil {
-    protected static Logger LOGGER = LogUtils.getLogger();
+    protected static final Logger LOGGER = LogUtils.getLogger();
     private static final int FORMAT_VERSION = 2;
 
     /**
@@ -82,19 +88,20 @@ public class PackUtil {
         return modelName.replace("block/", "").replace("item/", "");
     }
 
-    /**
-     * Generate a UUID from the mod file to use as the pack UUID.
-     *
-     * @param modFile The mod file to generate the UUID from.
-     * @return The generated UUID.
-     */
-    public static String getModUUID(@NotNull Path modFile) {
-        try {
-            return UUID.nameUUIDFromBytes(Files.readAllBytes(modFile)).toString();
-        } catch (IOException e) {
-            // Fall back to the file name, should only happen in dev environments
-            LOGGER.warn("Failed to read mod file for UUID generation, falling back to file path: {}", modFile);
-            return UUID.nameUUIDFromBytes(modFile.toString().getBytes()).toString();
+    public static UUID getModUUID(Collection<Path> modRoots) {
+        final HashingOutputStream hos = new HashingOutputStream(Hashing.murmur3_128(), OutputStream.nullOutputStream());
+        try (Stream<Path> stream = modRoots.parallelStream()) {
+            stream.flatMap(IOUtil.uncheckFunction(Files::walk)).forEachOrdered(p -> {
+                try {
+                    hos.write(p.toString().getBytes(StandardCharsets.UTF_8));
+                    if (Files.isRegularFile(p)) {
+                        Files.copy(p, hos);
+                    }
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to hash {}", p, e);
+                }
+            });
         }
+        return UUID.nameUUIDFromBytes(hos.hash().asBytes());
     }
 }

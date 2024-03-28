@@ -40,7 +40,6 @@ import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
-import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.hydraulic.util.PackUtil;
@@ -82,19 +81,17 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
     }
 
     private void preProcess(@NotNull PackPreProcessContext<BlockPackModule> context) {
-        ResourcePack assets = context.pack();
-        for (team.unnamed.creative.blockstate.BlockState blockState : assets.blockStates()) {
-            this.blockStates.put(blockState.key().toString(), new StateDefinition(blockState, context.pack()));
+        for (var blockState : context.assets(ResourcePack::blockStates)) {
+            this.blockStates.put(blockState.key().toString(), new StateDefinition(blockState, context.modelProvider()));
         }
 
         ModStorage storage = context.storage();
         if (storage.materials().materials().isEmpty()) {
             PackLogListener packLogListener = new PackLogListener(LOGGER);
-            ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, packLogListener);
 
             Materials materials = new Materials();
-            for (Model model : assets.models()) {
-                Model stitchedModel = new ModelStitcher(provider, model, packLogListener).stitch();
+            for (Model model : context.assets(ResourcePack::models)) {
+                Model stitchedModel = new ModelStitcher(context.modelProvider(), model, packLogListener).stitch();
                 if (stitchedModel == null) {
                     LOGGER.warn("Could not find a stitched model for block {}", model.key());
                     continue;
@@ -172,7 +169,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             List<CustomBlockPermutation> permutations = new ArrayList<>();
             CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                ModelDefinition definition = getModel(context.mod(), blockLocation, state);
+                ModelDefinition definition = getModel(blockLocation, state);
                 if (definition == null) {
                     continue;
                 }
@@ -371,7 +368,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
     }
 
     @Nullable
-    private ModelDefinition getModel(@NotNull ModInfo mod, @NotNull ResourceLocation blockLocation, @NotNull BlockState state) {
+    private ModelDefinition getModel(@NotNull ResourceLocation blockLocation, @NotNull BlockState state) {
         StateDefinition definition = this.blockStates.get(blockLocation.toString());
         if (definition == null) {
             LOGGER.warn("Missing blockstate for block {}", blockLocation);
@@ -404,7 +401,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             Variant variant = multiVariant.variants().get(0);
             Key modelKey = variant.model();
 
-            Model model = definition.pack().model(modelKey);
+            Model model = definition.modelProvider().model(modelKey);
             if (model == null) {
                 LOGGER.warn("Missing model {} for block {}", modelKey, blockLocation);
             } else {

@@ -13,6 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.List;
+
 @Mixin(value = ItemTranslator.class, remap = false)
 public class ItemTranslatorMixin {
 
@@ -44,11 +46,8 @@ public class ItemTranslatorMixin {
 
         // Get the mod name from the identifier
         String modId = identifier.substring(0, identifier.indexOf(":"));
-        ModInfo mod = HydraulicImpl.instance().mod(modId);
-        String modName = "Minecraft";
-        if (mod != null) {
-            modName = mod.name();
-        }
+        List<ModInfo> mods = HydraulicImpl.instance().getPackManager().getNamespacesToMods().get(modId);
+        String modName = !mods.isEmpty() ? mods.get(0).name() : "Minecraft";
 
         listTag.add(new StringTag("", "§r§9§o" + modName));
         compoundTag.put(listTag);
