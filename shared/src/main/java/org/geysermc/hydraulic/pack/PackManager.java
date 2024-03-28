@@ -263,6 +263,7 @@ public class PackManager {
 
     /**
      * Creates a {@link ModelStitcher.Provider} that first searches mods, then the Vanilla pack.
+     *
      * @param mods The mods to search through.
      * @param modPacks A {@link Map} from mod ID to a {@link List} of {@link ResourcePack}s contained within that mod.
      *                 There may be multiple {@link ResourcePack}s in a mod if there are multiple resource roots for the

@@ -30,9 +30,10 @@ public class FabricUtil {
 
     /**
      * Creates {@link ModInfo} objects for each mod in a jar, including JiJ'd mods, recursively.
+     * @see #resolveJiJ(Collection, Consumer)
+     *
      * @param roots The root paths of a mod. Usually only one element, but may be more if using classpath groups.
      * @return A stream that returns each created {@link ModInfo} object.
-     * @see #resolveJiJ(Collection, Consumer)
      */
     public static Stream<ModInfo> resolveJiJ(Collection<Path> roots) {
         return Stream.of(roots).mapMulti(FabricUtil::resolveJiJ);
@@ -40,9 +41,10 @@ public class FabricUtil {
 
     /**
      * Creates {@link ModInfo} objects for each mod in a jar, including JiJ'd mods, recursively.
+     * @see #resolveJiJ(Collection)
+     *
      * @param roots The root paths of a mod. Usually only one element, but may be more if using classpath groups.
      * @param output Invoked with each created {@link ModInfo} object.
-     * @see #resolveJiJ(Collection)
      */
     // We aren't modifying jars, therefore we don't need to close() them, as they'll simply get GCed.
     @SuppressWarnings("resource")
@@ -162,6 +164,7 @@ public class FabricUtil {
 
     /**
      * Finds the first file matching the specified path in the specified roots.
+     *
      * @param roots The root directories to search. Earlier elements are searched first.
      * @param file The file to search for.
      * @return The {@link Path} to the searched file, or {@code null} if it wasn't found.
@@ -179,6 +182,7 @@ public class FabricUtil {
 
     /**
      * Converts an {@link Iterable} to a {@link Collection}, unless it already is one.
+     *
      * @param iterable The {@link Iterable} to convert.
      * @return {@code iterable} if it's already a {@link Collection}, or a copy of it as a {@link Collection} otherwise.
      */
