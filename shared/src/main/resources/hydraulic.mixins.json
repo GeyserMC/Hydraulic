@@ -5,7 +5,9 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "ext.BlockRegistryPopulatorMixin",
-    "ext.ItemTranslatorMixin"
+    "ext.ItemTranslatorMixin",
+    "ext.BlockStateSerializerMixin",
+    "ext.MinecraftResourcePackReaderImplMixin"
   ],
   "injectors": {
     "defaultRequire": 1

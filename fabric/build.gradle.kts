@@ -45,4 +45,14 @@ dependencies {
 
     modRuntimeOnly(libs.pack.converter)
     includeTransitive(libs.pack.converter)
+
+    modLocalRuntime(libs.geyser.fabric)
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs(project(":shared").sourceSets["main"].resources.srcDirs)
+        }
+    }
 }

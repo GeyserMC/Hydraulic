@@ -35,6 +35,7 @@ import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.geyser.util.MathUtils;
 import org.geysermc.hydraulic.pack.ConvertablePackModule;
+import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
@@ -86,9 +87,11 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
         ModStorage storage = context.storage();
         if (storage.materials().materials().isEmpty()) {
+            PackLogListener packLogListener = new PackLogListener(LOGGER);
+
             Materials materials = new Materials();
             for (Model model : context.assets(ResourcePack::models)) {
-                Model stitchedModel = new ModelStitcher(context.modelProvider(), model).stitch();
+                Model stitchedModel = new ModelStitcher(context.modelProvider(), model, packLogListener).stitch();
                 if (stitchedModel == null) {
                     LOGGER.warn("Could not find a stitched model for block {}", model.key());
                     continue;
@@ -308,7 +311,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             builder.components(componentsBuilder.build());
 
             CustomBlockData blockData = builder.build();
-            event.register(blockData);
+            try {
+                event.register(blockData);
+            } catch (IllegalArgumentException e) {
+                LOGGER.error("Failed to register block {}", blockLocation, e.getMessage());
+                continue;
+            }
 
             int blockId = registry.getId(block);
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {

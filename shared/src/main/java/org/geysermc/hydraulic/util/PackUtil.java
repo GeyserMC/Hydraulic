@@ -4,7 +4,6 @@ import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.mojang.logging.LogUtils;
 import net.kyori.adventure.key.Key;
-import org.apache.commons.io.function.Uncheck;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.bedrock.resource.Manifest;
@@ -92,7 +91,7 @@ public class PackUtil {
     public static UUID getModUUID(Collection<Path> modRoots) {
         final HashingOutputStream hos = new HashingOutputStream(Hashing.murmur3_128(), OutputStream.nullOutputStream());
         try (Stream<Path> stream = modRoots.parallelStream()) {
-            stream.flatMap(p -> Uncheck.get(() -> Files.walk(p))).forEachOrdered(p -> {
+            stream.flatMap(IOUtil.uncheckFunction(Files::walk)).forEachOrdered(p -> {
                 try {
                     hos.write(p.toString().getBytes(StandardCharsets.UTF_8));
                     if (Files.isRegularFile(p)) {

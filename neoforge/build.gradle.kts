@@ -57,3 +57,11 @@ tasks {
         archiveClassifier.set("dev")
     }
 }
+
+sourceSets {
+    main {
+        resources {
+            srcDirs(project(":shared").sourceSets["main"].resources.srcDirs)
+        }
+    }
+}

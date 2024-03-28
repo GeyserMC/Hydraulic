@@ -8,6 +8,7 @@ import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -28,7 +29,7 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
                     mod.getNamespace(),
                     mod.getDisplayName(),
                     mod.getVersion().toString(),
-                    mod.getLogoFile().map(modPath::resolve).orElse(null),
+                    mod.getLogoFile().map(modPath::resolve).filter(Files::isRegularFile).orElse(null),
                     List.of(modPath)
                 );
             })
