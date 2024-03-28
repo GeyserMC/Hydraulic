@@ -9,6 +9,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import org.geysermc.event.Event;
 import org.geysermc.geyser.api.GeyserApi;
+import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
@@ -21,7 +22,6 @@ import org.geysermc.pack.converter.converter.Converter;
 import org.geysermc.pack.converter.converter.model.ModelConverter;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.geysermc.pack.converter.data.ConversionData;
-import org.geysermc.pack.converter.util.LogListener;
 import org.geysermc.pack.converter.util.NioDirectoryFileTreeReader;
 import org.geysermc.pack.converter.util.VanillaPackProvider;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +33,6 @@ import team.unnamed.creative.serialize.minecraft.MinecraftResourcePackReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -92,7 +91,7 @@ public class PackManager {
                     .toList()
             );
         }
-        modelProvider = createModelProvider(mods, modPacks, new PackLogListener(LOGGER));
+        modelProvider = createModelProvider(mods, modPacks);
 
         for (PackModule<?> module : ServiceLoader.load(PackModule.class)) {
             this.modules.add(module);
@@ -211,6 +210,7 @@ public class PackManager {
     }
 
     private void initializeModLookups() {
+        // Step 1: Lookup which namespaces are contained by which mods
         final Multimap<String, ModInfo> namespacesToMods = this.namespacesToMods;
         namespacesToMods.clear();
         for (final ModInfo mod : hydraulic.mods()) {
@@ -229,6 +229,7 @@ public class PackManager {
             }
         }
 
+        // Step 2: Use namespace information to lookup which mods contains what block models
         final Multimap<String, ResourceLocation> modsToBlocks = this.modsToBlocks;
         modsToBlocks.clear();
         blocksLoop:
@@ -243,6 +244,8 @@ public class PackManager {
             }
         }
 
+        // Step 3: Use namespace information to lookup which mods contains what item models
+        // There's no ordering requirement between this and Step 2.
         final Multimap<String, ResourceLocation> modsToItems = this.modsToItems;
         modsToItems.clear();
         itemsLoop:
@@ -258,11 +261,17 @@ public class PackManager {
         }
     }
 
-    // Based off of ModelStitcher.vanillaProvider
+    /**
+     * Creates a {@link ModelStitcher.Provider} that first searches mods, then the Vanilla pack.
+     * @param mods The mods to search through.
+     * @param modPacks A {@link Map} from mod ID to a {@link List} of {@link ResourcePack}s contained within that mod.
+     *                 There may be multiple {@link ResourcePack}s in a mod if there are multiple resource roots for the
+     *                 mod.
+     * @return A {@link ModelStitcher.Provider} that searches through mods and the Vanilla pack.
+     */
     private static ModelStitcher.Provider createModelProvider(
         Collection<ModInfo> mods,
-        Map<String, List<ResourcePack>> modPacks,
-        LogListener log
+        Map<String, List<ResourcePack>> modPacks
     ) {
         final List<ResourcePack> flattenedPacks = mods.stream()
             .map(ModInfo::id)
@@ -270,8 +279,15 @@ public class PackManager {
             .flatMap(List::stream)
             .toList();
 
-        Path vanillaPackPath = Paths.get("vanilla-pack.zip");
-        VanillaPackProvider.create(vanillaPackPath, log);
+        Path vanillaPackPath = HydraulicImpl.instance()
+            .dataFolder(Constants.MOD_ID)
+            .resolve("cache/vanilla-pack.zip");
+        try {
+            Files.createDirectories(vanillaPackPath.getParent());
+        } catch (IOException e) {
+            LOGGER.error("Failed to create cache dir");
+        }
+        VanillaPackProvider.create(vanillaPackPath, new PackLogListener(LOGGER));
         ResourcePack vanillaResourcePack = MinecraftResourcePackReader.minecraft().readFromZipFile(vanillaPackPath);
 
         return key -> {
