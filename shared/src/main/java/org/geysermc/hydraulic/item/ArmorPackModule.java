@@ -14,6 +14,8 @@ import org.geysermc.pack.bedrock.resource.attachables.attachable.Description;
 import org.geysermc.pack.bedrock.resource.attachables.attachable.description.Scripts;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,13 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
         LOGGER.info("Armor to convert: " + armorItems.size() + " in mod " + context.mod().id());
 
+        // enchanted_actor_glint.png is from https://github.com/Mojang/bedrock-samples/blob/main/resource_pack/textures/misc/enchanted_actor_glint.png
+        try (InputStream stream = ArmorPackModule.class.getClassLoader().getResourceAsStream("textures/enchanted_actor_glint.png")) {
+            context.bedrockResourcePack().addExtraFile(stream.readAllBytes(), "textures/misc/enchanted_actor_glint.png");
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load enchanted_actor_glint.png, enchanted armor will not have a glint effect");
+        }
+
         for (ArmorItem armorItem : armorItems) {
             ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
 
@@ -72,7 +81,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             description.textures(new HashMap<>() {
                 {
                     put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), armorTextureLocation.getPath(), (armorItem.getEquipmentSlot() == EquipmentSlot.LEGS ? 2 : 1)));
-                    put("enchanted", "textures/misc/enchanted_item_glint");
+                    put("enchanted", "textures/misc/enchanted_actor_glint");
                 }
             });
 
