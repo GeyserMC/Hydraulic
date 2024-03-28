@@ -4,6 +4,7 @@
   "package": "org.geysermc.hydraulic.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "ext.BlockRegistryPopulatorMixin",
     "ext.ItemTranslatorMixin",
     "ext.BlockStateSerializerMixin",
     "ext.MinecraftResourcePackReaderImplMixin"

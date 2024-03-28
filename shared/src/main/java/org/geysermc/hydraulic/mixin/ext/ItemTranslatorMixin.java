@@ -3,27 +3,31 @@ package org.geysermc.hydraulic.mixin.ext;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import com.github.steveice10.opennbt.tag.builtin.ListTag;
 import com.github.steveice10.opennbt.tag.builtin.StringTag;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import org.geysermc.geyser.registry.type.ItemMapping;
-import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.inventory.item.ItemTranslator;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.List;
 
 import java.util.List;
 
 @Mixin(value = ItemTranslator.class, remap = false)
 public class ItemTranslatorMixin {
 
-    @Inject(
+    @ModifyReturnValue(
             method = "translateDisplayProperties(Lorg/geysermc/geyser/session/GeyserSession;Lcom/github/steveice10/opennbt/tag/builtin/CompoundTag;Lorg/geysermc/geyser/registry/type/ItemMapping;C)Lcom/github/steveice10/opennbt/tag/builtin/CompoundTag;",
-            at = @At("RETURN"),
-            cancellable = true
+            at = @At("RETURN")
     )
-    private static void translateDisplayProperties(GeyserSession session, CompoundTag tag, ItemMapping mapping, char translationColor, CallbackInfoReturnable<CompoundTag> ci) {
+    private static CompoundTag translateDisplayProperties(
+        CompoundTag original,
+        @Local(argsOnly = true) CompoundTag tag,
+        @Local(argsOnly = true) ItemMapping mapping
+    ) {
         CompoundTag newNbt = tag;
         if (newNbt == null) {
             newNbt = new CompoundTag("nbt");
@@ -53,6 +57,6 @@ public class ItemTranslatorMixin {
         compoundTag.put(listTag);
         newNbt.put(compoundTag);
 
-        ci.setReturnValue(newNbt);
+        return newNbt;
     }
 }
