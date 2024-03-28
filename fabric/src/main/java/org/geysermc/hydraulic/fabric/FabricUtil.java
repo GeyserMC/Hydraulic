@@ -79,6 +79,9 @@ public class FabricUtil {
         if (modInfo == null) return;
         output.accept(modInfo);
 
+        // Fabric loads JiJ by reading a list of JiJ'd mods from a "jars" element inside fabric.mod.json. This is an
+        // array of objects where each object has a field called "file" that specifies the path, relative to the root of
+        // the jar, of the JiJ'd mod. See V1ModMetadataParser.
         final JsonElement jarsElement = fmj.get("jars");
         if (!(jarsElement instanceof JsonArray jarsArray)) return;
         for (final JsonElement element : jarsArray) {

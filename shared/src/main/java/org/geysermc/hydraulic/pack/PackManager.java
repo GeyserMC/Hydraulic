@@ -232,14 +232,13 @@ public class PackManager {
         // Step 2: Use namespace information to lookup which mods contains what block models
         final Multimap<String, ResourceLocation> modsToBlocks = this.modsToBlocks;
         modsToBlocks.clear();
-        blocksLoop:
         for (final ResourceLocation block : BuiltInRegistries.BLOCK.keySet()) {
             if (block.getNamespace().equals("minecraft")) continue;
             for (final ModInfo mod : namespacesToMods.get(block.getNamespace())) {
                 final Path checkFile = mod.resolveFile("assets/" + block.getNamespace() + "/blockstates/" + block.getPath() + ".json");
                 if (checkFile != null) {
                     modsToBlocks.put(mod.id(), block);
-                    continue blocksLoop;
+                    break;
                 }
             }
         }
@@ -248,14 +247,13 @@ public class PackManager {
         // There's no ordering requirement between this and Step 2.
         final Multimap<String, ResourceLocation> modsToItems = this.modsToItems;
         modsToItems.clear();
-        itemsLoop:
         for (final ResourceLocation item : BuiltInRegistries.ITEM.keySet()) {
             if (item.getNamespace().equals("minecraft")) continue;
             for (final ModInfo mod : namespacesToMods.get(item.getNamespace())) {
                 final Path checkFile = mod.resolveFile("assets/" + item.getNamespace() + "/models/item/" + item.getPath() + ".json");
                 if (checkFile != null) {
                     modsToItems.put(mod.id(), item);
-                    continue itemsLoop;
+                    break;
                 }
             }
         }
