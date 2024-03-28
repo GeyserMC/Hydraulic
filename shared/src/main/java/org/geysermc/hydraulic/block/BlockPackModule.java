@@ -86,9 +86,11 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
         ModStorage storage = context.storage();
         if (storage.materials().materials().isEmpty()) {
+            PackLogListener packLogListener = new PackLogListener(LOGGER);
+
             Materials materials = new Materials();
             for (Model model : context.assets(ResourcePack::models)) {
-                Model stitchedModel = new ModelStitcher(context.modelProvider(), model, new PackLogListener(LOGGER)).stitch();
+                Model stitchedModel = new ModelStitcher(context.modelProvider(), model, packLogListener).stitch();
                 if (stitchedModel == null) {
                     LOGGER.warn("Could not find a stitched model for block {}", model.key());
                     continue;
