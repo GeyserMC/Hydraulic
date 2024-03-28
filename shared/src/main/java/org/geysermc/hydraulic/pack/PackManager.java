@@ -7,7 +7,6 @@ import com.google.common.collect.MultimapBuilder;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import org.apache.commons.io.function.IOStream;
 import org.geysermc.event.Event;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.hydraulic.HydraulicImpl;
@@ -219,9 +218,7 @@ public class PackManager {
                 final Path assets = root.resolve("assets");
                 if (!Files.isDirectory(assets)) continue;
                 try (Stream<Path> stream = Files.list(assets)) {
-                    IOStream.adapt(stream)
-                        .filter(Files::isDirectory)
-                        .unwrap()
+                    stream.filter(Files::isDirectory)
                         .map(Path::getFileName)
                         .map(Path::toString)
                         .filter(namespace -> !namespace.equals("minecraft"))
