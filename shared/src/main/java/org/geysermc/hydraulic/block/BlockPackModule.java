@@ -89,11 +89,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
         ModStorage storage = context.storage();
         if (storage.materials().materials().isEmpty()) {
-            ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, new PackLogListener(LOGGER));
+            PackLogListener packLogListener = new PackLogListener(LOGGER);
+            ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, packLogListener);
 
             Materials materials = new Materials();
             for (Model model : assets.models()) {
-                Model stitchedModel = new ModelStitcher(provider, model).stitch();
+                Model stitchedModel = new ModelStitcher(provider, model, packLogListener).stitch();
                 if (stitchedModel == null) {
                     LOGGER.warn("Could not find a stitched model for block {}", model.key());
                     continue;
