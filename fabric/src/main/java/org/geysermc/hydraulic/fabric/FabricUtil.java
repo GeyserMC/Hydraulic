@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import net.minecraft.util.GsonHelper;
+import org.geysermc.hydraulic.fabric.platform.HydraulicFabricBootstrap;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,13 +22,28 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+/**
+ * Utilities used to implement {@link HydraulicFabricBootstrap}.
+ */
 public class FabricUtil {
     public static final int ICON_SIZE = 256;
 
+    /**
+     * Creates {@link ModInfo} objects for each mod in a jar, including JiJ'd mods, recursively.
+     * @param roots The root paths of a mod. Usually only one element, but may be more if using classpath groups.
+     * @return A stream that returns each created {@link ModInfo} object.
+     * @see #resolveJiJ(Collection, Consumer)
+     */
     public static Stream<ModInfo> resolveJiJ(Collection<Path> roots) {
         return Stream.of(roots).mapMulti(FabricUtil::resolveJiJ);
     }
 
+    /**
+     * Creates {@link ModInfo} objects for each mod in a jar, including JiJ'd mods, recursively.
+     * @param roots The root paths of a mod. Usually only one element, but may be more if using classpath groups.
+     * @param output Invoked with each created {@link ModInfo} object.
+     * @see #resolveJiJ(Collection)
+     */
     // We aren't modifying jars, therefore we don't need to close() them, as they'll simply get GCed.
     @SuppressWarnings("resource")
     public static void resolveJiJ(Collection<Path> roots, Consumer<ModInfo> output) {
@@ -80,7 +96,7 @@ public class FabricUtil {
     }
 
     @Nullable
-    public static ModInfo createModInfo(JsonObject metadata, Collection<Path> roots, int schemaVersion) {
+    private static ModInfo createModInfo(JsonObject metadata, Collection<Path> roots, int schemaVersion) {
         final JsonElement custom = metadata.get("custom");
         if (custom instanceof JsonObject object && new JsonPrimitive(true).equals(object.get("fabric-loom:generated"))) {
             return null;
@@ -144,6 +160,12 @@ public class FabricUtil {
         );
     }
 
+    /**
+     * Finds the first file matching the specified path in the specified roots.
+     * @param roots The root directories to search. Earlier elements are searched first.
+     * @param file The file to search for.
+     * @return The {@link Path} to the searched file, or {@code null} if it wasn't found.
+     */
     @Nullable
     public static Path resolveFile(Collection<Path> roots, String file) {
         for (final Path path : roots) {
@@ -155,6 +177,11 @@ public class FabricUtil {
         return null;
     }
 
+    /**
+     * Converts an {@link Iterable} to a {@link Collection}, unless it already is one.
+     * @param iterable The {@link Iterable} to convert.
+     * @return {@code iterable} if it's already a {@link Collection}, or a copy of it as a {@link Collection} otherwise.
+     */
     public static <T> Collection<T> toCollection(Iterable<T> iterable) {
         return iterable instanceof Collection<T> collection ? collection : ImmutableList.copyOf(iterable);
     }
