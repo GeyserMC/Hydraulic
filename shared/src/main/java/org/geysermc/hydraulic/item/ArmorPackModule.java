@@ -60,6 +60,15 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             description.scripts(ATTACHABLE_SCRIPTS);
             description.renderControllers(new String[] { "controller.render.armor" });
 
+            // Change the query to match the item
+            // This should always work as armour should have 2d item models
+            // If its 3d this will break as the item won't have the `item.` prefix
+            // TODO Register another attachable for 3d items? Or just work out which is correct from here
+            Map<String, String> items = new HashMap<>() {{
+                put(armorItemLocation.getNamespace() + ":item." + armorItemLocation.getPath(), "query.owner_identifier == 'minecraft:player'");
+            }};
+            description.item(items);
+
             description.textures(new HashMap<>() {
                 {
                     put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), armorTextureLocation.getPath(), (armorItem.getEquipmentSlot() == EquipmentSlot.LEGS ? 2 : 1)));
