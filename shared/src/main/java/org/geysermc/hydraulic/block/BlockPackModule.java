@@ -35,6 +35,7 @@ import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.geyser.util.MathUtils;
 import org.geysermc.hydraulic.pack.ConvertablePackModule;
+import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
