@@ -88,7 +88,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         if (storage.materials().materials().isEmpty()) {
             Materials materials = new Materials();
             for (Model model : context.assets(ResourcePack::models)) {
-                Model stitchedModel = new ModelStitcher(context.modelProvider(), model).stitch();
+                Model stitchedModel = new ModelStitcher(context.modelProvider(), model, new PackLogListener(LOGGER)).stitch();
                 if (stitchedModel == null) {
                     LOGGER.warn("Could not find a stitched model for block {}", model.key());
                     continue;
@@ -308,7 +308,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             builder.components(componentsBuilder.build());
 
             CustomBlockData blockData = builder.build();
-            event.register(blockData);
+            try {
+                event.register(blockData);
+            } catch (IllegalArgumentException e) {
+                LOGGER.error("Failed to register block {}", blockLocation, e.getMessage());
+                continue;
+            }
 
             int blockId = registry.getId(block);
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
