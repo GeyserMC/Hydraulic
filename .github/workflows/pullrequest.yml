@@ -1,11 +1,10 @@
-name: Build
+name: Build Pull Request
 
 on:
-  workflow_dispatch:
-  push:
+  pull_request:
     paths-ignore:
       - '.github/ISSUE_TEMPLATE/*.yml'
-      - '.github/actions/pullrequest.yml'
+      - '.github/actions/build.yml'
       - '.idea/copyright/*.xml' 
       - '.gitignore'
       - 'LICENSE'
@@ -53,28 +52,3 @@ jobs:
           name: Hydraulic NeoForge
           path: neoforge/build/libs/hydraulic-neoforge.jar
           if-no-files-found: error
-
-      - name: Publish to Downloads API
-        if: ${{ success() && github.repository == 'GeyserMC/Hydraulic' && github.ref_name == 'master' }}
-        shell: bash
-        env:
-          DOWNLOADS_USERNAME: ${{ vars.DOWNLOADS_USERNAME }}
-          DOWNLOADS_PRIVATE_KEY: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
-          DOWNLOADS_SERVER_IP: ${{ secrets.DOWNLOADS_SERVER_IP }}
-        run: |
-          # Save the private key to a file
-          echo "$DOWNLOADS_PRIVATE_KEY" > id_ecdsa
-          chmod 600 id_ecdsa
-          # Set the project
-          project=hydraulic
-          # Get the version from gradle.properties
-          version=$(cat gradle.properties | grep -o "^version=[0-9\\.]*" | cut -d"=" -f2)
-          # Create the build folder
-          ssh -o StrictHostKeyChecking=no -i id_ecdsa $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP mkdir -p "~/uploads/$project/$GITHUB_RUN_NUMBER/"
-          # Copy over artifacts
-          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" fabric/build/libs/hydraulic-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
-          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" neoforge/build/libs/hydraulic-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
-          # Run the build script
-          # Push the metadata
-          echo "{\"project\": \"$project\", \"version\": \"$version\", \"id\": $GITHUB_RUN_NUMBER, \"commit\": \"$GITHUB_SHA\"}" > metadata.json
-          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" metadata.json $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$project/$GITHUB_RUN_NUMBER/
