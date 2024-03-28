@@ -45,4 +45,6 @@ dependencies {
 
     modRuntimeOnly(libs.pack.converter)
     includeTransitive(libs.pack.converter)
+
+    modLocalRuntime(libs.geyser.fabric)
 }
