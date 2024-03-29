@@ -43,6 +43,8 @@ dependencies {
         isTransitive = false
     }
 
+    compileOnly(libs.asm)
+
     modRuntimeOnly(libs.pack.converter)
     includeTransitive(libs.pack.converter)
 

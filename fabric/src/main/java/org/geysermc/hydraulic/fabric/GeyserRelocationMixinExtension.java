@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic;
+package org.geysermc.hydraulic.fabric;
 
 import com.llamalad7.mixinextras.lib.apache.commons.tuple.Pair;
 import com.llamalad7.mixinextras.utils.MixinInternals;
@@ -31,7 +31,7 @@ public class GeyserRelocationMixinExtension implements IExtension {
     @Override
     public void preApply(ITargetClassContext context) {
         // Ignore non Geyser classes
-        if (!context.getClassInfo().getName().startsWith("org/geysermc/")) return;
+        if (!context.getClassInfo().getName().startsWith("org/geysermc/geyser/")) return;
 
         for (Pair<IMixinInfo, ClassNode> pair : MixinInternals.getMixinsFor(context)) {
             for (MethodNode method : pair.getRight().methods) {

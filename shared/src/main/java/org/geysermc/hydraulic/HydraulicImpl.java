@@ -1,6 +1,5 @@
 package org.geysermc.hydraulic;
 
-import com.llamalad7.mixinextras.utils.MixinInternals;
 import net.minecraft.server.MinecraftServer;
 import org.geysermc.geyser.api.event.EventRegistrar;
 import org.geysermc.hydraulic.pack.PackManager;
@@ -40,9 +39,6 @@ public class HydraulicImpl implements EventRegistrar {
         this.platform = platform;
         this.bootstrap = bootstrap;
         this.packManager = new PackManager(this);
-
-        // Register the GeyserRelocationMixinExtension
-        MixinInternals.registerExtension(new GeyserRelocationMixinExtension());
     }
 
     /**

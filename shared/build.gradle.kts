@@ -5,7 +5,6 @@ architectury {
 dependencies {
     compileOnly(libs.mixin)
     compileOnly(libs.mixinextras)
-    compileOnly(libs.asm)
     compileOnly(libs.geyser.api)
     compileOnly(libs.geyser.core) {
         exclude(group = "io.netty")
