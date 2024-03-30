@@ -41,6 +41,7 @@ public abstract class MinecraftResourcePackReaderImplMixin {
 
     /**
      * Redirect the deserializeFromJson to ignore any null JsonElements
+     * Also catch any exceptions that may occur and log them
      */
     @Redirect(
         method = "read(Lteam/unnamed/creative/serialize/minecraft/fs/FileTreeReader;)Lteam/unnamed/creative/ResourcePack;",
@@ -54,7 +55,13 @@ public abstract class MinecraftResourcePackReaderImplMixin {
             return null;
         }
 
-        return instance.deserializeFromJson(jsonElement, key);
+        try {
+            return instance.deserializeFromJson(jsonElement, key);
+        } catch (Exception e) {
+            LOGGER.error("Failed to deserialize JSON (" + key + "): " + e.getMessage());
+        }
+
+        return null;
     }
 
     /**
