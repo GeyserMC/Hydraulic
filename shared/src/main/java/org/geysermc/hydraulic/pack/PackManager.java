@@ -52,12 +52,9 @@ public class PackManager {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     static final Set<String> IGNORED_MODS = Set.of(
-            "minecraft",
-            "java",
             "geyser-fabric",
             "geyser-forge",
             "floodgate",
-            "vanilla",
             "mixinextras"
     );
 
@@ -135,7 +132,8 @@ public class PackManager {
                 .logListener(new PackLogListener(LOGGER))
                 .converters(createPackConverters())
                 .output(packPath)
-                .textureSubdirectory(mod.namespace());
+                .textureSubdirectory(mod.namespace())
+                .packageHandler(new PackPackager());
 
         Map<Class<ConversionData>, List<ActionListener<ConversionData>>> actionListeners = new IdentityHashMap<>();
         for (PackModule<?> module : this.modules) {
@@ -165,8 +163,6 @@ public class PackManager {
             LOGGER.error("Failed to convert mod {} to pack", mod.id(), ex);
             return false;
         }
-
-        // TODO Ignore packs if they only have a manifest
 
         // Now export the pack
         try {
