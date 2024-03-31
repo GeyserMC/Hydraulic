@@ -67,4 +67,9 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
     public @NotNull Path dataFolder(@NotNull String modId) {
         return FabricLoader.getInstance().getConfigDir().resolve(modId);
     }
+
+    @Override
+    public boolean isDev() {
+        return FabricLoader.getInstance().isDevelopmentEnvironment();
+    }
 }

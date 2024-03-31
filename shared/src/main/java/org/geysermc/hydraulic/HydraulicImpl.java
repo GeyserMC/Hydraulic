@@ -137,4 +137,8 @@ public class HydraulicImpl implements EventRegistrar {
     public PackManager getPackManager() {
         return packManager;
     }
+
+    public boolean isDev() {
+        return this.bootstrap.isDev();
+    }
 }

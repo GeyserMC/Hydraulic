@@ -35,4 +35,11 @@ public interface HydraulicBootstrap {
      */
     @NotNull
     Path dataFolder(@NotNull String modId);
+
+    /**
+     * Gets if the current environment is a development environment.
+     *
+     * @return if the current environment is a development environment
+     */
+    boolean isDev();
 }

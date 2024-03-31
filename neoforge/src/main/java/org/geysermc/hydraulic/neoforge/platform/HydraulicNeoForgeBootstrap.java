@@ -50,4 +50,9 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
     public @NotNull Path dataFolder(@NotNull String modId) {
         return FMLPaths.CONFIGDIR.get().resolve(modId);
     }
+
+    @Override
+    public boolean isDev() {
+        return false; // TODO
+    }
 }
