@@ -8,6 +8,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
@@ -137,7 +138,6 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             ResourceLocation itemLocation = registry.getKey(item);
 
             // Check if the item has a 2D icon
-            // TODO Work out why right click doesn't animate
             boolean flatIcon = itemsWith2dIcon.contains(itemLocation.toString());
             NonVanillaCustomItemData.Builder customItemBuilder = NonVanillaCustomItemData.builder()
                 .name(itemLocation.getPath())
@@ -209,6 +209,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 customItemBuilder.toolType("shears");
             } else if (item instanceof BowItem) {
                 customItemBuilder.chargeable(true);
+            } else if (item instanceof BlockItem) {
+                // Set the block_placer component to the correct block
+                // This fixes animations sometimes not showing
+                customItemBuilder.block(itemLocation.toString());
             }
 
             event.register(customItemBuilder.build());

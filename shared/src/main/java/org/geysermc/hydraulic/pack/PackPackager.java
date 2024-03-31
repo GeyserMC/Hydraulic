@@ -3,7 +3,6 @@ package org.geysermc.hydraulic.pack;
 import org.geysermc.pack.converter.PackConverter;
 import org.geysermc.pack.converter.PackageHandler;
 import org.geysermc.pack.converter.util.LogListener;
-import org.geysermc.pack.converter.util.ZipUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -14,7 +13,7 @@ import java.util.stream.Stream;
 /**
  * Packs the pack into a zip file unless its empty.
  * <p>
- * Follows the same zip process as the {@link PackageHandler#ZIP} handler.
+ * Passes over to {@link PackageHandler#ZIP} after its finished its checks.
  */
 public class PackPackager implements PackageHandler {
     @Override
@@ -31,8 +30,6 @@ public class PackPackager implements PackageHandler {
             return;
         }
 
-        ZipUtils zipUtils = new ZipUtils(converter, path.toFile());
-        zipUtils.generateFileList();
-        zipUtils.zipIt(logger, outputPath.toString());
+        PackageHandler.ZIP.pack(converter, path, outputPath, logger);
     }
 }
