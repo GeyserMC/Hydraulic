@@ -8,6 +8,7 @@ import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.hydraulic.util.FormatUtil;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.Manifest;
 import org.slf4j.Logger;
@@ -16,8 +17,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.zip.ZipFile;
 
 /**
@@ -62,15 +67,26 @@ public class PackListener {
 
         LOGGER.info("Found {} packs to convert!", packsToLoad.size());
 
+        long start = System.currentTimeMillis();
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (var entry : packsToLoad.entrySet()) {
-            try {
-                if (this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight())) {
-                    event.resourcePacks().add(entry.getValue().getRight());
+            futures.add(CompletableFuture.runAsync(() -> {
+                LOGGER.info("Converting pack for mod {}", entry.getKey());
+                try {
+                    if (this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight())) {
+                        event.resourcePacks().add(entry.getValue().getRight());
+                    }
+                } catch (Throwable t) {
+                    LOGGER.error("Failed to convert pack for mod {}", entry.getKey(), t);
                 }
-            } catch (Throwable t) {
-                LOGGER.error("Failed to convert pack for mod {}", entry.getKey(), t);
-            }
+            }));
         }
+
+        // Wait for all futures to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        LOGGER.info("Converted {} packs for mods in {}", packsToLoad.size(), FormatUtil.humanReadableFormat(System.currentTimeMillis() - start));
     }
 
     /**

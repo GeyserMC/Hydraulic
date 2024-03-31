@@ -64,11 +64,24 @@ public class PackManager {
     private final ListMultimap<String, ModInfo> namespacesToMods = MultimapBuilder.hashKeys().arrayListValues(1).build();
     private final ListMultimap<String, ResourceLocation> modsToBlocks = MultimapBuilder.hashKeys().arrayListValues().build();
     private final ListMultimap<String, ResourceLocation> modsToItems = MultimapBuilder.hashKeys().arrayListValues().build();
+    private final List<? extends Converter<?>> packConverters;
 
     private ModelStitcher.Provider modelProvider;
 
     public PackManager(HydraulicImpl hydraulic) {
         this.hydraulic = hydraulic;
+
+        this.packConverters = ServiceLoader.load(Converter.class)
+            .stream()
+            .map(ServiceLoader.Provider::get)
+            .map(c -> (Converter<?>)c)
+            .filter(Predicate.not(Converter::isExperimental))
+            .map(converter ->
+                converter instanceof ModelConverter && modelProvider != null
+                    ? new CustomModelConverter(modelProvider)
+                    : converter
+            )
+            .toList();
     }
 
     /**
@@ -130,7 +143,7 @@ public class PackManager {
     boolean createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
         PackConverter converter = new PackConverter()
                 .logListener(new PackLogListener(LOGGER))
-                .converters(createPackConverters())
+                .converters(packConverters)
                 .output(packPath)
                 .textureSubdirectory(mod.namespace())
                 .packageHandler(new PackPackager());
@@ -171,21 +184,7 @@ public class PackManager {
             LOGGER.error("Failed to export pack for mod {}", mod.id(), ex);
         }
 
-        return true;
-    }
-
-    private List<? extends Converter<?>> createPackConverters() {
-        return ServiceLoader.load(Converter.class)
-            .stream()
-            .map(ServiceLoader.Provider::get)
-            .map(c -> (Converter<?>)c)
-            .filter(Predicate.not(Converter::isExperimental))
-            .map(converter ->
-                converter instanceof ModelConverter && modelProvider != null
-                    ? new CustomModelConverter(modelProvider)
-                    : converter
-            )
-            .toList();
+        return Files.exists(packPath);
     }
 
     private void callEvents(@NotNull Event event) {
