@@ -64,24 +64,12 @@ public class PackManager {
     private final ListMultimap<String, ModInfo> namespacesToMods = MultimapBuilder.hashKeys().arrayListValues(1).build();
     private final ListMultimap<String, ResourceLocation> modsToBlocks = MultimapBuilder.hashKeys().arrayListValues().build();
     private final ListMultimap<String, ResourceLocation> modsToItems = MultimapBuilder.hashKeys().arrayListValues().build();
-    private final List<? extends Converter<?>> packConverters;
 
+    private List<? extends Converter<?>> packConverters;
     private ModelStitcher.Provider modelProvider;
 
     public PackManager(HydraulicImpl hydraulic) {
         this.hydraulic = hydraulic;
-
-        this.packConverters = ServiceLoader.load(Converter.class)
-            .stream()
-            .map(ServiceLoader.Provider::get)
-            .map(c -> (Converter<?>)c)
-            .filter(Predicate.not(Converter::isExperimental))
-            .map(converter ->
-                converter instanceof ModelConverter && modelProvider != null
-                    ? new CustomModelConverter(modelProvider)
-                    : converter
-            )
-            .toList();
     }
 
     /**
@@ -102,6 +90,18 @@ public class PackManager {
             );
         }
         modelProvider = createModelProvider(mods, modPacks);
+
+        this.packConverters = ServiceLoader.load(Converter.class)
+            .stream()
+            .map(ServiceLoader.Provider::get)
+            .map(c -> (Converter<?>)c)
+            .filter(Predicate.not(Converter::isExperimental))
+            .map(converter ->
+                converter instanceof ModelConverter && modelProvider != null
+                    ? new CustomModelConverter(modelProvider)
+                    : converter
+            )
+            .toList();
 
         for (PackModule<?> module : ServiceLoader.load(PackModule.class)) {
             this.modules.add(module);
@@ -129,7 +129,6 @@ public class PackManager {
         }
 
         GeyserApi.api().eventBus().register(this.hydraulic, new PackListener(this.hydraulic, this));
-
     }
 
     /**
