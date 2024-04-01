@@ -11,6 +11,7 @@ import java.util.Map;
  * Contains mappings for items to their creative groups and categories.
  */
 public class CreativeMappings {
+    // https://wiki.bedrock.dev/documentation/creative-categories.html
     private static final Map<Class<? extends Item>, CreativeMapping> CREATIVE_MAPPINGS = new HashMap<>() {
         {
             put(ArmorItem.class, new CreativeMapping(CreativeCategory.EQUIPMENT));
@@ -27,6 +28,9 @@ public class CreativeMappings {
             put(ShovelItem.class, new CreativeMapping("itemGroup.name.shovel", CreativeCategory.EQUIPMENT));
             put(SpawnEggItem.class, new CreativeMapping("itemGroup.name.mobEgg", CreativeCategory.NATURE));
             put(SwordItem.class, new CreativeMapping("itemGroup.name.sword", CreativeCategory.EQUIPMENT));
+            put(HangingSignItem.class , new CreativeMapping("itemGroup.name.hanging_sign"));
+            put(SignItem.class , new CreativeMapping("itemGroup.name.sign"));
+            put(SmithingTemplateItem.class , new CreativeMapping("itemGroup.name.smithing_templates"));
 
             // Fallbacks for more base level classes
             put(TieredItem.class, new CreativeMapping(CreativeCategory.EQUIPMENT));
