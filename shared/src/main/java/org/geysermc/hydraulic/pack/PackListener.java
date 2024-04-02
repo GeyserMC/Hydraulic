@@ -11,18 +11,22 @@ import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.util.FormatUtil;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.Manifest;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipFile;
 
 /**
@@ -31,9 +35,27 @@ import java.util.zip.ZipFile;
 public class PackListener {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new Gson();
+    private static final ExecutorService THREAD_POOL;
 
     private final HydraulicImpl hydraulic;
     private final PackManager manager;
+
+    static {
+        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
+        THREAD_POOL = Executors.newFixedThreadPool(threads, new ThreadFactory() {
+            private final AtomicInteger threadCounter = new AtomicInteger();
+
+            @Override
+            public Thread newThread(final @NotNull Runnable run) {
+                Thread ret = new Thread(run);
+
+                ret.setName("Hydraulic Conversion Thread #" + this.threadCounter.getAndIncrement());
+                ret.setUncaughtExceptionHandler((thread, throwable) -> LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable));
+
+                return ret;
+            }
+        });
+    }
 
     public PackListener(HydraulicImpl hydraulic, PackManager manager) {
         this.hydraulic = hydraulic;
@@ -80,7 +102,7 @@ public class PackListener {
                 } catch (Throwable t) {
                     LOGGER.error("Failed to convert pack for mod {}", entry.getKey(), t);
                 }
-            }));
+            }, THREAD_POOL));
         }
 
         // Wait for all futures to complete

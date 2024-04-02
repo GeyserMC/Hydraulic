@@ -25,6 +25,9 @@ public class PackUtil {
     protected static final Logger LOGGER = LogUtils.getLogger();
 
     public static String getTextureName(@NotNull String modelName) {
+        // TODO Sometimes things end up in the minecraft namespace when they shouldn't.
+        //      We should look at the current mods resources to see if we find a match there first
+        //      EG: betternether:wall_mushroom_red refrencing both mushroom_red_new (its own) and mushroom_block_inside (mc)
         if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
             String modelValue = modelName.split(":")[1];
 
