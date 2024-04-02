@@ -183,15 +183,15 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
                 CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
                         .transformation(new TransformationComponent(
-                                definition.variant().x(), // Rotation X
-                                definition.variant().y(), // Rotation Y
-                                0, // Rotation Z
-                                1, // Scale X
-                                1, // Scale Y
-                                1, // Scale Z
-                                0, // Translation X
-                                0, // Translation Y
-                                0 // Translation Z
+                            (360 - definition.variant().x()) % 360, // Rotation X
+                            (360 - definition.variant().y()) % 360, // Rotation Y
+                            0, // Rotation Z
+                            1, // Scale X
+                            1, // Scale Y
+                            1, // Scale Z
+                            0, // Translation X
+                            0, // Translation Y
+                            0 // Translation Z
                         ));
 
                 if (!isUnitCube(model.parent())) {
