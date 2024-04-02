@@ -114,7 +114,11 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
             List<ModelTexture> layers = model.textures().layers();
             if (layers == null || layers.isEmpty()) {
-                LOGGER.warn("Item {} has no layer0 texture, skipping", itemLocation);
+                // Don't warn if a block as they can use the block model
+                if (!(item instanceof BlockItem)) {
+                    LOGGER.warn("Item {} has no layer0 texture, skipping", itemLocation);
+                }
+
                 continue;
             }
 
