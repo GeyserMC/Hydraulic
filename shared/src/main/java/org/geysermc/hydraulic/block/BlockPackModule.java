@@ -306,7 +306,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
             CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
                     .displayName("%" + block.getDescriptionId())
-                    .friction(block.getFriction())
+                    .friction(Math.min(1 - block.getFriction(), 0.9f))
                     .destructibleByMining(block.defaultDestroyTime()) // TODO: Check
                     // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(createBoxComponent(shape))
