@@ -38,6 +38,7 @@ import org.geysermc.hydraulic.item.CreativeMappings;
 import org.geysermc.hydraulic.pack.ConvertablePackModule;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
+import org.geysermc.hydraulic.pack.context.PackContext;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
@@ -88,13 +89,13 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
         ModStorage storage = context.storage();
         if (storage.materials().materials().isEmpty()) {
-            PackLogListener packLogListener = new PackLogListener(LOGGER);
+            PackLogListener packLogListener = new PackLogListener(context.logger());
 
             Materials materials = new Materials();
             for (Model model : context.assets(ResourcePack::models)) {
                 Model stitchedModel = new ModelStitcher(context.modelProvider(), model, packLogListener).stitch();
                 if (stitchedModel == null) {
-                    LOGGER.warn("Could not find a stitched model for block {}", model.key());
+                    context.logger().warn("Could not find a stitched model for block {}", model.key());
                     continue;
                 }
 
@@ -172,7 +173,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             List<CustomBlockPermutation> permutations = new ArrayList<>();
             CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                ModelDefinition definition = getModel(blockLocation, state);
+                ModelDefinition definition = getModel(context, blockLocation, state);
                 if (definition == null) {
                     continue;
                 }
@@ -271,7 +272,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
                             .build());
-                    LOGGER.warn("Could not find material for block {}", key);
+                    context.logger().warn("Could not find material for block {}", key);
                 }
 
                 // No properties exist on this state, so there's only one
@@ -317,7 +318,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             try {
                 event.register(blockData);
             } catch (IllegalArgumentException e) {
-                LOGGER.error("Failed to register block {}: {}", blockLocation, e.getMessage());
+                context.logger().error("Failed to register block {}: {}", blockLocation, e.getMessage());
                 continue;
             }
 
@@ -371,10 +372,10 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
     }
 
     @Nullable
-    private ModelDefinition getModel(@NotNull ResourceLocation blockLocation, @NotNull BlockState state) {
+    private ModelDefinition getModel(@NotNull PackContext<?> context, @NotNull ResourceLocation blockLocation, @NotNull BlockState state) {
         StateDefinition definition = this.blockStates.get(blockLocation.toString());
         if (definition == null) {
-            LOGGER.warn("Missing blockstate for block {}", blockLocation);
+            context.logger().warn("Missing blockstate for block {}", blockLocation);
             return null;
         }
 
@@ -406,7 +407,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
             Model model = definition.modelProvider().model(modelKey);
             if (model == null) {
-                LOGGER.warn("Missing model {} for block {}", modelKey, blockLocation);
+                context.logger().warn("Missing model {} for block {}", modelKey, blockLocation);
             } else {
                 return new ModelDefinition(model, variant);
             }

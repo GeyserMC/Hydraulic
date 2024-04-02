@@ -62,7 +62,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         }
 
         List<Item> items = context.registryValues(Registries.ITEM);
-        PackLogListener packLogListener = new PackLogListener(LOGGER);
+        PackLogListener packLogListener = new PackLogListener(context.logger());
         for (Item item : items) {
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
@@ -95,20 +95,20 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
         List<Item> items = context.registryValues(Registries.ITEM);
 
-        LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod().id());
+        context.logger().info("Items to convert: " + items.size() + " in mod " + context.mod().id());
 
-        PackLogListener packLogListener = new PackLogListener(LOGGER);
+        PackLogListener packLogListener = new PackLogListener(context.logger());
         for (Item item : items) {
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
             Model baseModel = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
             if (baseModel == null) {
-                LOGGER.warn("Item {} has no item model, skipping", itemLocation);
+                context.logger().warn("Item {} has no item model, skipping", itemLocation);
                 continue;
             }
             Model model = new ModelStitcher(context.modelProvider(), baseModel, packLogListener).stitch();
             if (model == null || model.textures() == null) {
-                LOGGER.warn("Item {} has no item model, skipping", itemLocation);
+                context.logger().warn("Item {} has no item model, skipping", itemLocation);
                 continue;
             }
 
@@ -116,7 +116,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             if (layers == null || layers.isEmpty()) {
                 // Don't warn if a block as they can use the block model
                 if (!(item instanceof BlockItem)) {
-                    LOGGER.warn("Item {} has no layer0 texture, skipping", itemLocation);
+                    context.logger().warn("Item {} has no layer0 texture, skipping", itemLocation);
                 }
 
                 continue;

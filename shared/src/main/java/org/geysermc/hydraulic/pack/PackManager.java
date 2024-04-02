@@ -26,6 +26,7 @@ import org.geysermc.pack.converter.util.NioDirectoryFileTreeReader;
 import org.geysermc.pack.converter.util.VanillaPackProvider;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.serialize.minecraft.MinecraftResourcePackReader;
@@ -118,9 +119,7 @@ public class PackManager {
 
                 if (module.hasPreProcessors()) {
                     try {
-                        module.preProcess0(new PackPreProcessContext(
-                            this.hydraulic, mod, module, modPacks.get(mod.id()), modelProvider
-                        ));
+                        module.preProcess0(new PackPreProcessContext(this.hydraulic, mod, module, modPacks.get(mod.id()), modelProvider));
                     } catch (Throwable t) {
                         LOGGER.error("Failed to pre-process mod {} for module {}", mod.id(), module.getClass().getSimpleName(), t);
                     }
@@ -141,7 +140,7 @@ public class PackManager {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     boolean createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
         PackConverter converter = new PackConverter()
-                .logListener(new PackLogListener(LOGGER))
+                .logListener(new PackLogListener(LoggerFactory.getLogger(LOGGER.getName() + "/" + mod.id())))
                 .converters(packConverters)
                 .output(packPath)
                 .textureSubdirectory(mod.namespace())

@@ -46,13 +46,13 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
                 .map(item -> (ArmorItem) item)
                 .toList();
 
-        LOGGER.info("Armor to convert: " + armorItems.size() + " in mod " + context.mod().id());
+        context.logger().info("Armor to convert: " + armorItems.size() + " in mod " + context.mod().id());
 
         // enchanted_actor_glint.png is from https://github.com/Mojang/bedrock-samples/blob/main/resource_pack/textures/misc/enchanted_actor_glint.png
         try (InputStream stream = ArmorPackModule.class.getClassLoader().getResourceAsStream("textures/enchanted_actor_glint.png")) {
             context.bedrockResourcePack().addExtraFile(stream.readAllBytes(), "textures/misc/enchanted_actor_glint.png");
         } catch (IOException e) {
-            LOGGER.warn("Failed to load enchanted_actor_glint.png, enchanted armor will not have a glint effect");
+            context.logger().warn("Failed to load enchanted_actor_glint.png, enchanted armor will not have a glint effect");
         }
 
         for (ArmorItem armorItem : armorItems) {

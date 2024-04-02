@@ -77,7 +77,7 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
                 .map(item -> (BowItem) item)
                 .toList();
 
-        LOGGER.info("Bows to convert: " + bowItems.size() + " in mod " + context.mod().id());
+        context.logger().info("Bows to convert: " + bowItems.size() + " in mod " + context.mod().id());
 
         for (BowItem bowItem : bowItems) {
             ResourceLocation bowLocation = BuiltInRegistries.ITEM.getKey(bowItem);
@@ -89,13 +89,13 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
 
             Model model = assets.model(Key.key(bowLocation.getNamespace(), "item/" + bowLocation.getPath()));
             if (model == null || model.textures() == null) {
-                LOGGER.warn("Bow {} has no model, skipping", bowLocation);
+                context.logger().warn("Bow {} has no model, skipping", bowLocation);
                 continue;
             }
 
             List<ModelTexture> layers = model.textures().layers();
             if (layers == null || layers.isEmpty()) {
-                LOGGER.warn("Bow {} has no layer0 texture, skipping", bowLocation);
+                context.logger().warn("Bow {} has no layer0 texture, skipping", bowLocation);
                 continue;
             }
 
@@ -107,13 +107,13 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
             for (ItemOverride override : model.overrides()) {
                 Model pullingModel = assets.model(override.model());
                 if (pullingModel == null || pullingModel.textures() == null) {
-                    LOGGER.warn("Bow pulling model {} has no model, skipping", override.model());
+                    context.logger().warn("Bow pulling model {} has no model, skipping", override.model());
                     continue;
                 }
 
                 List<ModelTexture> pullingLayers = pullingModel.textures().layers();
                 if (pullingLayers == null || pullingLayers.isEmpty()) {
-                    LOGGER.warn("Bow pulling model {} has no layer0 texture, skipping", override.model());
+                    context.logger().warn("Bow pulling model {} has no layer0 texture, skipping", override.model());
                     continue;
                 }
 

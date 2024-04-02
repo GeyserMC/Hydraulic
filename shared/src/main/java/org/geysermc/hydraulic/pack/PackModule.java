@@ -1,12 +1,13 @@
 package org.geysermc.hydraulic.pack;
 
-import com.mojang.logging.LogUtils;
 import org.geysermc.event.Event;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
+import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,8 +30,6 @@ import java.util.function.Consumer;
  * @param <T> the pack module
  */
 public abstract class PackModule<T extends PackModule<T>> {
-    protected static final Logger LOGGER = LogUtils.getLogger();
-
     private final Map<Class<? extends Event>, List<Consumer<PackEventContext<?, T>>>> eventListeners = new HashMap<>();
 
     private final List<Consumer<PackPreProcessContext<T>>> preProcessors = new ArrayList<>();
@@ -85,7 +84,7 @@ public abstract class PackModule<T extends PackModule<T>> {
             try {
                 preProcessor.accept(context);
             } catch (Throwable t) {
-                LOGGER.error("Error processing pre processor {}", preProcessor, t);
+                context.logger().error("Error processing pre processor {}", preProcessor, t);
             }
         }
     }
@@ -95,7 +94,7 @@ public abstract class PackModule<T extends PackModule<T>> {
             try {
                 postProcessor.accept(context);
             } catch (Throwable t) {
-                LOGGER.error("Error processing post processor {}", postProcessor, t);
+                context.logger().error("Error processing post processor {}", postProcessor, t);
             }
         }
     }
@@ -115,9 +114,19 @@ public abstract class PackModule<T extends PackModule<T>> {
                 try {
                     listener.accept(context);
                 } catch (Throwable t) {
-                    LOGGER.error("Error processing event {}", event, t);
+                    context.logger().error("Error processing event {}", event, t);
                 }
             }
         }
+    }
+
+    /**
+     * Gets the logger for this pack module.
+     *
+     * @param mod the mod that this pack module is parsing
+     * @return the logger
+     */
+    public Logger logger(ModInfo mod) {
+        return LoggerFactory.getLogger(this.getClass().getSimpleName() + "/" + mod.id());
     }
 }

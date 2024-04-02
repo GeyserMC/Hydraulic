@@ -10,6 +10,7 @@ import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.storage.ModStorage;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
 import java.util.List;
 
@@ -22,11 +23,13 @@ public class PackContext<T extends PackModule<T>> {
     private final HydraulicImpl hydraulic;
     private final ModInfo mod;
     private final T module;
+    private final Logger logger;
 
     public PackContext(@NotNull HydraulicImpl hydraulic, @NotNull ModInfo mod, @NotNull T module) {
         this.hydraulic = hydraulic;
         this.mod = mod;
         this.module = module;
+        this.logger = module.logger(mod);
     }
 
     /**
@@ -57,6 +60,16 @@ public class PackContext<T extends PackModule<T>> {
     @NotNull
     public T module() {
         return this.module;
+    }
+
+    /**
+     * Gets the logger for this pack.
+     *
+     * @return the logger for this pack
+     */
+    @NotNull
+    public Logger logger() {
+        return this.logger;
     }
 
     /**
