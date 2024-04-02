@@ -30,14 +30,14 @@ public class InventoryUtilsMixin {
     )
     private static void findOrCreateItemCreative(GeyserSession session, String itemName, CallbackInfo ci, @Share("creative") LocalBooleanRef creative) {
         // If we are already looking for the `item.`, don't do anything
-        if (itemName.contains(":item.")) {
+        if (itemName.endsWith("_item")) {
             return;
         }
 
         // Flag this call as creative
         creative.set(true);
 
-        InventoryUtils.findOrCreateItem(session, itemName.replace(":", ":item."));
+        InventoryUtils.findOrCreateItem(session, itemName + "_item");
 
         ci.cancel();
     }
@@ -56,11 +56,11 @@ public class InventoryUtilsMixin {
             return;
         }
 
-        // If we are already looking for the `item.`, don't do anything
-        if (itemName.contains(":item.")) {
+        // If we are already looking for the `_item`, don't do anything
+        if (itemName.endsWith("_item")) {
             return;
         }
 
-        InventoryUtils.findOrCreateItem(session, itemName.replace(":", ":item."));
+        InventoryUtils.findOrCreateItem(session, itemName + "_item");
     }
 }

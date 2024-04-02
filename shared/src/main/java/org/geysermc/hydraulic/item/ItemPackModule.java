@@ -18,6 +18,7 @@ import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.Tiers;
+import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import org.geysermc.geyser.api.util.CreativeCategory;
@@ -142,7 +143,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             NonVanillaCustomItemData.Builder customItemBuilder = NonVanillaCustomItemData.builder()
                 .name(itemLocation.getPath())
                 .displayName("%" + item.getDescriptionId())
-                .identifier(itemLocation.getNamespace() + ":" + (flatIcon ? "item." : "") + itemLocation.getPath())
+                .identifier(itemLocation + (flatIcon ? "_item" : ""))
                 .icon(itemLocation.toString())
                 .javaId(registry.getId(item))
                 .stackSize(item.getMaxStackSize())
@@ -213,6 +214,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 // Set the block_placer component to the correct block
                 // This fixes animations sometimes not showing
                 customItemBuilder.block(itemLocation.toString());
+
+                Block block = BuiltInRegistries.BLOCK.get(itemLocation);
+                CreativeMappings.setupBlock(block, customItemBuilder);
             }
 
             event.register(customItemBuilder.build());

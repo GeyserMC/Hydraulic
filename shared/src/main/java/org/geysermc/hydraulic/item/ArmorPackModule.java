@@ -74,7 +74,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             // If its 3d this will break as the item won't have the `item.` prefix
             // TODO Register another attachable for 3d items? Or just work out which is correct from here
             Map<String, String> items = new HashMap<>() {{
-                put(armorItemLocation.getNamespace() + ":item." + armorItemLocation.getPath(), "query.owner_identifier == 'minecraft:player'");
+                put(armorItemLocation + "_item", "query.owner_identifier == 'minecraft:player'");
             }};
             description.item(items);
 

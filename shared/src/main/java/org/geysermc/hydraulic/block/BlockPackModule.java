@@ -34,6 +34,7 @@ import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.geyser.util.MathUtils;
+import org.geysermc.hydraulic.item.CreativeMappings;
 import org.geysermc.hydraulic.pack.ConvertablePackModule;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
@@ -150,9 +151,9 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             CustomBlockData.Builder builder = NonVanillaCustomBlockData.builder()
                     .name(blockLocation.getPath())
                     .namespace(blockLocation.getNamespace())
-                    .includedInCreativeInventory(true)
-                    .creativeGroup("itemGroup.name.items")
-                    .creativeCategory(CreativeCategory.ITEMS);
+                    .includedInCreativeInventory(true);
+
+            CreativeMappings.setupBlock(block, builder);
 
             for (Property<?> property : block.getStateDefinition().getProperties()) {
                 if (property instanceof IntegerProperty intProperty) {
@@ -314,7 +315,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             try {
                 event.register(blockData);
             } catch (IllegalArgumentException e) {
-                LOGGER.error("Failed to register block {}", blockLocation, e.getMessage());
+                LOGGER.error("Failed to register block {}: {}", blockLocation, e.getMessage());
                 continue;
             }
 
