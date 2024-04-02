@@ -41,7 +41,7 @@ public class PackListener {
     private final PackManager manager;
 
     static {
-        int threads = Runtime.getRuntime().availableProcessors() * 3 / 8;
+        int threads = Math.max(1, Runtime.getRuntime().availableProcessors() * 3 / 8);
         THREAD_POOL = Executors.newFixedThreadPool(threads, new ThreadFactory() {
             private final AtomicInteger threadCounter = new AtomicInteger();
 
