@@ -98,7 +98,6 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         LOGGER.info("Items to convert: " + items.size() + " in mod " + context.mod().id());
 
         PackLogListener packLogListener = new PackLogListener(LOGGER);
-        ModelStitcher.Provider provider = ModelStitcher.vanillaProvider(assets, packLogListener);
         for (Item item : items) {
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
 
@@ -107,7 +106,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 LOGGER.warn("Item {} has no item model, skipping", itemLocation);
                 continue;
             }
-            Model model = new ModelStitcher(provider, baseModel, packLogListener).stitch();
+            Model model = new ModelStitcher(context.modelProvider(), baseModel, packLogListener).stitch();
             if (model == null || model.textures() == null) {
                 LOGGER.warn("Item {} has no item model, skipping", itemLocation);
                 continue;

@@ -5,6 +5,7 @@ import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.PackConverter;
+import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
 import team.unnamed.creative.ResourcePack;
 
@@ -21,16 +22,25 @@ public class PackPostProcessContext<T extends PackModule<T>> extends PackContext
     private final ResourcePack javaPack;
     private final BedrockResourcePack bedrockPack;
     private final Path path;
+    private final ModelStitcher.Provider modelProvider;
 
-    public PackPostProcessContext(@NotNull HydraulicImpl hydraulic, @NotNull ModInfo mod, @NotNull T module,
-                                  @NotNull PackConverter converter, @NotNull ResourcePack javaPack,
-                                  @NotNull BedrockResourcePack bedrockPack, @NotNull Path path) {
+    public PackPostProcessContext(
+        @NotNull HydraulicImpl hydraulic,
+        @NotNull ModInfo mod,
+        @NotNull T module,
+        @NotNull PackConverter converter,
+        @NotNull ResourcePack javaPack,
+        @NotNull BedrockResourcePack bedrockPack,
+        @NotNull Path path,
+        @NotNull ModelStitcher.Provider modelProvider
+    ) {
         super(hydraulic, mod, module);
 
         this.converter = converter;
         this.javaPack = javaPack;
         this.bedrockPack = bedrockPack;
         this.path = path;
+        this.modelProvider = modelProvider;
     }
 
     /**
@@ -71,5 +81,10 @@ public class PackPostProcessContext<T extends PackModule<T>> extends PackContext
     @NotNull
     public Path path() {
         return this.path;
+    }
+
+    @NotNull
+    public ModelStitcher.Provider modelProvider() {
+        return modelProvider;
     }
 }

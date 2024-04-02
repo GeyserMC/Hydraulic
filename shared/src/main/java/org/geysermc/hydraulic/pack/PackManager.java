@@ -158,7 +158,7 @@ public class PackManager {
         converter.actionListeners(actionListeners);
         converter.postProcessor((javaPack, bedrockPack) -> {
             for (PackModule<?> module : this.modules) {
-                PackPostProcessContext context = new PackPostProcessContext(this.hydraulic, mod, module, converter, javaPack, bedrockPack, packPath);
+                PackPostProcessContext context = new PackPostProcessContext(this.hydraulic, mod, module, converter, javaPack, bedrockPack, packPath, modelProvider);
                 if (!module.test(context)) {
                     continue;
                 }
