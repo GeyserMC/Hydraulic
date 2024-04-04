@@ -63,15 +63,18 @@ import team.unnamed.creative.texture.Texture;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @AutoService(PackModule.class)
 public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
 
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
+    private final Set<String> emptyModels = new HashSet<>();
 
     public BlockPackModule() {
         super(ModelConversionData.class);
@@ -117,6 +120,35 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
             storage.materials(materials);
             storage.save();
+        }
+
+        // Check for empty models
+        List<Block> blocks = context.registryValues(Registries.BLOCK);
+        DefaultedRegistry<Block> registry = BuiltInRegistries.BLOCK;
+        for (Block block : blocks) {
+            ResourceLocation blockLocation = registry.getKey(block);
+            BlockState state = block.defaultBlockState();
+
+            ModelDefinition definition = getModel(context, blockLocation, state);
+            if (definition == null) {
+                continue;
+            }
+
+            Model model = definition.model();
+            Key key = model.key();
+
+            // Skip unit cube models
+            if (isUnitCube(model.parent())) {
+                continue;
+            }
+
+            // Check if the model is empty
+            Model stitchedModel = new ModelStitcher(context.modelProvider(), model, new PackLogListener(context.logger())).stitch();
+            if (!stitchedModel.elements().isEmpty()) {
+                continue;
+            }
+
+            emptyModels.add(key.toString());
         }
     }
 
@@ -198,11 +230,16 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     String namespace = key.namespace();
                     String value = key.value();
 
-                    String fileName = value.substring(value.lastIndexOf('/') + 1);
-                    String geoName = (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + fileName;
+                    String geoKey = value.substring(value.lastIndexOf('/') + 1);
+                    String geoName = "geometry." + (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + geoKey;
+
+                    if (emptyModels.contains(key.toString())) {
+                        context.logger().warn("Missing block model for block {}", blockLocation);
+                        geoName = "geometry.hydraulic.empty";
+                    }
 
                     componentsBuilder.geometry(GeometryComponent.builder()
-                            .identifier("geometry." + geoName)
+                            .identifier(geoName)
                             .build());
 
                     // TODO: This is not fully correct. On Bedrock, the shape rotates with

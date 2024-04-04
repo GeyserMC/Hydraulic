@@ -18,7 +18,7 @@ public class InventoryUtilsMixin {
 
     /**
      * Find or create the item with the 2d item identifier
-     * Only for non-creative inventory items
+     * Only for creative inventory items
      */
     @Inject(
         method = "findOrCreateItem(Lorg/geysermc/geyser/session/GeyserSession;Ljava/lang/String;)V",
