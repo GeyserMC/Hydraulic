@@ -44,6 +44,7 @@ import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.Constants;
+import org.geysermc.hydraulic.util.MathUtil;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.util.SingletonBlockGetter;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
@@ -181,10 +182,13 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 Model model = definition.model();
                 Key key = model.key();
 
+                int angleX = (360 - definition.variant().x()) % 360;
+                int angleY = (360 - definition.variant().y()) % 360;
+
                 CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
                         .transformation(new TransformationComponent(
-                            (360 - definition.variant().x()) % 360, // Rotation X
-                            (360 - definition.variant().y()) % 360, // Rotation Y
+                            angleX, // Rotation X
+                            angleY, // Rotation Y
                             0, // Rotation Z
                             1, // Scale X
                             1, // Scale Y
@@ -210,8 +214,19 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
 
-                    componentsBuilder.selectionBox(createBoxComponent(shape));
-                    componentsBuilder.collisionBox(createBoxComponent(collisionShape));
+                    // Y pos still ends up wrong in some cases
+                    try {
+                        angleX = -angleX;
+                        angleY = -angleY;
+                        componentsBuilder.selectionBox(createBoxComponent(shape, angleX, angleY));
+                        componentsBuilder.collisionBox(createBoxComponent(collisionShape, angleX, angleY));
+                    } catch (Exception e) {
+                        context.logger().error("Failed to create box for block {}", blockLocation, e);
+
+                        // Fall back to the non-rotated box
+                        componentsBuilder.selectionBox(createBoxComponent(shape));
+                        componentsBuilder.collisionBox(createBoxComponent(collisionShape));
+                    }
                 } else {
                     componentsBuilder.geometry(GeometryComponent.builder()
                             .identifier("minecraft:geometry.full_block")
@@ -518,6 +533,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         return mapping;
     }
 
+    /**
+     * Create a box component with the given shape.
+     *
+     * @param shape The shape to create the box from
+     * @return The box component
+     */
     private static BoxComponent createBoxComponent(VoxelShape shape) {
         if (shape.isEmpty()) {
             return BoxComponent.emptyBox();
@@ -559,5 +580,107 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 16 * (maxY - minY),
                 16 * (maxZ - minZ)
         );
+    }
+
+    /**
+     * Create a box component with the given shape and rotation.
+     *
+     * @param shape The shape to create the box from
+     * @param rotationX The X rotation
+     * @param rotationY The Y rotation
+     * @return The box component
+     */
+    private static BoxComponent createBoxComponent(VoxelShape shape, float rotationX, float rotationY) {
+        return rotateBox(createBoxComponent(shape), Math.toRadians(rotationX), Math.toRadians(rotationY));
+    }
+
+    /**
+     * Rotate the given box component by the given angles.
+     *
+     * @param boxComponent The box component to rotate
+     * @param angleX The X rotation
+     * @param angleY The Y rotation
+     * @return The rotated box component
+     */
+    private static BoxComponent rotateBox(BoxComponent boxComponent, double angleX, double angleY) {
+        if (angleX == 0 && angleY == 0) {
+            return boxComponent;
+        }
+
+        // Y offset to fix the box position as pivot is at the bottom
+        int offsetY = 8;
+
+        Vec3 position = new Vec3(boxComponent.originX(), boxComponent.originY() - offsetY, boxComponent.originZ());
+        Vec3 size = new Vec3(boxComponent.sizeX(), boxComponent.sizeY(), boxComponent.sizeZ());
+
+        // Rotate the box around Y if needed
+        if (angleY != 0) {
+            position = rotatePoint(position, new Vec3(0, 1, 0), angleY);
+            size = rotatePoint(size, new Vec3(0, 1, 0), angleY);
+
+            // Fix the position/size
+            if (size.x() < 0) position = new Vec3(position.x() + size.x(), position.y(), position.z());
+            if (size.y() < 0) position = new Vec3(position.x(), position.y() + size.y(), position.z());
+            if (size.z() < 0) position = new Vec3(position.x(), position.y(), position.z() + size.z());
+            size = new Vec3(Math.abs(size.x()), Math.abs(size.y()), Math.abs(size.z()));
+        }
+
+        // Rotate the box around X if needed
+        if (angleX != 0) {
+            position = rotatePoint(position, new Vec3(1, 0, 0), angleX);
+            size = rotatePoint(size, new Vec3(1, 0, 0), angleX);
+
+            // Fix the position/size
+            if (size.x() < 0) position = new Vec3(position.x() + size.x(), position.y(), position.z());
+            if (size.y() < 0) position = new Vec3(position.x(), position.y() + size.y(), position.z());
+            if (size.z() < 0) position = new Vec3(position.x(), position.y(), position.z() + size.z());
+            size = new Vec3(Math.abs(size.x()), Math.abs(size.y()), Math.abs(size.z()));
+        }
+
+        // Add back the Y offset
+        position = new Vec3(position.x(), position.y() + offsetY, position.z());
+
+        // Round the values to 3 decimal places and return the new box component
+        return new BoxComponent(
+            MathUtil.round((float) position.x(), 3),
+            MathUtil.round((float) position.y(), 3),
+            MathUtil.round((float) position.z(), 3),
+            MathUtil.round((float) size.x(), 3),
+            MathUtil.round((float) size.y(), 3),
+            MathUtil.round((float) size.z(), 3)
+        );
+    }
+
+    /**
+     * Rotate the given point around the given axis by the given angle.
+     *
+     * @param point The point to rotate
+     * @param axis The axis to rotate around
+     * @param angle The angle to rotate by
+     * @return The rotated point
+     */
+    private static Vec3 rotatePoint(Vec3 point, Vec3 axis, double angle) {
+        double x = point.x();
+        double y = point.y();
+        double z = point.z();
+
+        double u = axis.x();
+        double v = axis.y();
+        double w = axis.z();
+
+        double cosAngle = Math.cos(angle);
+        double sinAngle = Math.sin(angle);
+
+        double newX = (u * (u * x + v * y + w * z) * (1 - cosAngle)
+            + x * cosAngle
+            + (-w * y + v * z) * sinAngle);
+        double newY = (v * (u * x + v * y + w * z) * (1 - cosAngle)
+            + y * cosAngle
+            + (w * x - u * z) * sinAngle);
+        double newZ = (w * (u * x + v * y + w * z) * (1 - cosAngle)
+            + z * cosAngle
+            + (-v * x + u * y) * sinAngle);
+
+        return new Vec3(newX, newY, newZ);
     }
 }
