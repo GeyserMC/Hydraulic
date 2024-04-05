@@ -6,6 +6,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.geysermc.event.subscribe.Subscribe;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
+import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.util.FormatUtil;
@@ -49,7 +50,7 @@ public class PackListener {
             public Thread newThread(final @NotNull Runnable run) {
                 Thread ret = new Thread(run);
 
-                ret.setName("Hydraulic Conversion Thread #" + this.threadCounter.getAndIncrement());
+                ret.setName(Constants.MOD_NAME + " Conversion Thread #" + this.threadCounter.getAndIncrement());
                 ret.setUncaughtExceptionHandler((thread, throwable) -> LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable));
 
                 return ret;

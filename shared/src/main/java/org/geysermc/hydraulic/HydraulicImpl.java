@@ -21,7 +21,7 @@ import java.util.Map;
  * Main class of the Hydraulic mod.
  */
 public class HydraulicImpl implements EventRegistrar {
-    private static final Logger LOGGER = LoggerFactory.getLogger("Hydraulic");
+    private static final Logger LOGGER = LoggerFactory.getLogger(Constants.MOD_NAME);
 
     private static HydraulicImpl instance;
 
@@ -128,7 +128,7 @@ public class HydraulicImpl implements EventRegistrar {
     @NotNull
     public static HydraulicImpl instance() {
         if (instance == null) {
-            throw new IllegalStateException("Hydraulic has not been loaded!");
+            throw new IllegalStateException(Constants.MOD_NAME + " has not been loaded!");
         }
 
         return instance;

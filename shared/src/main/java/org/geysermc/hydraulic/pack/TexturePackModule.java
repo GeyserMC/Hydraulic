@@ -2,9 +2,8 @@ package org.geysermc.hydraulic.pack;
 
 import net.kyori.adventure.key.Key;
 import org.apache.commons.lang3.StringUtils;
+import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.pack.context.PackContext;
-import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
-import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.pack.converter.data.TextureConversionData;
 import org.jetbrains.annotations.NotNull;
 

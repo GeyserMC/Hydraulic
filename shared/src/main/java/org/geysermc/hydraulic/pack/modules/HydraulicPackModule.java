@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.pack.modules;
 
 import com.google.auto.service.AutoService;
+import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.util.GeoUtil;
@@ -15,21 +16,21 @@ public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
         this.postProcess(context -> {
             // Map all block textures files as valid names
             for (Map.Entry<String, String> entry : TextureMappings.textureMappings().textures("block").entrySet()) {
-                context.bedrockResourcePack().addBlockTexture("hydraulic:" + entry.getValue(), "textures/blocks/" + entry.getValue());
+                context.bedrockResourcePack().addBlockTexture(Constants.MOD_ID + ":" + entry.getValue(), "textures/blocks/" + entry.getValue());
             }
 
             // Map all item textures files as valid names
             for (Map.Entry<String, String> entry : TextureMappings.textureMappings().textures("item").entrySet()) {
-                context.bedrockResourcePack().addItemTexture("hydraulic:" + entry.getValue(), "textures/items/" + entry.getValue());
+                context.bedrockResourcePack().addItemTexture(Constants.MOD_ID + ":" + entry.getValue(), "textures/items/" + entry.getValue());
             }
 
             // Add the empty geometry
-            context.bedrockResourcePack().addBlockModel(GeoUtil.empty("geometry.hydraulic.empty"), "empty.json");
+            context.bedrockResourcePack().addBlockModel(GeoUtil.empty("geometry." + Constants.MOD_ID + ".empty"), "empty.json");
         });
     }
 
     @Override
     public boolean test(@NotNull PackPostProcessContext<HydraulicPackModule> context) {
-        return context.mod().id().equals("hydraulic");
+        return context.mod().id().equals(Constants.MOD_ID);
     }
 }

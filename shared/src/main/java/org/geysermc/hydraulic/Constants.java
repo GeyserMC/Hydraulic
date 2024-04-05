@@ -11,4 +11,6 @@ public class Constants {
     public static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .create();
+
+    public static final String BEDROCK_TEXTURE_LOCATION = "textures/%s.png";
 }

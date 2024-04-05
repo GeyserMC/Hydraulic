@@ -8,7 +8,6 @@ import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -36,6 +35,7 @@ import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.geyser.util.MathUtils;
+import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.item.CreativeMappings;
 import org.geysermc.hydraulic.pack.ConvertablePackModule;
@@ -46,7 +46,6 @@ import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.storage.ModStorage;
-import org.geysermc.hydraulic.util.Constants;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.util.SingletonBlockGetter;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
@@ -237,7 +236,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
                     if (emptyModels.contains(key.toString())) {
                         context.logger().warn("Missing block model for block {}", blockLocation);
-                        geoName = "geometry.hydraulic.empty";
+                        geoName = "geometry." + Constants.MOD_ID + ".empty";
                     }
 
                     componentsBuilder.geometry(GeometryComponent.builder()
