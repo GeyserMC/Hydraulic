@@ -2,6 +2,7 @@ package org.geysermc.hydraulic.neoforge.platform;
 
 import com.google.common.base.Suppliers;
 import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -53,6 +54,6 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
 
     @Override
     public boolean isDev() {
-        return false; // TODO
+        return !FMLLoader.isProduction();
     }
 }
