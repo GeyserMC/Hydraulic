@@ -185,7 +185,6 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                     .name(blockLocation.getPath())
                     .namespace(blockLocation.getNamespace())
                     .includedInCreativeInventory(true)
-                    .creativeGroup("itemGroup.name.items")
                     .creativeCategory(CreativeCategory.ITEMS);
 
             CreativeMappings.setupBlock(block, builder);

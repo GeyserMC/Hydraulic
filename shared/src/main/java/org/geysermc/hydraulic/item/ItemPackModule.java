@@ -153,7 +153,6 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 .maxDamage(item.getMaxDamage())
                 .allowOffhand(true)
                 .creativeCategory(CreativeCategory.ITEMS.id())
-                .creativeGroup("itemGroup.name.items")
                 .maxDamage(item.getMaxDamage())
                 .stackSize(item.getMaxStackSize());
 
