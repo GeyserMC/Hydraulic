@@ -127,28 +127,28 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         DefaultedRegistry<Block> registry = BuiltInRegistries.BLOCK;
         for (Block block : blocks) {
             ResourceLocation blockLocation = registry.getKey(block);
-            BlockState state = block.defaultBlockState();
+            for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                ModelDefinition definition = getModel(context, blockLocation, state);
+                if (definition == null) {
+                    continue;
+                }
 
-            ModelDefinition definition = getModel(context, blockLocation, state);
-            if (definition == null) {
-                continue;
+                Model model = definition.model();
+                Key key = model.key();
+
+                // Skip unit cube models
+                if (isUnitCube(model.parent())) {
+                    continue;
+                }
+
+                // Check if the model is empty
+                Model stitchedModel = new ModelStitcher(context.modelProvider(), model, new PackLogListener(context.logger())).stitch();
+                if (!stitchedModel.elements().isEmpty()) {
+                    continue;
+                }
+
+                emptyModels.add(key.toString());
             }
-
-            Model model = definition.model();
-            Key key = model.key();
-
-            // Skip unit cube models
-            if (isUnitCube(model.parent())) {
-                continue;
-            }
-
-            // Check if the model is empty
-            Model stitchedModel = new ModelStitcher(context.modelProvider(), model, new PackLogListener(context.logger())).stitch();
-            if (!stitchedModel.elements().isEmpty()) {
-                continue;
-            }
-
-            emptyModels.add(key.toString());
         }
     }
 
