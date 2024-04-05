@@ -8,7 +8,9 @@ import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -34,6 +36,7 @@ import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.geyser.util.MathUtils;
+import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.item.CreativeMappings;
 import org.geysermc.hydraulic.pack.ConvertablePackModule;
 import org.geysermc.hydraulic.pack.PackLogListener;
@@ -389,6 +392,19 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                         .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
                         .stateGroupId(blockId)
                         .pistonBehavior(pistonBehavior.name());
+
+                // TODO Work out if we need to prefix with _item so we can remove InventoryUtilsMixin
+                try {
+                    ItemStack pickItem = block.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, state);
+                    String itemId = BuiltInRegistries.ITEM.getKey(pickItem.getItem()).toString();
+
+                    // If the method is annotated with `@Environment(EnvType.CLIENT)` then we get air back, so lets ignore that
+                    if (!itemId.equals("minecraft:air")) {
+                        javaBlockStateBuilder.pickItem(itemId);
+                    }
+                } catch (Exception e) {
+                    context.logger().warn("Failed to get pick item for block {}: {}", blockLocation, e.getMessage());
+                }
 
                 /*
                 List<AABB> aabbs = collisionShape.toAabbs();
