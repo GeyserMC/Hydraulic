@@ -13,12 +13,6 @@ public record CreativeMapping(@NotNull String creativeGroup, @NotNull CreativeCa
     }
 
     public CreativeMapping(CreativeCategory creativeCategory) {
-        this(switch (creativeCategory) {
-            case CONSTRUCTION -> "itemGroup.name.construction";
-            case EQUIPMENT -> "itemGroup.name.equipment";
-            case NATURE -> "itemGroup.name.nature";
-            case ITEMS -> "itemGroup.name.items";
-            case NONE -> "commands";
-        }, creativeCategory);
+        this("", creativeCategory);
     }
 }
