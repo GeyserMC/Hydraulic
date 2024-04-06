@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.item;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -24,51 +25,58 @@ public class CreativeMappings {
             // region --- Construction ---
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(),
-                List.of(SlabBlock.class),
-                List.of()
-            ), new CreativeMapping(ItemGroup.SLABS, CreativeCategory.CONSTRUCTION));
-
-            put(new CreativeMappingTarget(
-                List.of(),
-                List.of(),
-                List.of(FenceGateBlock.class),
-                List.of()
-            ), new CreativeMapping(ItemGroup.FENCE_GATES, CreativeCategory.CONSTRUCTION));
-
-            put(new CreativeMappingTarget(
-                List.of(),
-                List.of(),
-                List.of(FenceBlock.class),
-                List.of()
-            ), new CreativeMapping(ItemGroup.FENCES, CreativeCategory.CONSTRUCTION));
-
-            put(new CreativeMappingTarget(
-                List.of(),
-                List.of(),
+                List.of(ItemTags.DOORS),
                 List.of(DoorBlock.class),
-                List.of()
+                List.of(BlockTags.DOORS)
             ), new CreativeMapping(ItemGroup.DOORS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(),
-                List.of(TrapDoorBlock.class),
-                List.of()
-            ), new CreativeMapping(ItemGroup.TRAPDOORS, CreativeCategory.CONSTRUCTION));
+                List.of(ItemTags.FENCES),
+                List.of(FenceBlock.class),
+                List.of(BlockTags.FENCES)
+            ), new CreativeMapping(ItemGroup.FENCES, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
+                List.of(ItemTags.FENCE_GATES),
+                List.of(FenceGateBlock.class),
+                List.of(BlockTags.FENCE_GATES)
+            ), new CreativeMapping(ItemGroup.FENCE_GATES, CreativeCategory.CONSTRUCTION));
+
+            put(new CreativeMappingTarget(
                 List.of(),
+                List.of(ItemTags.PLANKS),
+                List.of(),
+                List.of(BlockTags.PLANKS)
+            ), new CreativeMapping(ItemGroup.PLANKS, CreativeCategory.CONSTRUCTION));
+
+            put(new CreativeMappingTarget(
+                List.of(),
+                List.of(ItemTags.SLABS),
+                List.of(SlabBlock.class),
+                List.of(BlockTags.SLABS)
+            ), new CreativeMapping(ItemGroup.SLABS, CreativeCategory.CONSTRUCTION));
+
+            put(new CreativeMappingTarget(
+                List.of(),
+                List.of(ItemTags.STAIRS),
                 List.of(StairBlock.class),
-                List.of()
+                List.of(BlockTags.STAIRS)
             ), new CreativeMapping(ItemGroup.STAIRS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
+                List.of(ItemTags.TRAPDOORS),
+                List.of(TrapDoorBlock.class),
+                List.of(BlockTags.TRAPDOORS)
+            ), new CreativeMapping(ItemGroup.TRAPDOORS, CreativeCategory.CONSTRUCTION));
+
+            put(new CreativeMappingTarget(
                 List.of(),
+                List.of(ItemTags.WALLS),
                 List.of(WallBlock.class),
-                List.of()
+                List.of(BlockTags.WALLS)
             ), new CreativeMapping(ItemGroup.WALLS, CreativeCategory.CONSTRUCTION));
             // endregion
 
@@ -82,17 +90,24 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(),
+                List.of(ItemTags.FLOWERS, ItemTags.SMALL_FLOWERS, ItemTags.TALL_FLOWERS),
                 List.of(FlowerBlock.class, PinkPetalsBlock.class, TallFlowerBlock.class),
-                List.of()
+                List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS, BlockTags.TALL_FLOWERS)
             ), new CreativeMapping(ItemGroup.FLOWERS, CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(),
+                List.of(ItemTags.LEAVES),
                 List.of(LeavesBlock.class),
-                List.of()
+                List.of(BlockTags.LEAVES)
             ), new CreativeMapping(ItemGroup.LEAVES, CreativeCategory.NATURE));
+
+            put(new CreativeMappingTarget(
+                List.of(),
+                List.of(ItemTags.LOGS),
+                List.of(),
+                List.of(BlockTags.LOGS)
+            ), new CreativeMapping(ItemGroup.LOGS, CreativeCategory.NATURE));
 
             // TODO Remove, these are added differently to bedrock https://wiki.bedrock.dev/visuals/retexturing-spawn-eggs.html
             put(new CreativeMappingTarget(
@@ -111,30 +126,30 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(),
+                List.of(ItemTags.SAPLINGS),
                 List.of(SaplingBlock.class),
-                List.of()
+                List.of(BlockTags.SAPLINGS)
             ), new CreativeMapping(ItemGroup.SAPLINGS, CreativeCategory.NATURE));
             // endregion
 
             // region --- Equipment ---
             put(new CreativeMappingTarget(
                 List.of(ArrowItem.class),
-                List.of(),
+                List.of(ItemTags.ARROWS),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.ARROWS, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
                 List.of(AxeItem.class),
-                List.of(),
+                List.of(ItemTags.AXES),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.AXES, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
                 List.of(HoeItem.class),
-                List.of(),
+                List.of(ItemTags.HOES),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.HOES, CreativeCategory.EQUIPMENT));
@@ -148,21 +163,21 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(PickaxeItem.class),
-                List.of(),
+                List.of(ItemTags.PICKAXES),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.PICKAXES, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
                 List.of(ShovelItem.class),
-                List.of(),
+                List.of(ItemTags.SHOVELS),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.SHOVELS, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
                 List.of(SwordItem.class),
-                List.of(),
+                List.of(ItemTags.SWORDS),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.SWORDS, CreativeCategory.EQUIPMENT));
@@ -171,9 +186,9 @@ public class CreativeMappings {
             // region --- Items ---
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(),
+                List.of(ItemTags.ANVIL),
                 List.of(AnvilBlock.class),
-                List.of()
+                List.of(BlockTags.ANVIL)
             ), new CreativeMapping(ItemGroup.ANVILS, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
@@ -199,9 +214,9 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(),
+                List.of(ItemTags.BUTTONS),
                 List.of(ButtonBlock.class),
-                List.of()
+                List.of(BlockTags.BUTTONS)
             ), new CreativeMapping(ItemGroup.BUTTONS, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
@@ -222,12 +237,12 @@ public class CreativeMappings {
                 List.of(),
                 List.of(),
                 List.of(PressurePlateBlock.class),
-                List.of()
+                List.of(BlockTags.PRESSURE_PLATES)
             ), new CreativeMapping(ItemGroup.PRESSURE_PLATES, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
                 List.of(RecordItem.class),
-                List.of(),
+                List.of(ItemTags.MUSIC_DISCS),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.RECORDS, CreativeCategory.ITEMS));
@@ -241,7 +256,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(SmithingTemplateItem.class),
-                List.of(),
+                List.of(ItemTags.TRIM_TEMPLATES),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.SMITHING_TEMPLATES, CreativeCategory.ITEMS));
@@ -261,6 +276,13 @@ public class CreativeMappings {
                 List.of(),
                 List.of()
             ), new CreativeMapping(CreativeCategory.EQUIPMENT));
+
+            put(new CreativeMappingTarget(
+                List.of(Item.class),
+                List.of(),
+                List.of(Block.class),
+                List.of()
+            ), new CreativeMapping(CreativeCategory.ITEMS));
             // endregion
         }
     };

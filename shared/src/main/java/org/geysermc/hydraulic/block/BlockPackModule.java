@@ -186,8 +186,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             CustomBlockData.Builder builder = NonVanillaCustomBlockData.builder()
                     .name(blockLocation.getPath())
                     .namespace(blockLocation.getNamespace())
-                    .includedInCreativeInventory(true)
-                    .creativeCategory(CreativeCategory.ITEMS);
+                    .includedInCreativeInventory(true);
 
             CreativeMappings.setupBlock(block, builder);
 
@@ -518,7 +517,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         if (parent == null) {
             return false;
         }
-        return parent.namespace().equals("minecraft") && parent.value().startsWith("block/cube");
+        return parent.namespace().equals("minecraft") && (parent.value().startsWith("block/cube") || parent.value().startsWith("block/orientable"));
     }
 
     /**
