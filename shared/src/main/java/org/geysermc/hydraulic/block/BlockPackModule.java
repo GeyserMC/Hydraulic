@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 @AutoService(PackModule.class)
 public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
@@ -438,8 +439,66 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
             multiVariant = packState.variants().get("");
         }
 
+        // Try and match the state
+        // TODO Handle multiple variants since we only take the first match
+        //      Will likely need to generate more geometry files and then alter bone visibility for each part
+        if (multiVariant == null) {
+            for (Selector selector : packState.multipart()) {
+                // Ignore none conditions
+                if (selector.condition() == Condition.NONE) {
+                    continue;
+                }
+
+                List<Condition> conditions = new ArrayList<>();
+                BiFunction<Boolean, Boolean, Boolean> comparator = (a, b) -> false;
+                if (selector.condition() instanceof Condition.And andCondition) {
+                    conditions.addAll(andCondition.conditions());
+                    comparator = Boolean::logicalAnd;
+                } else if (selector.condition() instanceof Condition.Or orCondition) {
+                    conditions.addAll(orCondition.conditions());
+                    comparator = Boolean::logicalOr;
+                } else if (selector.condition() instanceof Condition.Match) {
+                    conditions.add(selector.condition());
+                }
+
+                boolean first = true;
+                boolean result = true;
+                for (Condition condition : conditions) {
+                    if (!(condition instanceof Condition.Match match)) {
+                        context.logger().warn("Non match condition found in {}", blockLocation);
+                        continue;
+                    }
+
+                    Property<?> foundProperty = null;
+                    for (Property<?> property : state.getProperties()) {
+                        if (property.getName().equals(match.key())) {
+                            foundProperty = property;
+                            break;
+                        }
+                    }
+
+                    if (foundProperty == null) {
+                        result = false;
+                        continue;
+                    }
+
+                    boolean test = state.getValue(foundProperty).toString().equals(match.value().toString());
+                    if (!first) {
+                        result = comparator.apply(result, test);
+                    } else {
+                        result = test;
+                        first = false;
+                    }
+                }
+
+                if (result) {
+                    multiVariant = selector.variant();
+                    break;
+                }
+            }
+        }
+
         // Get the default multipart variant if we have no match
-        // TODO: Multipart states, this is temporary as we dont parse the condition yet
         if (multiVariant == null) {
             Optional<Selector> selector = packState.multipart().stream().filter(multipart -> multipart.condition() == Condition.NONE).findFirst();
             if (selector.isPresent()) {
