@@ -7,7 +7,7 @@ pack-converter = "3.2.1-SNAPSHOT"
 indra = "3.1.3"
 shadow = "7.1.3-SNAPSHOT"
 architectury-plugin = "3.4-SNAPSHOT"
-architectury-loom = "1.5-SNAPSHOT"
+architectury-loom = "1.6-SNAPSHOT"
 minecraft-version = "1.20.4"
 asm = "5.2"
 
