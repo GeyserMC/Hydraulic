@@ -48,7 +48,10 @@ dependencies {
     modRuntimeOnly(libs.pack.converter)
     includeTransitive(libs.pack.converter)
 
-    modLocalRuntime(libs.geyser.fabric)
+    modLocalRuntime(libs.geyser.fabric) {
+        exclude(group = "io.netty")
+        exclude(group = "io.netty.incubator")
+    }
 }
 
 sourceSets {

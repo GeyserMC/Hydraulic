@@ -2,14 +2,13 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 dependencyResolutionManagement {
     repositories {
-        mavenLocal()
+//        mavenLocal()
         mavenCentral()
 
         gradlePluginPortal()
 
         // Geyser, Floodgate, Cumulus etc.
         maven("https://repo.opencollab.dev/main")
-        maven("https://repo.opencollab.dev/maven-snapshots")
 
         // Minecraft
         maven("https://libraries.minecraft.net") {

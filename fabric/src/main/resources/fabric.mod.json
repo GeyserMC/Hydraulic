@@ -26,10 +26,10 @@
   ],
 
   "depends": {
-    "fabricloader": ">=0.14",
+    "fabricloader": ">=0.15",
     "fabric": "*",
     "geyser-fabric": "*",
     "minecraft": "${minecraft_version}",
-    "java": ">=17"
+    "java": ">=21"
   }
 }

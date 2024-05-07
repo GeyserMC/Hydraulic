@@ -3,9 +3,11 @@ package org.geysermc.hydraulic.item;
 import com.google.auto.service.AutoService;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
@@ -149,11 +151,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 .identifier(itemLocation + (flatIcon ? "_item" : ""))
                 .icon(itemLocation.toString())
                 .javaId(registry.getId(item))
-                .stackSize(item.getMaxStackSize())
-                .maxDamage(item.getMaxDamage())
-                .allowOffhand(true)
-                .maxDamage(item.getMaxDamage())
-                .stackSize(item.getMaxStackSize());
+                .stackSize(item.getDefaultMaxStackSize())
+                .maxDamage(item.getDefaultInstance().getMaxDamage())
+                .allowOffhand(true);
 
             // Allow minecraft namespace texture to be used (remapped as hydraulic)
             if (itemBuiltinTexture.containsKey(itemLocation.toString())) {
@@ -165,15 +165,16 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 customItemBuilder.foil(true);
             }
 
-            if (item.isEdible()) {
+            if (item.components().has(DataComponents.FOOD)) {
                 customItemBuilder
                         .creativeCategory(CreativeCategory.EQUIPMENT.id())
                         .creativeGroup("itemGroup.name.miscFood")
                         .edible(true);
 
-                if (item.getFoodProperties() != null) {
+                FoodProperties foodProperties = item.components().get(DataComponents.FOOD);
+                if (foodProperties != null) {
                     customItemBuilder
-                            .canAlwaysEat(item.getFoodProperties().canAlwaysEat());
+                            .canAlwaysEat(foodProperties.canAlwaysEat());
                 }
             }
 

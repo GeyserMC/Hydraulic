@@ -155,7 +155,7 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.HOES, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(HorseArmorItem.class),
+                List.of(AnimalArmorItem.class), // Not all Horse Armor anymore
                 List.of(),
                 List.of(),
                 List.of()

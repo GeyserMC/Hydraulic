@@ -58,7 +58,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
         for (ArmorItem armorItem : armorItems) {
             ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
 
-            ResourceLocation armorTextureLocation = new ResourceLocation(armorItem.getMaterial().getName());
+            ResourceLocation armorTextureLocation = new ResourceLocation(armorItem.getMaterial().getRegisteredName());
 
             Attachables armorAttachable = new Attachables();
             armorAttachable.formatVersion("1.10.0");
