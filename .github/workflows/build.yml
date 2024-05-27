@@ -14,51 +14,60 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-        PROJECT: 'hydraulic'
     steps:
       - name: Checkout repository and submodules
         # See https://github.com/actions/checkout/commits
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           submodules: recursive
 
       - name: Validate Gradle Wrapper
         # See https://github.com/gradle/wrapper-validation-action/commits
-        uses: gradle/wrapper-validation-action@b231772637bb498f11fdbc86052b6e8a8dc9fc92 # v2.1.2
+        uses: gradle/actions/wrapper-validation@db19848a5fa7950289d3668fb053140cf3028d43 # v3.3.2
 
+      - name: Setup Java
         # See https://github.com/actions/setup-java/commits
-      - uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
         with:
           java-version: 21
           distribution: temurin
           
-      - name: Build
-        # See https://github.com/gradle/gradle-build-action/commits
-        uses: gradle/gradle-build-action@ebc47c299ce5f6b106c1663c8c99ab07e0ce1666 # v3.1.0
+      - name: Setup Gradle
+        # See https://github.com/gradle/actions/commits
+        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
         with:
-          arguments: build
           gradle-home-cache-cleanup: true
+
+      - name: Build Hydraulic
+        run: ./gradlew build
           
       - name: Archive artifacts (Hydraulic Fabric)
         # See https://github.com/actions/upload-artifact/commits
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: success()
         with:
           name: Hydraulic Fabric
           path: fabric/build/libs/hydraulic-fabric.jar
           if-no-files-found: error
       - name: Archive artifacts (Hydraulic NeoForge)
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         if: success()
         with:
           name: Hydraulic NeoForge
           path: neoforge/build/libs/hydraulic-neoforge.jar
           if-no-files-found: error
 
+      - name: Get Version
+        if: ${{ success() && github.repository == 'GeyserMC/Hydraulic' && github.ref_name == 'master' }}
+        id: get-version
+        run: |
+          version=$(cat gradle.properties | grep -o "^version=[0-9\\.]*" | cut -d"=" -f2)
+          echo "VERSION=${version}" >> $GITHUB_OUTPUT
+
       - name: Get Release Metadata
         if: ${{ success() && github.repository == 'GeyserMC/Hydraulic' && github.ref_name == 'master' }}
-        uses: Kas-tle/base-release-action@b863fa0f89bd15267a96a72efb84aec25f168d4c # https://github.com/Kas-tle/base-release-action/releases/tag/main-11
+        uses: GeyserMC/actions/release@master
+        id: metadata
         with:
           appID: ${{ secrets.RELEASE_APP_ID }}
           appPrivateKey: ${{ secrets.RELEASE_APP_PK }}
@@ -67,37 +76,16 @@ jobs:
             neoforge:neoforge/build/libs/hydraulic-neoforge.jar
           releaseEnabled: false
           saveMetadata: true
-
-      - name: Update Generated Metadata
-        if: ${{ success() && github.repository == 'GeyserMC/Hydraulic' && github.ref_name == 'master' }}
-        run: |
-          cat metadata.json
-          echo
-          mv metadata.json metadata.json.tmp
-          version=$(cat gradle.properties | grep -o "^version=[0-9\\.]*" | cut -d"=" -f2)
-          jq --arg project "${PROJECT}" --arg version "${version}" '
-            .
-            | .changes |= map({"commit", "summary", "message"}) 
-            | .downloads |= map_values({"name", "sha256"})
-            | {$project, "repo", $version, "number": .build, "changes", "downloads"}
-          ' metadata.json.tmp > metadata.json
-          cat metadata.json
+          releaseProject: 'hydraulic'
+          releaseVersion: ${{ steps.get-version.outputs.VERSION }}
 
       - name: Publish to Downloads API
         if: ${{ success() && github.repository == 'GeyserMC/Hydraulic' && github.ref_name == 'master' }}
-        shell: bash
-        env:
-          DOWNLOADS_USERNAME: ${{ vars.DOWNLOADS_USERNAME }}
-          DOWNLOADS_PRIVATE_KEY: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
-          DOWNLOADS_SERVER_IP: ${{ secrets.DOWNLOADS_SERVER_IP }}
-        run: |
-          # Save the private key to a file
-          echo "$DOWNLOADS_PRIVATE_KEY" > id_ecdsa
-          chmod 600 id_ecdsa
-          # Create the build folder
-          ssh -o StrictHostKeyChecking=no -i id_ecdsa $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP mkdir -p "~/uploads/$PROJECT/$GITHUB_RUN_NUMBER/"
-          # Copy over artifacts
-          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" fabric/build/libs/hydraulic-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$PROJECT/$GITHUB_RUN_NUMBER/
-          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" neoforge/build/libs/hydraulic-*.jar $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$PROJECT/$GITHUB_RUN_NUMBER/
-          # Run the build script
-          rsync -P -e "ssh -o StrictHostKeyChecking=no -i id_ecdsa" metadata.json $DOWNLOADS_USERNAME@$DOWNLOADS_SERVER_IP:~/uploads/$PROJECT/$GITHUB_RUN_NUMBER/
+        uses: GeyserMC/actions/upload-release@master
+        with:
+          username: ${{ vars.DOWNLOADS_USERNAME }}
+          privateKey: ${{ secrets.DOWNLOADS_PRIVATE_KEY }}
+          host: ${{ secrets.DOWNLOADS_SERVER_IP }}
+          files: |
+            fabric/build/libs/hydraulic-fabric.jar
+            neoforge/build/libs/hydraulic-neoforge.jar
