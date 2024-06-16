@@ -211,6 +211,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             } else if (item instanceof ShearsItem) {
                 customItemBuilder.toolType("shears");
             } else if (item instanceof BowItem) {
+                customItemBuilder.toolType("bow");
                 customItemBuilder.chargeable(true);
             } else if (item instanceof BlockItem) {
                 // Set the block_placer component to the correct block
