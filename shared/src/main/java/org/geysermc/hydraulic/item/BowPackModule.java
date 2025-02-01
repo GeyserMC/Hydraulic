@@ -72,7 +72,7 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
         ResourcePack assets = context.javaResourcePack();
         BedrockResourcePack bedrockPack = context.bedrockResourcePack();
 
-        List<BowItem> bowItems = context.registryValues(Registries.ITEM).stream()
+        List<BowItem> bowItems = context.registryValues(BuiltInRegistries.ITEM).stream()
                 .filter(item -> item instanceof BowItem)
                 .map(item -> (BowItem) item)
                 .toList();
@@ -189,6 +189,6 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
 
     @Override
     public boolean test(@NotNull PackPostProcessContext<BowPackModule> context) {
-        return context.registryValues(Registries.ITEM).stream().anyMatch(item -> item instanceof BowItem);
+        return context.registryValues(BuiltInRegistries.ITEM).stream().anyMatch(item -> item instanceof BowItem);
     }
 }

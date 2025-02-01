@@ -22,7 +22,8 @@
     ]
   },
   "mixins": [
-    "hydraulic.mixins.json"
+    "hydraulic.mixins.json",
+    "hydraulic-fabric.mixins.json"
   ],
 
   "depends": {

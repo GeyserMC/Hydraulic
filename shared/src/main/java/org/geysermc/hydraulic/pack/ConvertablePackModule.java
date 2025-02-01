@@ -15,8 +15,8 @@ import java.util.Map;
  */
 public abstract class ConvertablePackModule<T extends PackModule<T>, C extends ConversionData> extends PackModule<T> implements ActionListener<C> {
     protected static final Map<String, String> DIRECTORY_LOCATIONS = Map.of(
-            "block", "blocks",
-            "item", "items"
+            "block", "block",
+            "item", "item"
     );
 
     private final Class<C> conversionType;

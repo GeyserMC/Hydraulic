@@ -4,6 +4,7 @@
   "package": "org.geysermc.hydraulic.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ext.ArmorItemMixin",
     "ext.BlockRegistryPopulatorMixin",
     "ext.BlockStateSerializerMixin",
     "ext.ItemTranslatorMixin",

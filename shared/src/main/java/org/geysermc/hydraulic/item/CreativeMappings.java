@@ -90,9 +90,9 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FLOWERS, ItemTags.SMALL_FLOWERS, ItemTags.TALL_FLOWERS),
+                List.of(ItemTags.SMALL_FLOWERS),
                 List.of(FlowerBlock.class, PinkPetalsBlock.class, TallFlowerBlock.class),
-                List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS, BlockTags.TALL_FLOWERS)
+                List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS)
             ), new CreativeMapping(ItemGroup.FLOWERS, CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
@@ -241,13 +241,6 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.PRESSURE_PLATES, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
-                List.of(RecordItem.class),
-                List.of(ItemTags.MUSIC_DISCS),
-                List.of(),
-                List.of()
-            ), new CreativeMapping(ItemGroup.RECORDS, CreativeCategory.ITEMS));
-
-            put(new CreativeMappingTarget(
                 List.of(SignItem.class),
                 List.of(ItemTags.SIGNS),
                 List.of(SignBlock.class),
@@ -256,7 +249,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(SmithingTemplateItem.class),
-                List.of(ItemTags.TRIM_TEMPLATES),
+                List.of(ItemTags.TRIM_MATERIALS),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.SMITHING_TEMPLATES, CreativeCategory.ITEMS));
@@ -271,7 +264,7 @@ public class CreativeMappings {
             ), new CreativeMapping(CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
-                List.of(ArmorItem.class, BowItem.class, ShearsItem.class, TieredItem.class),
+                List.of(ArmorItem.class, BowItem.class, ShearsItem.class),
                 List.of(),
                 List.of(),
                 List.of()
