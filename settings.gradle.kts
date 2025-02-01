@@ -74,4 +74,4 @@ rootProject.name = "hydraulic-parent"
 
 include(":shared")
 include(":fabric")
-//include(":neoforge")
+include(":neoforge")

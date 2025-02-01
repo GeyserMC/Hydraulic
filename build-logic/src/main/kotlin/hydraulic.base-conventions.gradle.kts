@@ -24,7 +24,7 @@ indra {
 
 tasks {
     processResources {
-        filesMatching(listOf("fabric.mod.json", "hydraulic.mixins.json", "META-INF/mods.toml")) {
+        filesMatching(listOf("fabric.mod.json", "hydraulic.mixins.json", "META-INF/neoforge.mods.toml")) {
             expand(
                 "id" to "hydraulic",
                 "name" to "Hydraulic",

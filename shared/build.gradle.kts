@@ -1,6 +1,5 @@
 architectury {
-    //common("neoforge", "fabric")
-    common("fabric")
+    common("neoforge", "fabric")
 }
 
 dependencies {
