@@ -22,7 +22,7 @@ import java.util.Map;
 
 @AutoService(PackModule.class)
 public class ArmorPackModule extends PackModule<ArmorPackModule> {
-    private static final String BEDROCK_ARMOR_TEXTURE_LOCATION = "textures/models/%s/armor/%s_layer_%s";
+    private static final String BEDROCK_ARMOR_TEXTURE_LOCATION = "textures/entity/%s/equipment/%s/%s";
 
     private static final Map<String, String> ATTACHABLE_MATERIALS = new HashMap<>() {
         {
@@ -80,7 +80,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
             description.textures(new HashMap<>() {
                 {
-                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), armorTextureLocation.getPath(), (((ArmorItemExt) armorItem).type() == ArmorType.LEGGINGS ? 2 : 1)));
+                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), (((ArmorItemExt) armorItem).type() == ArmorType.LEGGINGS ? "humanoid_leggings" : "humanoid"), armorTextureLocation.getPath()));
                     put("enchanted", "textures/misc/enchanted_actor_glint");
                 }
             });
