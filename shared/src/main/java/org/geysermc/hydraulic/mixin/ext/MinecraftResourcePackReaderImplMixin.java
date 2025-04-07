@@ -64,20 +64,20 @@ public abstract class MinecraftResourcePackReaderImplMixin {
         return null;
     }
 
-    /**
-     * Redirect the accept method to ignore any null resources
-     */
-    @Redirect(
-        method = "read(Lteam/unnamed/creative/serialize/minecraft/fs/FileTreeReader;)Lteam/unnamed/creative/ResourcePack;",
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/util/function/BiConsumer;accept(Ljava/lang/Object;Ljava/lang/Object;)V"
-        )
-    )
-    private void accept(BiConsumer instance, Object container, Object resource) {
-        // Only accept the resource if it is not null
-        if (resource != null) {
-            instance.accept(container, resource);
-        }
-    }
+//    /**
+//     * Redirect the accept method to ignore any null resources
+//     */
+//    @Redirect(
+//        method = "read(Lteam/unnamed/creative/serialize/minecraft/fs/FileTreeReader;)Lteam/unnamed/creative/ResourcePack;",
+//        at = @At(
+//            value = "INVOKE",
+//            target = "Ljava/util/function/BiConsumer;accept(Ljava/lang/Object;Ljava/lang/Object;)V"
+//        )
+//    )
+//    private void accept(BiConsumer instance, Object container, Object resource) {
+//        // Only accept the resource if it is not null
+//        if (resource != null) {
+//            instance.accept(container, resource);
+//        }
+//    }
 }

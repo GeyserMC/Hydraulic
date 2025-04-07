@@ -3,6 +3,8 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
+
     gradlePluginPortal()
 
     maven("https://repo.opencollab.dev/maven-releases/")

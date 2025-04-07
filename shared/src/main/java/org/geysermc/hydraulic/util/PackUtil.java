@@ -36,7 +36,7 @@ public class PackUtil {
             String value = modelValue.substring(modelValue.indexOf("/") + 1);
 
             // Need to use the Bedrock value for vanilla textures
-            Map<String, String> textures = TextureMappings.textureMappings().textures(type);
+            Map<String, String> textures = (Map<String, String>) TextureMappings.textureMappings().textures(type);
             if (textures != null) {
                 String textureName = textures.getOrDefault(value, "");
                 if (textureName.isEmpty()) {

@@ -1,11 +1,14 @@
 package org.geysermc.hydraulic.item;
 
 import com.google.auto.service.AutoService;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.equipment.ArmorType;
-import org.geysermc.hydraulic.ext.ArmorItemExt;
+import net.minecraft.world.item.equipment.EquipmentAsset;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.pack.bedrock.resource.attachables.Attachable;
@@ -19,6 +22,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @AutoService(PackModule.class)
 public class ArmorPackModule extends PackModule<ArmorPackModule> {
@@ -41,9 +45,8 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
     }
 
     private void postProcess(@NotNull PackPostProcessContext<ArmorPackModule> context) {
-        List<ArmorItem> armorItems = context.registryValues(BuiltInRegistries.ITEM).stream()
-                .filter(item -> item instanceof ArmorItem)
-                .map(item -> (ArmorItem) item)
+        List<Item> armorItems = context.registryValues(BuiltInRegistries.ITEM).stream()
+                .filter(item -> item.getDefaultInstance().has(DataComponents.EQUIPPABLE))
                 .toList();
 
         context.logger().info("Armor to convert: " + armorItems.size() + " in mod " + context.mod().id());
@@ -55,10 +58,16 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             context.logger().warn("Failed to load enchanted_actor_glint.png, enchanted armor will not have a glint effect");
         }
 
-        for (ArmorItem armorItem : armorItems) {
+        for (Item armorItem : armorItems) {
             ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
 
-            ResourceLocation armorTextureLocation = ((ArmorItemExt) armorItem).material().assetId().location();
+            Optional<ResourceKey<EquipmentAsset>> resourceKey = armorItem.getDefaultInstance().get(DataComponents.EQUIPPABLE).assetId();
+
+            if (resourceKey.isEmpty()) {
+                continue; // TODO: Figure out what to do here, no texture means what??
+            }
+
+            ResourceLocation armorTextureLocation = resourceKey.get().location();
 
             Attachables armorAttachable = new Attachables();
             armorAttachable.formatVersion("1.10.0");
@@ -80,17 +89,17 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
             description.textures(new HashMap<>() {
                 {
-                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), (((ArmorItemExt) armorItem).type() == ArmorType.LEGGINGS ? "humanoid_leggings" : "humanoid"), armorTextureLocation.getPath()));
+                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), (armorItem.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot().equals(EquipmentSlot.LEGS) ? "humanoid_leggings" : "humanoid"), armorTextureLocation.getPath()));
                     put("enchanted", "textures/misc/enchanted_actor_glint");
                 }
             });
 
             String geometryType = "";
-            switch (((ArmorItemExt) armorItem).type()) {
-                case ArmorType.HELMET -> geometryType = "helmet";
-                case ArmorType.CHESTPLATE -> geometryType = "chestplate";
-                case ArmorType.LEGGINGS -> geometryType = "leggings";
-                case ArmorType.BOOTS -> geometryType = "boots";
+            switch (armorItem.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()) {
+                case EquipmentSlot.HEAD -> geometryType = "helmet";
+                case EquipmentSlot.CHEST -> geometryType = "chestplate";
+                case EquipmentSlot.LEGS -> geometryType = "leggings";
+                case EquipmentSlot.FEET -> geometryType = "boots";
             }
 
             final String finalGeometryType = geometryType;
@@ -106,6 +115,6 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
     @Override
     public boolean test(@NotNull PackPostProcessContext<ArmorPackModule> context) {
-        return context.registryValues(BuiltInRegistries.ITEM).stream().anyMatch(item -> item instanceof ArmorItem);
+        return context.registryValues(BuiltInRegistries.ITEM).stream().anyMatch(item -> item.getDefaultInstance().has(DataComponents.EQUIPPABLE));
     }
 }

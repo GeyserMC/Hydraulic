@@ -8,21 +8,10 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.BowItem;
-import net.minecraft.world.item.HoeItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.PickaxeItem;
-import net.minecraft.world.item.ShearsItem;
-import net.minecraft.world.item.ShovelItem;
-import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
-import org.geysermc.geyser.api.util.CreativeCategory;
-import org.geysermc.hydraulic.ext.ArmorItemExt;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
@@ -105,7 +94,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 continue;
             }
             Model model = new ModelStitcher(context.modelProvider(), baseModel, packLogListener).stitch();
-            if (model == null || model.textures() == null) {
+            if (model == null) {
                 context.logger().warn("Item {} has no item model, skipping", itemLocation);
                 continue;
             }
@@ -162,9 +151,12 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             }
 
             if (item.components().has(DataComponents.FOOD)) {
+//                customItemBuilder
+//                        .creativeCategory(CreativeCategory.EQUIPMENT.id())
+//                        .creativeGroup("itemGroup.name.miscFood")
+//                        .edible(true);
                 customItemBuilder
-                        .creativeCategory(CreativeCategory.EQUIPMENT.id())
-                        .creativeGroup("itemGroup.name.miscFood")
+                        .creativeGroup("")
                         .edible(true);
 
                 FoodProperties foodProperties = item.components().get(DataComponents.FOOD);
@@ -174,17 +166,26 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 }
             }
 
-            CreativeMappings.setup(item, customItemBuilder);
+            //CreativeMappings.setup(item, customItemBuilder);
 
-            if (item instanceof ArmorItem armorItem) {
-                customItemBuilder.protectionValue(((ArmorItemExt) armorItem).protection());
-                switch (armorItem.components().get(DataComponents.EQUIPPABLE).slot()) {
-                    case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
-                    case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
-                    case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("itemGroup.name.leggings");
-                    case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
+            if (item.getDefaultInstance().has(DataComponents.EQUIPPABLE) && item.getDefaultInstance().has(DataComponents.ATTRIBUTE_MODIFIERS)) {
+                customItemBuilder.protectionValue((int) item.getDefaultInstance().get(DataComponents.ATTRIBUTE_MODIFIERS).compute(0, item.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()));
+            }
+
+            if (item.getDefaultInstance().has(DataComponents.EQUIPPABLE)) {
+                switch (item.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()) {
+//                    case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
+//                    case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
+//                    case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("itemGroup.name.leggings");
+//                    case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
+                    case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("");
+                    case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("");
+                    case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("");
+                    case FEET -> customItemBuilder.armorType("boots").creativeGroup("");
                 }
-            } else if (item.components().has(DataComponents.TOOL)) {
+            }
+
+            if (item.getDefaultInstance().has(DataComponents.TOOL)) {
                 customItemBuilder.displayHandheld(true); // So we hold the tool right
 
                 // TODO Support custom tiers
@@ -194,7 +195,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 //                    customItemBuilder.toolTier(tieredItem.getTier().toString());
 //                }
 
-                if (item instanceof PickaxeItem) {
+                // TODO: I don't like this hack, but components be wild, do *not* push this into prod, same with the sword
+                if (BuiltInRegistries.ITEM.getKey(item).getPath().contains("pickaxe")) {
                     customItemBuilder.toolType("pickaxe");
                 } else if (item instanceof HoeItem) {
                     customItemBuilder.toolType("hoe");
@@ -202,7 +204,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                     customItemBuilder.toolType("axe");
                 } else if (item instanceof ShovelItem) {
                     customItemBuilder.toolType("shovel");
-                } else if (item instanceof SwordItem) {
+                } else if (BuiltInRegistries.ITEM.getKey(item).getPath().contains("sword")) {
                     customItemBuilder.toolType("sword");
                 }
             } else if (item instanceof ShearsItem) {

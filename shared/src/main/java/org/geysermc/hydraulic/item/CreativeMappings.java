@@ -90,8 +90,8 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.SMALL_FLOWERS),
-                List.of(FlowerBlock.class, PinkPetalsBlock.class, TallFlowerBlock.class),
+                List.of(ItemTags.FLOWERS),
+                List.of(FlowerBlock.class, TallFlowerBlock.class),
                 List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS)
             ), new CreativeMapping(ItemGroup.FLOWERS, CreativeCategory.NATURE));
 
@@ -155,14 +155,14 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.HOES, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(AnimalArmorItem.class), // Not all Horse Armor anymore
+                List.of(), // TODO: No item class present, perhaps we can make our own that mods can hook into?
                 List.of(),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.HORSE_ARMOR, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(PickaxeItem.class),
+                List.of(), // No item class present, currently depends on the tag
                 List.of(ItemTags.PICKAXES),
                 List.of(),
                 List.of()
@@ -176,7 +176,7 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.SHOVELS, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(SwordItem.class),
+                List.of(), // No item class present, currently depends on the tag
                 List.of(ItemTags.SWORDS),
                 List.of(),
                 List.of()
@@ -192,7 +192,7 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.ANVILS, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
-                List.of(BannerPatternItem.class),
+                List.of(), // TODO: Missing item class type, no tag replacement, perhaps we need a way to check with components too?
                 List.of(),
                 List.of(),
                 List.of()
@@ -264,7 +264,7 @@ public class CreativeMappings {
             ), new CreativeMapping(CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
-                List.of(ArmorItem.class, BowItem.class, ShearsItem.class),
+                List.of(BowItem.class, ShearsItem.class), // TODO: Armor item class is now missing, would require components to check or a tag
                 List.of(),
                 List.of(),
                 List.of()
