@@ -9,10 +9,6 @@ dependencies {
     compileOnly("org.checkerframework", "checker-qual", "3.19.0")
 }
 
-repositories {
-    mavenLocal()
-}
-
 indra {
     github("GeyserMC", "Hydraulic") {
         ci(true)
