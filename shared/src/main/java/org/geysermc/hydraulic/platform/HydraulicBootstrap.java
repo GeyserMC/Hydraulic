@@ -1,11 +1,13 @@
 package org.geysermc.hydraulic.platform;
 
+import net.minecraft.server.MinecraftServer;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.function.Consumer;
 
 /**
  * Represents the bootstrap of a platform.
@@ -42,4 +44,9 @@ public interface HydraulicBootstrap {
      * @return if the current environment is a development environment
      */
     boolean isDev();
+
+    /**
+     * Register a listener for the stop server event
+     */
+    void registerServerStop(Consumer<MinecraftServer> listenerAction);
 }

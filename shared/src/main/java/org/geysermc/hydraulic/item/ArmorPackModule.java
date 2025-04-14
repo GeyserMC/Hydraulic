@@ -7,8 +7,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.equipment.ArmorType;
-import net.minecraft.world.item.equipment.EquipmentAsset;
+import net.minecraft.world.item.equipment.Equippable;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.pack.bedrock.resource.attachables.Attachable;
@@ -59,15 +58,17 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
         }
 
         for (Item armorItem : armorItems) {
+            Equippable equippable = armorItem.components().get(DataComponents.EQUIPPABLE);
+
             ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
 
-            Optional<ResourceKey<EquipmentAsset>> resourceKey = armorItem.getDefaultInstance().get(DataComponents.EQUIPPABLE).assetId();
+            Optional<ResourceLocation> optionalResourceLocation = equippable.assetId().map(ResourceKey::location);
 
-            if (resourceKey.isEmpty()) {
+            if (optionalResourceLocation.isEmpty()) {
                 continue; // TODO: Figure out what to do here, no texture means what??
             }
 
-            ResourceLocation armorTextureLocation = resourceKey.get().location();
+            ResourceLocation armorTextureLocation = optionalResourceLocation.get();
 
             Attachables armorAttachable = new Attachables();
             armorAttachable.formatVersion("1.10.0");
@@ -89,13 +90,13 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
             description.textures(new HashMap<>() {
                 {
-                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), (armorItem.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot().equals(EquipmentSlot.LEGS) ? "humanoid_leggings" : "humanoid"), armorTextureLocation.getPath()));
+                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), (equippable.slot().equals(EquipmentSlot.LEGS) ? "humanoid_leggings" : "humanoid"), armorTextureLocation.getPath()));
                     put("enchanted", "textures/misc/enchanted_actor_glint");
                 }
             });
 
             String geometryType = "";
-            switch (armorItem.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()) {
+            switch (equippable.slot()) {
                 case EquipmentSlot.HEAD -> geometryType = "helmet";
                 case EquipmentSlot.CHEST -> geometryType = "chestplate";
                 case EquipmentSlot.LEGS -> geometryType = "leggings";

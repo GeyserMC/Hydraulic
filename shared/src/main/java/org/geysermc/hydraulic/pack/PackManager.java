@@ -54,9 +54,11 @@ public class PackManager {
 
     static final Set<String> IGNORED_MODS = Set.of(
             "geyser-fabric",
-            "geyser-forge",
+            "geyser-neoforge",
             "floodgate",
-            "mixinextras"
+            "mixinextras",
+            "fabric-permissions-api-v0",
+            "cloud"
     );
 
     private final HydraulicImpl hydraulic;

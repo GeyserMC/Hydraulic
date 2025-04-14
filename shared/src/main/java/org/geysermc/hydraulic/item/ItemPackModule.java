@@ -12,6 +12,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
+import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
@@ -151,12 +152,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             }
 
             if (item.components().has(DataComponents.FOOD)) {
-//                customItemBuilder
-//                        .creativeCategory(CreativeCategory.EQUIPMENT.id())
-//                        .creativeGroup("itemGroup.name.miscFood")
-//                        .edible(true);
                 customItemBuilder
-                        .creativeGroup("")
+                        .creativeCategory(CreativeCategory.EQUIPMENT.id())
+                        .creativeGroup("itemGroup.name.miscFood")
                         .edible(true);
 
                 FoodProperties foodProperties = item.components().get(DataComponents.FOOD);
@@ -166,7 +164,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 }
             }
 
-            //CreativeMappings.setup(item, customItemBuilder);
+            CreativeMappings.setup(item, customItemBuilder);
 
             if (item.getDefaultInstance().has(DataComponents.EQUIPPABLE) && item.getDefaultInstance().has(DataComponents.ATTRIBUTE_MODIFIERS)) {
                 customItemBuilder.protectionValue((int) item.getDefaultInstance().get(DataComponents.ATTRIBUTE_MODIFIERS).compute(0, item.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()));
@@ -174,28 +172,16 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
             if (item.getDefaultInstance().has(DataComponents.EQUIPPABLE)) {
                 switch (item.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()) {
-//                    case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
-//                    case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
-//                    case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("itemGroup.name.leggings");
-//                    case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
-                    case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("");
-                    case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("");
-                    case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("");
-                    case FEET -> customItemBuilder.armorType("boots").creativeGroup("");
+                    case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
+                    case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
+                    case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("itemGroup.name.leggings");
+                    case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
                 }
             }
 
             if (item.getDefaultInstance().has(DataComponents.TOOL)) {
                 customItemBuilder.displayHandheld(true); // So we hold the tool right
 
-                // TODO Support custom tiers
-                customItemBuilder.toolTier("DIAMOND");
-                // TODO Find new way to do tiers
-//                if (tieredItem.getTier() instanceof Tiers) {
-//                    customItemBuilder.toolTier(tieredItem.getTier().toString());
-//                }
-
-                // TODO: I don't like this hack, but components be wild, do *not* push this into prod, same with the sword
                 if (BuiltInRegistries.ITEM.getKey(item).getPath().contains("pickaxe")) {
                     customItemBuilder.toolType("pickaxe");
                 } else if (item instanceof HoeItem) {

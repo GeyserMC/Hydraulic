@@ -1,6 +1,5 @@
 package org.geysermc.hydraulic.item;
 
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -155,13 +154,6 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.HOES, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(), // TODO: No item class present, perhaps we can make our own that mods can hook into?
-                List.of(),
-                List.of(),
-                List.of()
-            ), new CreativeMapping(ItemGroup.HORSE_ARMOR, CreativeCategory.EQUIPMENT));
-
-            put(new CreativeMappingTarget(
                 List.of(), // No item class present, currently depends on the tag
                 List.of(ItemTags.PICKAXES),
                 List.of(),
@@ -190,13 +182,6 @@ public class CreativeMappings {
                 List.of(AnvilBlock.class),
                 List.of(BlockTags.ANVIL)
             ), new CreativeMapping(ItemGroup.ANVILS, CreativeCategory.ITEMS));
-
-            put(new CreativeMappingTarget(
-                List.of(), // TODO: Missing item class type, no tag replacement, perhaps we need a way to check with components too?
-                List.of(),
-                List.of(),
-                List.of()
-            ), new CreativeMapping(ItemGroup.BANNER_PATTERNS, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
                 List.of(),
