@@ -198,6 +198,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                     customItemOptions.protectionValue((int) itemAttributeModifiers.compute(0, equippable.slot()));
                 }
 
+                customItemOptions.tag(Identifier.of("minecraft", "is_armor"));
+
 //                switch (item.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()) {
 //                    case HEAD -> customItemOptions.armorType("helmet").creativeGroup("itemGroup.name.helmet");
 //                    case CHEST -> customItemOptions.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
@@ -242,7 +244,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 // This fixes animations sometimes not showing
                 Block block = blockItem.getBlock();
 
-                customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), false));
+                customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), true));
 
                 CreativeMappings.setupBlock(block, customItemOptions);
             }
