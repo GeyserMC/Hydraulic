@@ -19,94 +19,92 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 import java.util.Map;
 
-// Seemingly not needed with modern Geyser, no difference was noticed
-// Difference was now noticed.
 @Mixin(value = BlockRegistryPopulator.class, remap = false)
 public class BlockRegistryPopulatorMixin {
-    @Inject(
-        method = {"registerBedrockBlocks"},
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/util/Map$Entry;getKey()Ljava/lang/Object;",
-            ordinal = 0
-        )
-    )
-    private static void replaceJavaRuntimeIdInBedrock(
-        CallbackInfo ci,
-        @Local(name = "entry") Map.Entry<Object, JsonNode> entry,
-        @Local(name = "javaRuntimeId") LocalIntRef javaRuntimeId
-    ) throws CommandSyntaxException {
-        int newId;
-
-        if (entry.getKey() instanceof String str) {
-            newId = Block.getId(
-                    BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, str, false).blockState()
-            );
-        } else if (entry.getKey() instanceof GeyserJavaBlockState state) {
-            newId = Block.getId(
-                    BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, state.identifier(), false).blockState()
-            );
-        } else {
-            throw new RuntimeException("Argument type invalid. " + entry.getKey().getClass().getSimpleName());
-        }
-
-        javaRuntimeId.set(newId);
-    }
-
-    @ModifyArgs(
-            method = "registerJavaBlocks",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lorg/geysermc/geyser/registry/MappedRegistry;register(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
-            )
-    )
-    private static void replaceJavaRuntimeIdInJava(
-            Args args
-    ) throws CommandSyntaxException {
-        int newId;
-        Object arg0 = args.get(0);
-
-        if (arg0 instanceof String str) {
-            newId = Block.getId(
-                    BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, str, false).blockState()
-            );
-        } else if (arg0 instanceof GeyserJavaBlockState state) {
-            newId = Block.getId(
-                    BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, state.identifier(), false).blockState()
-            );
-        } else {
-            throw new RuntimeException("Argument type invalid. " + arg0.getClass().getSimpleName());
-        }
-
-        args.set(1, newId);
-    }
-
-    @Inject(
-        method = "registerBedrockBlocks",
-        at = @At(
-            value = "INVOKE",
-            target = "Lorg/geysermc/geyser/registry/type/BlockMappings$BlockMappingsBuilder;commandBlock(Lorg/cloudburstmc/protocol/bedrock/data/definitions/BlockDefinition;)Lorg/geysermc/geyser/registry/type/BlockMappings$BlockMappingsBuilder;"
-        )
-    )
-    private static void mapInsertedBlockStates(
-        CallbackInfo ci,
-        @Local(name = "javaRuntimeId") int javaRuntimeId,
-        @Local(name = "javaToBedrockBlocks") GeyserBedrockBlock[] javaToBedrockBlocks,
-        @Local(name = "javaToVanillaBedrockBlocks") GeyserBedrockBlock[] javaToVanillaBedrockBlocks
-    ) {
-        GeyserBedrockBlock lastBedrockBlock = javaToBedrockBlocks[0];
-        GeyserBedrockBlock lastVanillaBlock = javaToVanillaBedrockBlocks[0];
-        for (int i = 1; i < javaRuntimeId; i++) {
-            if (javaToBedrockBlocks[i] == null) {
-                javaToBedrockBlocks[i] = lastBedrockBlock;
-            } else {
-                lastBedrockBlock = javaToBedrockBlocks[i];
-            }
-            if (javaToVanillaBedrockBlocks[i] == null) {
-                javaToVanillaBedrockBlocks[i] = lastVanillaBlock;
-            } else {
-                lastVanillaBlock = javaToVanillaBedrockBlocks[i];
-            }
-        }
-    }
+//    @Inject(
+//        method = {"registerBedrockBlocks"},
+//        at = @At(
+//            value = "INVOKE",
+//            target = "Ljava/util/Map$Entry;getKey()Ljava/lang/Object;",
+//            ordinal = 0
+//        )
+//    )
+//    private static void replaceJavaRuntimeIdInBedrock(
+//        CallbackInfo ci,
+//        @Local(name = "entry") Map.Entry<Object, JsonNode> entry,
+//        @Local(name = "javaRuntimeId") LocalIntRef javaRuntimeId
+//    ) throws CommandSyntaxException {
+//        int newId;
+//
+//        if (entry.getKey() instanceof String str) {
+//            newId = Block.getId(
+//                    BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, str, false).blockState()
+//            );
+//        } else if (entry.getKey() instanceof GeyserJavaBlockState state) {
+//            newId = Block.getId(
+//                    BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, state.identifier(), false).blockState()
+//            );
+//        } else {
+//            throw new RuntimeException("Argument type invalid. " + entry.getKey().getClass().getSimpleName());
+//        }
+//
+//        javaRuntimeId.set(newId);
+//    }
+//
+//    @ModifyArgs(
+//            method = "registerJavaBlocks",
+//            at = @At(
+//                    value = "INVOKE",
+//                    target = "Lorg/geysermc/geyser/registry/MappedRegistry;register(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
+//            )
+//    )
+//    private static void replaceJavaRuntimeIdInJava(
+//            Args args
+//    ) throws CommandSyntaxException {
+//        int newId;
+//        Object arg0 = args.get(0);
+//
+//        if (arg0 instanceof String str) {
+//            newId = Block.getId(
+//                    BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, str, false).blockState()
+//            );
+//        } else if (arg0 instanceof GeyserJavaBlockState state) {
+//            newId = Block.getId(
+//                    BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK, state.identifier(), false).blockState()
+//            );
+//        } else {
+//            throw new RuntimeException("Argument type invalid. " + arg0.getClass().getSimpleName());
+//        }
+//
+//        args.set(1, newId);
+//    }
+//
+//    @Inject(
+//        method = "registerBedrockBlocks",
+//        at = @At(
+//            value = "INVOKE",
+//            target = "Lorg/geysermc/geyser/registry/type/BlockMappings$BlockMappingsBuilder;commandBlock(Lorg/cloudburstmc/protocol/bedrock/data/definitions/BlockDefinition;)Lorg/geysermc/geyser/registry/type/BlockMappings$BlockMappingsBuilder;"
+//        )
+//    )
+//    private static void mapInsertedBlockStates(
+//        CallbackInfo ci,
+//        @Local(name = "javaRuntimeId") int javaRuntimeId,
+//        @Local(name = "javaToBedrockBlocks") GeyserBedrockBlock[] javaToBedrockBlocks,
+//        @Local(name = "javaToVanillaBedrockBlocks") GeyserBedrockBlock[] javaToVanillaBedrockBlocks
+//    ) {
+//        GeyserBedrockBlock lastBedrockBlock = javaToBedrockBlocks[0];
+//        GeyserBedrockBlock lastVanillaBlock = javaToVanillaBedrockBlocks[0];
+//        for (int i = 1; i < javaRuntimeId; i++) {
+//            if (javaToBedrockBlocks[i] == null) {
+//                javaToBedrockBlocks[i] = lastBedrockBlock;
+//            } else {
+//                lastBedrockBlock = javaToBedrockBlocks[i];
+//            }
+//            if (javaToVanillaBedrockBlocks[i] == null) {
+//                javaToVanillaBedrockBlocks[i] = lastVanillaBlock;
+//            } else {
+//                lastVanillaBlock = javaToVanillaBedrockBlocks[i];
+//            }
+//        }
+//    }
 }

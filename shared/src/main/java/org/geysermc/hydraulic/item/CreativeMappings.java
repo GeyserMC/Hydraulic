@@ -8,6 +8,8 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
+import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
+import org.geysermc.geyser.api.item.custom.v2.NonVanillaCustomItemDefinition;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.hydraulic.util.ItemGroup;
 
@@ -265,24 +267,24 @@ public class CreativeMappings {
         }
     };
 
-    public static void setup(Item item, NonVanillaCustomItemData.Builder customItemBuilder) {
+    public static void setup(Item item, CustomItemBedrockOptions.Builder customItemOptions) {
         CreativeMapping mapping = getMapping(item);
 
         if (mapping == null) {
             return;
         }
 
-        customItemBuilder.creativeGroup(mapping.creativeGroup().group()).creativeCategory(mapping.creativeCategory().id());
+        customItemOptions.creativeGroup(mapping.creativeGroup().group()).creativeCategory(mapping.creativeCategory());
     }
 
-    public static void setupBlock(Block block, NonVanillaCustomItemData.Builder customItemBuilder) {
+    public static void setupBlock(Block block, CustomItemBedrockOptions.Builder customItemOptions) {
         CreativeMapping mapping = getMapping(block);
 
         if (mapping == null) {
             return;
         }
 
-        customItemBuilder.creativeGroup(mapping.creativeGroup().group()).creativeCategory(mapping.creativeCategory().id());
+        customItemOptions.creativeGroup(mapping.creativeGroup().group()).creativeCategory(mapping.creativeCategory());
     }
 
     public static void setupBlock(Block block, CustomBlockData.Builder customItemBuilder) {
