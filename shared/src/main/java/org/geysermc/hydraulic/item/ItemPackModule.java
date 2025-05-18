@@ -3,27 +3,21 @@ package org.geysermc.hydraulic.item;
 import com.google.auto.service.AutoService;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.BowItem;
-import net.minecraft.world.item.HoeItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.PickaxeItem;
-import net.minecraft.world.item.ShearsItem;
-import net.minecraft.world.item.ShovelItem;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.TieredItem;
-import net.minecraft.world.item.Tiers;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
-import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
+import org.geysermc.geyser.api.exception.CustomItemDefinitionRegisterException;
+import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
+import org.geysermc.geyser.api.item.custom.v2.NonVanillaCustomItemDefinition;
+import org.geysermc.geyser.api.item.custom.v2.component.*;
 import org.geysermc.geyser.api.util.CreativeCategory;
+import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
@@ -38,10 +32,7 @@ import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
@@ -58,12 +49,13 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
     private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
         for (Model model : context.assets(ResourcePack::models)) {
             // If the parent is item/generated, it's a 2D icon
-            if (model.parent() != null && model.parent().value().equals("item/generated")) {
+            Key modelParent = model.parent();
+            if (modelParent != null && modelParent.value().equals("item/generated")) {
                 itemsWith2dIcon.add(model.key().toString().replace("item/", ""));
             }
         }
 
-        List<Item> items = context.registryValues(Registries.ITEM);
+        List<Item> items = context.registryValues(BuiltInRegistries.ITEM);
         PackLogListener packLogListener = new PackLogListener(context.logger());
         for (Item item : items) {
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
@@ -74,7 +66,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             }
 
             Model model = new ModelStitcher(context.modelProvider(), baseModel, packLogListener).stitch();
-            if (model == null || model.textures() == null) {
+            if (model == null) {
                 continue;
             }
 
@@ -83,7 +75,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 continue;
             }
 
-            ModelTexture layer0 = layers.get(0);
+            ModelTexture layer0 = layers.getFirst();
 
             if (layer0.key().namespace().equals(Key.MINECRAFT_NAMESPACE)) {
                 itemBuiltinTexture.put(itemLocation.toString(), PackUtil.getTextureName(layer0.key().toString()));
@@ -95,9 +87,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         ResourcePack assets = context.javaResourcePack();
         BedrockResourcePack bedrockPack = context.bedrockResourcePack();
 
-        List<Item> items = context.registryValues(Registries.ITEM);
+        List<Item> items = context.registryValues(BuiltInRegistries.ITEM);
 
-        context.logger().info("Items to convert: " + items.size() + " in mod " + context.mod().id());
+        context.logger().info("Items to convert: {} in mod {}", items.size(), context.mod().id());
 
         PackLogListener packLogListener = new PackLogListener(context.logger());
         for (Item item : items) {
@@ -108,11 +100,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 context.logger().warn("Item {} has no item model, skipping", itemLocation);
                 continue;
             }
+
             Model model = new ModelStitcher(context.modelProvider(), baseModel, packLogListener).stitch();
-            if (model == null || model.textures() == null) {
-                context.logger().warn("Item {} has no item model, skipping", itemLocation);
-                continue;
-            }
 
             List<ModelTexture> layers = model.textures().layers();
             if (layers == null || layers.isEmpty()) {
@@ -124,7 +113,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 continue;
             }
 
-            ModelTexture layer0 = layers.get(0);
+            ModelTexture layer0 = layers.getFirst();
             String outputLoc = getOutputFromModel(context, layer0.key());
             bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
         }
@@ -132,97 +121,143 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     @Override
     public boolean test(@NotNull PackPostProcessContext<ItemPackModule> context) {
-        return !context.registryValues(Registries.ITEM).isEmpty();
+        return !context.registryValues(BuiltInRegistries.ITEM).isEmpty();
     }
 
     private void onDefineCustomItems(PackEventContext<GeyserDefineCustomItemsEvent, ItemPackModule> context) {
         GeyserDefineCustomItemsEvent event = context.event();
-        List<Item> items = context.registryValues(Registries.ITEM);
+        List<Item> items = context.registryValues(BuiltInRegistries.ITEM);
 
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;
         for (Item item : items) {
             ResourceLocation itemLocation = registry.getKey(item);
+            DataComponentMap components = item.components();
 
             // Check if the item has a 2D icon
-            boolean flatIcon = itemsWith2dIcon.contains(itemLocation.toString());
-            NonVanillaCustomItemData.Builder customItemBuilder = NonVanillaCustomItemData.builder()
-                .name(itemLocation.getPath())
-                .displayName("%" + item.getDescriptionId())
-                .identifier(itemLocation + (flatIcon ? "_item" : ""))
-                .icon(itemLocation.toString())
-                .javaId(registry.getId(item))
-                .stackSize(item.getDefaultMaxStackSize())
-                .maxDamage(item.getDefaultInstance().getMaxDamage())
-                .allowOffhand(true);
+            //boolean flatIcon = itemsWith2dIcon.contains(itemLocation.toString());
+            NonVanillaCustomItemDefinition.Builder customItemDefinition = NonVanillaCustomItemDefinition.builder(
+                    Identifier.of(itemLocation.toString()),
+                    Identifier.of(itemLocation.toString()/* + (flatIcon ? "_item" : "")*/), // Lets do a little test... Doesn't seem needed
+                    registry.getId(item)
+            )
+                    .displayName("%" + item.getDescriptionId())
+                    .component(DataComponent.MAX_STACK_SIZE, item.getDefaultMaxStackSize());
+
+            CustomItemBedrockOptions.Builder customItemOptions = CustomItemBedrockOptions.builder()
+                    .allowOffhand(true)
+                    .icon(itemLocation.toString());
 
             // Allow minecraft namespace texture to be used (remapped as hydraulic)
             if (itemBuiltinTexture.containsKey(itemLocation.toString())) {
-                customItemBuilder.icon(itemBuiltinTexture.get(itemLocation.toString()));
+                customItemOptions.icon(itemBuiltinTexture.get(itemLocation.toString()));
             }
 
             // Enchantment glint by default
             if (item.isFoil(item.getDefaultInstance())) {
-                customItemBuilder.foil(true);
+                customItemDefinition.component(DataComponent.ENCHANTMENT_GLINT_OVERRIDE, true);
             }
 
-            if (item.components().has(DataComponents.FOOD)) {
-                customItemBuilder
-                        .creativeCategory(CreativeCategory.EQUIPMENT.id())
-                        .creativeGroup("itemGroup.name.miscFood")
-                        .edible(true);
+            net.minecraft.world.food.FoodProperties foodProperties = components.get(DataComponents.FOOD);
+            if (foodProperties != null) {
+                customItemOptions
+                        .creativeCategory(CreativeCategory.EQUIPMENT)
+                        .creativeGroup("itemGroup.name.miscFood");
 
-                FoodProperties foodProperties = item.components().get(DataComponents.FOOD);
-                if (foodProperties != null) {
-                    customItemBuilder
-                            .canAlwaysEat(foodProperties.canAlwaysEat());
+                net.minecraft.world.item.component.Consumable consumable = components.get(DataComponents.CONSUMABLE);
+                if (consumable != null) {
+                    Consumable.Animation animation;
+                    try { // The names mostly line up, but bedrock is sadly missing 2, so we need to fallback
+                        animation = Consumable.Animation.valueOf(consumable.animation().getSerializedName().toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        animation = Consumable.Animation.EAT;
+                    }
+
+                    customItemDefinition.component(
+                            DataComponent.CONSUMABLE,
+                            new Consumable(consumable.consumeSeconds(), animation)
+                    );
+                } else {
+                    customItemDefinition.component(
+                            DataComponent.CONSUMABLE,
+                            new Consumable(1.61f, Consumable.Animation.EAT) // Default for food, needed so bedrock will actually play animation
+                    );
+                }
+
+                customItemDefinition.component(
+                        DataComponent.FOOD,
+                        new FoodProperties(foodProperties.nutrition(), foodProperties.saturation(), foodProperties.canAlwaysEat())
+                );
+            }
+
+            CreativeMappings.setup(item, customItemOptions);
+
+            net.minecraft.world.item.equipment.Equippable equippable = components.get(DataComponents.EQUIPPABLE);
+            if (equippable != null) {
+                ItemAttributeModifiers itemAttributeModifiers = components.get(DataComponents.ATTRIBUTE_MODIFIERS);
+                if (itemAttributeModifiers != null) {
+                    customItemOptions.protectionValue((int) itemAttributeModifiers.compute(0, equippable.slot()));
+                }
+
+                customItemOptions.tag(Identifier.of("minecraft", "is_armor"));
+
+//                switch (item.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()) {
+//                    case HEAD -> customItemOptions.armorType("helmet").creativeGroup("itemGroup.name.helmet");
+//                    case CHEST -> customItemOptions.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
+//                    case LEGS -> customItemOptions.armorType("leggings").creativeGroup("itemGroup.name.leggings");
+//                    case FEET -> customItemOptions.armorType("boots").creativeGroup("itemGroup.name.boots");
+//                }
+                switch (equippable.slot()) {
+                    case HEAD -> {
+                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.HEAD));
+                        customItemOptions.creativeGroup("itemGroup.name.helmet");
+                    }
+                    case CHEST -> {
+                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.CHEST));
+                        customItemOptions.creativeGroup("itemGroup.name.chestplate");
+                    }
+                    case LEGS -> {
+                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.LEGS));
+                        customItemOptions.creativeGroup("itemGroup.name.leggings");
+                    }
+                    case FEET -> {
+                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.FEET));
+                        customItemOptions.creativeGroup("itemGroup.name.boots");
+                    }
+                    case BODY -> {
+                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.BODY));
+                        //customItemOptions.creativeGroup("itemGroup.name.helmet"); // TODO: Find this creative group
+                    }
+                    case SADDLE -> {
+                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.SADDLE));
+                        //customItemOptions.creativeGroup("itemGroup.name.helmet"); // TODO: Find this creative group
+                    }
                 }
             }
 
-            CreativeMappings.setup(item, customItemBuilder);
+            Tool tool = components.get(DataComponents.TOOL);
+            if (tool != null) {
+                customItemOptions.displayHandheld(true); // So we hold the tool right
 
-            if (item instanceof ArmorItem armorItem) {
-                customItemBuilder.protectionValue(armorItem.getDefense());
-                switch (armorItem.getEquipmentSlot()) {
-                    case HEAD -> customItemBuilder.armorType("helmet").creativeGroup("itemGroup.name.helmet");
-                    case CHEST -> customItemBuilder.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
-                    case LEGS -> customItemBuilder.armorType("leggings").creativeGroup("itemGroup.name.leggings");
-                    case FEET -> customItemBuilder.armorType("boots").creativeGroup("itemGroup.name.boots");
-                }
-            } else if (item instanceof TieredItem tieredItem) {
-                customItemBuilder.displayHandheld(true); // So we hold the tool right
+                customItemDefinition.component(DataComponent.TOOL, new ToolProperties(tool.canDestroyBlocksInCreative()));
+            }
 
-                // TODO Support custom tiers
-                customItemBuilder.toolTier("DIAMOND");
-                if (tieredItem.getTier() instanceof Tiers) {
-                    customItemBuilder.toolTier(tieredItem.getTier().toString());
-                }
-
-                if (item instanceof PickaxeItem) {
-                    customItemBuilder.toolType("pickaxe");
-                } else if (item instanceof HoeItem) {
-                    customItemBuilder.toolType("hoe");
-                } else if (item instanceof AxeItem) {
-                    customItemBuilder.toolType("axe");
-                } else if (item instanceof ShovelItem) {
-                    customItemBuilder.toolType("shovel");
-                } else if (item instanceof SwordItem) {
-                    customItemBuilder.toolType("sword");
-                }
-            } else if (item instanceof ShearsItem) {
-                customItemBuilder.toolType("shears");
-            } else if (item instanceof BowItem) {
-                customItemBuilder.toolType("bow");
-                customItemBuilder.chargeable(true);
-            } else if (item instanceof BlockItem) {
+            if (item instanceof BlockItem blockItem) {
                 // Set the block_placer component to the correct block
                 // This fixes animations sometimes not showing
-                customItemBuilder.block(itemLocation.toString());
+                Block block = blockItem.getBlock();
 
-                Block block = BuiltInRegistries.BLOCK.get(itemLocation);
-                CreativeMappings.setupBlock(block, customItemBuilder);
+                customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), true));
+
+                CreativeMappings.setupBlock(block, customItemOptions);
             }
 
-            event.register(customItemBuilder.build());
+            customItemDefinition.bedrockOptions(customItemOptions);
+
+            try {
+                event.register(customItemDefinition.build());
+            } catch (CustomItemDefinitionRegisterException e) {
+                // TODO: Handle this exception, perhaps make it for PackModule?
+            }
         }
     }
 }

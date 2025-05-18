@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.neoforge.platform;
 
 import com.google.common.base.Suppliers;
+import net.minecraft.server.MinecraftServer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
@@ -14,6 +15,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -55,5 +57,10 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
     @Override
     public boolean isDev() {
         return !FMLLoader.isProduction();
+    }
+
+    @Override
+    public void registerServerStop(Consumer<MinecraftServer> listenerAction) {
+        // TODO Add for neofrgoe
     }
 }

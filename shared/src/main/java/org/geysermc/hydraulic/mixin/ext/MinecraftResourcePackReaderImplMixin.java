@@ -12,7 +12,6 @@ import team.unnamed.creative.serialize.minecraft.GsonUtil;
 import team.unnamed.creative.serialize.minecraft.io.JsonResourceDeserializer;
 
 import java.io.IOException;
-import java.util.function.BiConsumer;
 
 @Mixin(targets = "team.unnamed.creative.serialize.minecraft.MinecraftResourcePackReaderImpl", remap = false)
 public abstract class MinecraftResourcePackReaderImplMixin {
@@ -62,22 +61,5 @@ public abstract class MinecraftResourcePackReaderImplMixin {
         }
 
         return null;
-    }
-
-    /**
-     * Redirect the accept method to ignore any null resources
-     */
-    @Redirect(
-        method = "read(Lteam/unnamed/creative/serialize/minecraft/fs/FileTreeReader;)Lteam/unnamed/creative/ResourcePack;",
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/util/function/BiConsumer;accept(Ljava/lang/Object;Ljava/lang/Object;)V"
-        )
-    )
-    private void accept(BiConsumer instance, Object container, Object resource) {
-        // Only accept the resource if it is not null
-        if (resource != null) {
-            instance.accept(container, resource);
-        }
     }
 }

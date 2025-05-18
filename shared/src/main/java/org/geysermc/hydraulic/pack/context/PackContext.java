@@ -1,7 +1,9 @@
 package org.geysermc.hydraulic.pack.context;
 
 import com.google.common.collect.Lists;
+import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -77,27 +79,28 @@ public class PackContext<T extends PackModule<T>> {
      * that are relevant for the {@link ModInfo mod} this pack is
      * part of.
      *
-     * @param key the key of the registry to get the values from
+     * @param registry the registry to get the values from
      * @return the values from the specified registry that are relevant for this mod
      * @param <V> the type of the registry
      */
     @NotNull
     @SuppressWarnings("RedundantCast")
-    public <V> List<V> registryValues(@NotNull ResourceKey<? extends Registry<V>> key) {
-        Registry<V> registry = this.hydraulic.server().registryAccess().registryOrThrow(key);
+    public <V> List<V> registryValues(@NotNull DefaultedRegistry<? extends V> registry) {
         final List<ResourceLocation> locations;
-        if ((ResourceKey<?>)key == Registries.BLOCK) {
+        if (registry == BuiltInRegistries.BLOCK) {
             locations = hydraulic.getPackManager()
                 .getModsToBlocks()
                 .get(mod.id());
-        } else if ((ResourceKey<?>)key == Registries.ITEM) {
+        } else if (registry == BuiltInRegistries.ITEM) {
             locations = hydraulic.getPackManager()
                 .getModsToItems()
                 .get(mod.id());
         } else {
             locations = List.of();
         }
-        return Lists.transform(locations, registry::get);
+        return Lists.transform(locations, (k) -> {
+            return registry.get(k).get().value();
+        });
     }
 }
 

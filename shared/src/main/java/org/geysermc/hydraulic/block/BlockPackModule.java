@@ -6,7 +6,6 @@ import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
@@ -32,7 +31,6 @@ import org.geysermc.geyser.api.block.custom.component.TransformationComponent;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBlockState;
 import org.geysermc.geyser.api.block.custom.nonvanilla.JavaBoundingBox;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
-import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.geyser.util.MathUtils;
 import org.geysermc.hydraulic.Constants;
@@ -126,7 +124,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
         }
 
         // Check for empty models
-        List<Block> blocks = context.registryValues(Registries.BLOCK);
+        List<Block> blocks = context.registryValues(BuiltInRegistries.BLOCK);
         DefaultedRegistry<Block> registry = BuiltInRegistries.BLOCK;
         for (Block block : blocks) {
             ResourceLocation blockLocation = registry.getKey(block);
@@ -174,12 +172,12 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
     @Override
     public boolean test(@NotNull PackPostProcessContext<BlockPackModule> context) {
-        return !context.registryValues(Registries.BLOCK).isEmpty();
+        return !context.registryValues(BuiltInRegistries.BLOCK).isEmpty();
     }
 
     private void onDefineCustomBlocks(PackEventContext<GeyserDefineCustomBlocksEvent, BlockPackModule> context) {
         GeyserDefineCustomBlocksEvent event = context.event();
-        List<Block> blocks = context.registryValues(Registries.BLOCK);
+        List<Block> blocks = context.registryValues(BuiltInRegistries.BLOCK);
 
         DefaultedRegistry<Block> registry = BuiltInRegistries.BLOCK;
         for (Block block : blocks) {
@@ -387,14 +385,13 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                         .identifier(BlockStateParser.serialize(state))
                         .javaId(Block.getId(state))
                         .blockHardness(block.defaultDestroyTime()) // TODO: Check
-                        .hasBlockEntity(state.hasBlockEntity())
                         .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
                         .stateGroupId(blockId)
                         .pistonBehavior(pistonBehavior.name());
 
                 // TODO Work out if we need to prefix with _item so we can remove InventoryUtilsMixin
                 try {
-                    ItemStack pickItem = block.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, state);
+                    ItemStack pickItem = state.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, true);
                     String itemId = BuiltInRegistries.ITEM.getKey(pickItem.getItem()).toString();
 
                     // If the method is annotated with `@Environment(EnvType.CLIENT)` then we get air back, so lets ignore that

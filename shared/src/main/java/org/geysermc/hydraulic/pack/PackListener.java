@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipFile;
 
 /**
@@ -52,6 +53,10 @@ public class PackListener {
     public PackListener(HydraulicImpl hydraulic, PackManager manager) {
         this.hydraulic = hydraulic;
         this.manager = manager;
+
+        hydraulic.registerServerStop(server -> {
+            THREAD_POOL.shutdown(); // Prevents the server from locking up on stop
+        });
     }
 
     @Subscribe

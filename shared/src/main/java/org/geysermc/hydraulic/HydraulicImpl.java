@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Main class of the Hydraulic mod.
@@ -50,6 +51,13 @@ public class HydraulicImpl implements EventRegistrar {
         this.server = server;
 
         this.packManager.initialize();
+    }
+
+    /**
+     * Register a listener for the stop server event
+     */
+    public void registerServerStop(Consumer<MinecraftServer> listenerAction) {
+        bootstrap.registerServerStop(listenerAction);
     }
 
     /**

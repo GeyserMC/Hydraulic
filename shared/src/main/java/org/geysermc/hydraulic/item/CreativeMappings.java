@@ -1,6 +1,5 @@
 package org.geysermc.hydraulic.item;
 
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -9,6 +8,8 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
+import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
+import org.geysermc.geyser.api.item.custom.v2.NonVanillaCustomItemDefinition;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.hydraulic.util.ItemGroup;
 
@@ -90,9 +91,9 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FLOWERS, ItemTags.SMALL_FLOWERS, ItemTags.TALL_FLOWERS),
-                List.of(FlowerBlock.class, PinkPetalsBlock.class, TallFlowerBlock.class),
-                List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS, BlockTags.TALL_FLOWERS)
+                List.of(ItemTags.FLOWERS),
+                List.of(FlowerBlock.class, TallFlowerBlock.class),
+                List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS)
             ), new CreativeMapping(ItemGroup.FLOWERS, CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
@@ -155,14 +156,7 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.HOES, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(AnimalArmorItem.class), // Not all Horse Armor anymore
-                List.of(),
-                List.of(),
-                List.of()
-            ), new CreativeMapping(ItemGroup.HORSE_ARMOR, CreativeCategory.EQUIPMENT));
-
-            put(new CreativeMappingTarget(
-                List.of(PickaxeItem.class),
+                List.of(), // No item class present, currently depends on the tag
                 List.of(ItemTags.PICKAXES),
                 List.of(),
                 List.of()
@@ -176,7 +170,7 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.SHOVELS, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(SwordItem.class),
+                List.of(), // No item class present, currently depends on the tag
                 List.of(ItemTags.SWORDS),
                 List.of(),
                 List.of()
@@ -190,13 +184,6 @@ public class CreativeMappings {
                 List.of(AnvilBlock.class),
                 List.of(BlockTags.ANVIL)
             ), new CreativeMapping(ItemGroup.ANVILS, CreativeCategory.ITEMS));
-
-            put(new CreativeMappingTarget(
-                List.of(BannerPatternItem.class),
-                List.of(),
-                List.of(),
-                List.of()
-            ), new CreativeMapping(ItemGroup.BANNER_PATTERNS, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
                 List.of(),
@@ -241,13 +228,6 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.PRESSURE_PLATES, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
-                List.of(RecordItem.class),
-                List.of(ItemTags.MUSIC_DISCS),
-                List.of(),
-                List.of()
-            ), new CreativeMapping(ItemGroup.RECORDS, CreativeCategory.ITEMS));
-
-            put(new CreativeMappingTarget(
                 List.of(SignItem.class),
                 List.of(ItemTags.SIGNS),
                 List.of(SignBlock.class),
@@ -256,7 +236,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(SmithingTemplateItem.class),
-                List.of(ItemTags.TRIM_TEMPLATES),
+                List.of(ItemTags.TRIM_MATERIALS),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.SMITHING_TEMPLATES, CreativeCategory.ITEMS));
@@ -271,7 +251,7 @@ public class CreativeMappings {
             ), new CreativeMapping(CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
-                List.of(ArmorItem.class, BowItem.class, ShearsItem.class, TieredItem.class),
+                List.of(BowItem.class, ShearsItem.class), // TODO: Armor item class is now missing, would require components to check or a tag
                 List.of(),
                 List.of(),
                 List.of()
@@ -287,24 +267,24 @@ public class CreativeMappings {
         }
     };
 
-    public static void setup(Item item, NonVanillaCustomItemData.Builder customItemBuilder) {
+    public static void setup(Item item, CustomItemBedrockOptions.Builder customItemOptions) {
         CreativeMapping mapping = getMapping(item);
 
         if (mapping == null) {
             return;
         }
 
-        customItemBuilder.creativeGroup(mapping.creativeGroup().group()).creativeCategory(mapping.creativeCategory().id());
+        customItemOptions.creativeGroup(mapping.creativeGroup().group()).creativeCategory(mapping.creativeCategory());
     }
 
-    public static void setupBlock(Block block, NonVanillaCustomItemData.Builder customItemBuilder) {
+    public static void setupBlock(Block block, CustomItemBedrockOptions.Builder customItemOptions) {
         CreativeMapping mapping = getMapping(block);
 
         if (mapping == null) {
             return;
         }
 
-        customItemBuilder.creativeGroup(mapping.creativeGroup().group()).creativeCategory(mapping.creativeCategory().id());
+        customItemOptions.creativeGroup(mapping.creativeGroup().group()).creativeCategory(mapping.creativeCategory());
     }
 
     public static void setupBlock(Block block, CustomBlockData.Builder customItemBuilder) {

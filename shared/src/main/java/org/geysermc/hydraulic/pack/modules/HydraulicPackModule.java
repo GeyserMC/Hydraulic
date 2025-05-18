@@ -15,12 +15,12 @@ public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
     public HydraulicPackModule() {
         this.postProcess(context -> {
             // Map all block textures files as valid names
-            for (Map.Entry<String, String> entry : TextureMappings.textureMappings().textures("block").entrySet()) {
+            for (Map.Entry<String, String> entry : ((Map<String, String>) TextureMappings.textureMappings().textures("block")).entrySet()) {
                 context.bedrockResourcePack().addBlockTexture(Constants.MOD_ID + ":" + entry.getValue(), "textures/blocks/" + entry.getValue());
             }
 
             // Map all item textures files as valid names
-            for (Map.Entry<String, String> entry : TextureMappings.textureMappings().textures("item").entrySet()) {
+            for (Map.Entry<String, String> entry : ((Map<String, String>) TextureMappings.textureMappings().textures("item")).entrySet()) {
                 context.bedrockResourcePack().addItemTexture(Constants.MOD_ID + ":" + entry.getValue(), "textures/items/" + entry.getValue());
             }
 
