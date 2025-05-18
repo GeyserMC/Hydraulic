@@ -239,7 +239,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 customItemOptions.displayHandheld(true); // So we hold the tool right
 
                 customItemDefinition.component(DataComponent.TOOL, new ToolProperties(tool.canDestroyBlocksInCreative()));
-            } else if (item instanceof BlockItem blockItem) {
+            }
+
+            if (item instanceof BlockItem blockItem) {
                 // Set the block_placer component to the correct block
                 // This fixes animations sometimes not showing
                 Block block = blockItem.getBlock();
