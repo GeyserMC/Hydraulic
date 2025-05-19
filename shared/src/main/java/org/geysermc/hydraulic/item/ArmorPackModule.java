@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.item;
 
 import com.google.auto.service.AutoService;
+import net.kyori.adventure.key.Key;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
@@ -15,6 +16,10 @@ import org.geysermc.pack.bedrock.resource.attachables.Attachables;
 import org.geysermc.pack.bedrock.resource.attachables.attachable.Description;
 import org.geysermc.pack.bedrock.resource.attachables.attachable.description.Scripts;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import team.unnamed.creative.equipment.Equipment;
+import team.unnamed.creative.equipment.EquipmentLayer;
+import team.unnamed.creative.equipment.EquipmentLayerType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +50,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
     private void postProcess(@NotNull PackPostProcessContext<ArmorPackModule> context) {
         List<Item> armorItems = context.registryValues(BuiltInRegistries.ITEM).stream()
-                .filter(item -> item.getDefaultInstance().has(DataComponents.EQUIPPABLE))
+                .filter(item -> item.components().has(DataComponents.EQUIPPABLE) && item.components().get(DataComponents.EQUIPPABLE).assetId().isPresent())
                 .toList();
 
         context.logger().info("Armor to convert: " + armorItems.size() + " in mod " + context.mod().id());
@@ -60,15 +65,24 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
         for (Item armorItem : armorItems) {
             Equippable equippable = armorItem.components().get(DataComponents.EQUIPPABLE);
 
-            ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
-
-            Optional<ResourceLocation> optionalResourceLocation = equippable.assetId().map(ResourceKey::location);
-
-            if (optionalResourceLocation.isEmpty()) {
-                continue; // TODO: Figure out what to do here, no texture means what??
+            EquipmentLayerType layerType = getEquipmentLayer(equippable.slot());
+            if (layerType == null) {
+                continue; // There is no layer we can give the bedrock currently, so we can skip this
             }
 
-            ResourceLocation armorTextureLocation = optionalResourceLocation.get();
+            ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
+
+            ResourceLocation armorTextureLocation = equippable.assetId().map(ResourceKey::location).get(); // Checked above to ensure all armor processed has an asset id
+
+            Equipment equipment = context.javaResourcePack().equipment(Key.key(armorTextureLocation.toString()));
+            if (equipment == null) {
+                continue; // TODO: Find out if this is possible with the current way we check asset ids, if not the continue is probably fine since it means there is nothing to convert anyway
+            }
+            List<EquipmentLayer> layers = equipment.layers().get(layerType);
+            if (layers == null || layers.isEmpty()) { // TODO: Find out if we need to check both
+                continue; // We have no layers that we can convert, so we can just skip this one
+            }
+            Key layerTexture = layers.getFirst().texture();
 
             Attachables armorAttachable = new Attachables();
             armorAttachable.formatVersion("1.10.0");
@@ -90,7 +104,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
             description.textures(new HashMap<>() {
                 {
-                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, context.mod().id(), (equippable.slot().equals(EquipmentSlot.LEGS) ? "humanoid_leggings" : "humanoid"), armorTextureLocation.getPath()));
+                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, layerTexture.namespace(), layerType.name().toLowerCase(), layerTexture.value()));
                     put("enchanted", "textures/misc/enchanted_actor_glint");
                 }
             });
@@ -116,6 +130,14 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
     @Override
     public boolean test(@NotNull PackPostProcessContext<ArmorPackModule> context) {
-        return context.registryValues(BuiltInRegistries.ITEM).stream().anyMatch(item -> item.getDefaultInstance().has(DataComponents.EQUIPPABLE));
+        return context.registryValues(BuiltInRegistries.ITEM).stream().anyMatch(item -> item.components().has(DataComponents.EQUIPPABLE) && item.components().get(DataComponents.EQUIPPABLE).assetId().isPresent());
+    }
+
+    private static @Nullable EquipmentLayerType getEquipmentLayer(EquipmentSlot slot) {
+        return switch (slot) {
+            case HEAD, CHEST, FEET -> EquipmentLayerType.HUMANOID;
+            case LEGS -> EquipmentLayerType.HUMANOID_LEGGINGS;
+            default -> null;
+        };
     }
 }

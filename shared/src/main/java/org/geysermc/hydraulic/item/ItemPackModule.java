@@ -24,6 +24,7 @@ import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
+import org.geysermc.hydraulic.pack.converter.ComponentConverter;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
@@ -36,7 +37,7 @@ import java.util.*;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
-    private final List<String> itemsWith2dIcon = new ArrayList<>();
+    private final List<ResourceLocation> handheldItems = new ArrayList<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
 
     public ItemPackModule() {
@@ -50,8 +51,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         for (Model model : context.assets(ResourcePack::models)) {
             // If the parent is item/generated, it's a 2D icon
             Key modelParent = model.parent();
-            if (modelParent != null && modelParent.value().equals("item/generated")) {
-                itemsWith2dIcon.add(model.key().toString().replace("item/", ""));
+            if (modelParent != null) {
+                if (modelParent.value().equals("item/handheld")) {
+                    handheldItems.add(ResourceLocation.fromNamespaceAndPath(model.key().namespace(), model.key().value().replace("/item", "")));
+                }
             }
         }
 
@@ -131,13 +134,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;
         for (Item item : items) {
             ResourceLocation itemLocation = registry.getKey(item);
-            DataComponentMap components = item.components();
 
-            // Check if the item has a 2D icon
-            //boolean flatIcon = itemsWith2dIcon.contains(itemLocation.toString());
             NonVanillaCustomItemDefinition.Builder customItemDefinition = NonVanillaCustomItemDefinition.builder(
                     Identifier.of(itemLocation.toString()),
-                    Identifier.of(itemLocation.toString()/* + (flatIcon ? "_item" : "")*/), // Lets do a little test... Doesn't seem needed
+                    Identifier.of(itemLocation.toString()),
                     registry.getId(item)
             )
                     .displayName("%" + item.getDescriptionId())
@@ -152,93 +152,32 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 customItemOptions.icon(itemBuiltinTexture.get(itemLocation.toString()));
             }
 
-            // Enchantment glint by default
-            if (item.isFoil(item.getDefaultInstance())) {
-                customItemDefinition.component(DataComponent.ENCHANTMENT_GLINT_OVERRIDE, true);
+            // Make it handheld if need be
+            if (handheldItems.contains(itemLocation)) {
+                customItemOptions.displayHandheld(true);
             }
 
-            net.minecraft.world.food.FoodProperties foodProperties = components.get(DataComponents.FOOD);
-            if (foodProperties != null) {
-                customItemOptions
-                        .creativeCategory(CreativeCategory.EQUIPMENT)
-                        .creativeGroup("itemGroup.name.miscFood");
-
-                net.minecraft.world.item.component.Consumable consumable = components.get(DataComponents.CONSUMABLE);
-                if (consumable != null) {
-                    Consumable.Animation animation;
-                    try { // The names mostly line up, but bedrock is sadly missing 2, so we need to fallback
-                        animation = Consumable.Animation.valueOf(consumable.animation().getSerializedName().toUpperCase());
-                    } catch (IllegalArgumentException e) {
-                        animation = Consumable.Animation.EAT;
-                    }
-
-                    customItemDefinition.component(
-                            DataComponent.CONSUMABLE,
-                            new Consumable(consumable.consumeSeconds(), animation)
-                    );
-                } else {
-                    customItemDefinition.component(
-                            DataComponent.CONSUMABLE,
-                            new Consumable(1.61f, Consumable.Animation.EAT) // Default for food, needed so bedrock will actually play animation
-                    );
-                }
-
-                customItemDefinition.component(
-                        DataComponent.FOOD,
-                        new FoodProperties(foodProperties.nutrition(), foodProperties.saturation(), foodProperties.canAlwaysEat())
-                );
-            }
-
+            // Set the creative mappings
             CreativeMappings.setup(item, customItemOptions);
 
-            net.minecraft.world.item.equipment.Equippable equippable = components.get(DataComponents.EQUIPPABLE);
-            if (equippable != null) {
-                ItemAttributeModifiers itemAttributeModifiers = components.get(DataComponents.ATTRIBUTE_MODIFIERS);
-                if (itemAttributeModifiers != null) {
-                    customItemOptions.protectionValue((int) itemAttributeModifiers.compute(0, equippable.slot()));
-                }
+            // Set all bedrock components using what java components we have
+            ComponentConverter.setGeyserComponents(
+                    item.components(),
+                    customItemDefinition,
+                    customItemOptions
+            );
 
-                customItemOptions.tag(Identifier.of("minecraft", "is_armor"));
-
-//                switch (item.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()) {
-//                    case HEAD -> customItemOptions.armorType("helmet").creativeGroup("itemGroup.name.helmet");
-//                    case CHEST -> customItemOptions.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
-//                    case LEGS -> customItemOptions.armorType("leggings").creativeGroup("itemGroup.name.leggings");
-//                    case FEET -> customItemOptions.armorType("boots").creativeGroup("itemGroup.name.boots");
-//                }
-                switch (equippable.slot()) {
-                    case HEAD -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.HEAD));
-                        customItemOptions.creativeGroup("itemGroup.name.helmet");
-                    }
-                    case CHEST -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.CHEST));
-                        customItemOptions.creativeGroup("itemGroup.name.chestplate");
-                    }
-                    case LEGS -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.LEGS));
-                        customItemOptions.creativeGroup("itemGroup.name.leggings");
-                    }
-                    case FEET -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.FEET));
-                        customItemOptions.creativeGroup("itemGroup.name.boots");
-                    }
-                    case BODY -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.BODY));
-                        //customItemOptions.creativeGroup("itemGroup.name.helmet"); // TODO: Find this creative group
-                    }
-                    case SADDLE -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.SADDLE));
-                        //customItemOptions.creativeGroup("itemGroup.name.helmet"); // TODO: Find this creative group
-                    }
-                }
+            if (item instanceof BowItem) {
+                customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
+                        1f,
+                        false
+                ));
             }
-
-            Tool tool = components.get(DataComponents.TOOL);
-            if (tool != null) {
-                customItemOptions.displayHandheld(true); // So we hold the tool right
-
-                customItemDefinition.component(DataComponent.TOOL, new ToolProperties(tool.canDestroyBlocksInCreative()));
+            if (item instanceof CrossbowItem) {
+                customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
+                        0f,
+                        true
+                ));
             }
 
             if (item instanceof BlockItem blockItem) {

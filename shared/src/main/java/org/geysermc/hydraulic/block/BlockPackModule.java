@@ -391,7 +391,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
 
                 // TODO Work out if we need to prefix with _item so we can remove InventoryUtilsMixin
                 try {
-                    ItemStack pickItem = state.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, true);
+                    ItemStack pickItem = state.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, false);
                     String itemId = BuiltInRegistries.ITEM.getKey(pickItem.getItem()).toString();
 
                     // If the method is annotated with `@Environment(EnvType.CLIENT)` then we get air back, so lets ignore that
