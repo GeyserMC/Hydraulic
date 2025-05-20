@@ -14,6 +14,7 @@ import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemDefinition;
 import org.geysermc.geyser.api.item.custom.v2.component.*;
 import org.geysermc.geyser.api.util.Identifier;
+import org.geysermc.hydraulic.util.KeyUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class ComponentConverter {
         });
         addComponentConversion(DataComponents.USE_COOLDOWN, (component, map, definition, options) -> {
             ResourceLocation location = component.cooldownGroup().orElse(null);
-            definition.component(DataComponent.USE_COOLDOWN, new UseCooldown(component.seconds(), Identifier.of(location.getNamespace(), location.getPath())));
+            definition.component(DataComponent.USE_COOLDOWN, new UseCooldown(component.seconds(), KeyUtil.toGeyserIdentifier(location)));
         });
         addComponentConversion(DataComponents.TOOL, (component, map, definition, options) -> {
             definition.component(DataComponent.TOOL, new ToolProperties(component.canDestroyBlocksInCreative()));
