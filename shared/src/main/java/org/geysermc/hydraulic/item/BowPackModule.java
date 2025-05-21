@@ -99,7 +99,7 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
                 continue;
             }
 
-            ModelTexture layer0 = layers.get(0);
+            ModelTexture layer0 = layers.getFirst();
             String defaultOutputLoc = getOutputFromModel(context, layer0.key()).replace(".png", "");
 
             textures.put("default", defaultOutputLoc);
@@ -117,7 +117,7 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
                     continue;
                 }
 
-                ModelTexture pullingLayer0 = pullingLayers.get(0);
+                ModelTexture pullingLayer0 = pullingLayers.getFirst();
                 String outputLoc = getOutputFromModel(context, pullingLayer0.key()).replace(".png", "");
 
                 Map<String, Float> predicate = new HashMap<>();

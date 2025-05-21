@@ -53,7 +53,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
                 .filter(item -> item.components().has(DataComponents.EQUIPPABLE) && item.components().get(DataComponents.EQUIPPABLE).assetId().isPresent())
                 .toList();
 
-        context.logger().info("Armor to convert: " + armorItems.size() + " in mod " + context.mod().id());
+        context.logger().info("Armor to convert: {} in mod {}", armorItems.size(), context.mod().id());
 
         // enchanted_actor_glint.png is from https://github.com/Mojang/bedrock-samples/blob/main/resource_pack/textures/misc/enchanted_actor_glint.png
         try (InputStream stream = ArmorPackModule.class.getClassLoader().getResourceAsStream("textures/enchanted_actor_glint.png")) {
