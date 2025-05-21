@@ -66,7 +66,7 @@ public class ComponentConverter {
             definition.component(DataComponent.CONSUMABLE, new Consumable(component.consumeSeconds(), animation));
         });
         addComponentConversion(DataComponents.USE_COOLDOWN, (component, map, definition, options) -> {
-            ResourceLocation location = component.cooldownGroup().orElse(null);
+            Identifier location = component.cooldownGroup().map(KeyUtil::toGeyserIdentifier).orElse(null);
             definition.component(DataComponent.USE_COOLDOWN, new UseCooldown(component.seconds(), KeyUtil.toGeyserIdentifier(location)));
         });
         addComponentConversion(DataComponents.TOOL, (component, map, definition, options) -> {
