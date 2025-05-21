@@ -72,7 +72,7 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
             ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
 
-            ResourceLocation armorTextureLocation = equippable.assetId().map(ResourceKey::location).get(); // Checked above to ensure all armor processed has an asset id
+            ResourceLocation armorTextureLocation = equippable.assetId().map(ResourceKey::location).orElseThrow(); // Checked above to ensure all armor processed has an asset id, so this shouldn't throw (This instead of get to prevent yellow lines)
 
             Equipment equipment = context.javaResourcePack().equipment(Key.key(armorTextureLocation.toString()));
             if (equipment == null) {
