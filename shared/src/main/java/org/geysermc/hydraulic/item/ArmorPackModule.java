@@ -76,10 +76,10 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
             Equipment equipment = context.javaResourcePack().equipment(Key.key(armorTextureLocation.toString()));
             if (equipment == null) {
-                continue; // TODO: Find out if this is possible with the current way we check asset ids, if not the continue is probably fine since it means there is nothing to convert anyway
+                continue;
             }
             List<EquipmentLayer> layers = equipment.layers().get(layerType);
-            if (layers == null || layers.isEmpty()) { // TODO: Find out if we need to check both
+            if (layers == null || layers.isEmpty()) {
                 continue; // We have no layers that we can convert, so we can just skip this one
             }
             Key layerTexture = layers.getFirst().texture();

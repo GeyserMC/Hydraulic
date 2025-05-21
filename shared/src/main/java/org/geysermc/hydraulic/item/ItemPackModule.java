@@ -25,6 +25,7 @@ import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.pack.converter.ComponentConverter;
+import org.geysermc.hydraulic.util.HydraulicKey;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
@@ -53,7 +54,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             Key modelParent = model.parent();
             if (modelParent != null) {
                 if (modelParent.value().equals("item/handheld")) {
-                    handheldItems.add(ResourceLocation.fromNamespaceAndPath(model.key().namespace(), model.key().value().replace("/item", "")));
+                    HydraulicKey key = HydraulicKey.of(model.key());
+                    key.path(key.path().replace("/item", ""));
+                    handheldItems.add(key.location());
                 }
             }
         }

@@ -5,22 +5,16 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.TypedDataComponent;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.Item;
-import org.geysermc.event.util.TriConsumer;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemDefinition;
 import org.geysermc.geyser.api.item.custom.v2.component.*;
 import org.geysermc.geyser.api.util.Identifier;
-import org.geysermc.hydraulic.util.KeyUtil;
+import org.geysermc.hydraulic.util.HydraulicKey;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 public class ComponentConverter {
     private static final Map<DataComponentType<?>, Converter<Object>> COMPONENT_CONVERT_MAP = new HashMap<>();
@@ -66,8 +60,8 @@ public class ComponentConverter {
             definition.component(DataComponent.CONSUMABLE, new Consumable(component.consumeSeconds(), animation));
         });
         addComponentConversion(DataComponents.USE_COOLDOWN, (component, map, definition, options) -> {
-            Identifier location = component.cooldownGroup().map(KeyUtil::toGeyserIdentifier).orElse(null);
-            definition.component(DataComponent.USE_COOLDOWN, new UseCooldown(component.seconds(), KeyUtil.toGeyserIdentifier(location)));
+            Identifier location = component.cooldownGroup().map(HydraulicKey::of).orElse(null);
+            definition.component(DataComponent.USE_COOLDOWN, new UseCooldown(component.seconds(), location));
         });
         addComponentConversion(DataComponents.TOOL, (component, map, definition, options) -> {
             definition.component(DataComponent.TOOL, new ToolProperties(component.canDestroyBlocksInCreative()));
@@ -107,8 +101,8 @@ public class ComponentConverter {
                     component.items().stream()
                             .map(Holder::unwrapKey)
                             .filter(Optional::isPresent)
-                            .map(itemResourceKey -> itemResourceKey.get().location())
-                            .map(location -> Identifier.of(location.getNamespace(), location.getPath()))
+                            .map(Optional::get)
+                            .map(HydraulicKey::of)
                             .toList()
                             .toArray(new Identifier[]{})
             ));
