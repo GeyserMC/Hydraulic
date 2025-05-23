@@ -33,6 +33,7 @@ import java.util.*;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
+    private final List<ResourceLocation> itemsWith2dIcon = new ArrayList<>();
     private final List<ResourceLocation> handheldItems = new ArrayList<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
 
@@ -45,10 +46,13 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
         for (Model model : context.assets(ResourcePack::models)) {
-            // If the parent is item/generated, it's a 2D icon
             Key modelParent = model.parent();
             if (modelParent != null) {
-                if (modelParent.value().equals("item/handheld")) {
+                if (modelParent.value().equals("item/generated")) { // If the parent is item/generated, it's a 2D icon
+                    HydraulicKey key = HydraulicKey.of(model.key());
+                    key.path(key.path().replace("/item", ""));
+                    itemsWith2dIcon.add(key.location());
+                } else if (modelParent.value().equals("item/handheld")) { // If the parent is item/handheld, it's handheld
                     HydraulicKey key = HydraulicKey.of(model.key());
                     key.path(key.path().replace("/item", ""));
                     handheldItems.add(key.location());
@@ -142,12 +146,17 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                     .component(DataComponent.MAX_STACK_SIZE, item.getDefaultMaxStackSize());
 
             CustomItemBedrockOptions.Builder customItemOptions = CustomItemBedrockOptions.builder()
-                    .allowOffhand(true)
-                    .icon(itemLocation.toString());
+                    .allowOffhand(true);
 
             // Allow minecraft namespace texture to be used (remapped as hydraulic)
             if (itemBuiltinTexture.containsKey(itemLocation.toString())) {
                 customItemOptions.icon(itemBuiltinTexture.get(itemLocation.toString()));
+            }
+
+            // Add the icon if it should have an icon
+            boolean is2d = itemsWith2dIcon.contains(itemLocation);
+            if (is2d) {
+                customItemOptions.icon(itemLocation.toString());
             }
 
             // Make it handheld if need be
@@ -171,6 +180,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                         false
                 ));
             }
+
             if (item instanceof CrossbowItem) {
                 customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
                         0f,
@@ -183,7 +193,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 // This fixes animations sometimes not showing
                 Block block = blockItem.getBlock();
 
-                customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), true));
+                customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), !is2d));
 
                 CreativeMappings.setupBlock(block, customItemOptions);
             }

@@ -54,7 +54,12 @@ public class HydraulicKey implements Identifier, Key {
 
     @Override // Adventure
     public @NotNull String asString() {
-        return namespace() + path();
+        return toString();
+    }
+
+    @Override // Java
+    public String toString() {
+        return namespace() + ":" + path();
     }
 
     @KeyPattern.Namespace
