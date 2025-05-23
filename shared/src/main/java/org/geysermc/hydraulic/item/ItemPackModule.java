@@ -55,6 +55,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 } else if (modelParent.value().equals("item/handheld")) { // If the parent is item/handheld, it's handheld
                     HydraulicKey key = HydraulicKey.of(model.key());
                     key.path(key.path().replace("/item", ""));
+                    itemsWith2dIcon.add(key.location()); // item/handheld has the parent item/generated, so lets assume it's 2D
                     handheldItems.add(key.location());
                 }
             }
