@@ -3,7 +3,7 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
+    //mavenLocal()
 
     gradlePluginPortal()
 

@@ -3,20 +3,15 @@ package org.geysermc.hydraulic.item;
 import com.google.auto.service.AutoService;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.DefaultedRegistry;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.exception.CustomItemDefinitionRegisterException;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.NonVanillaCustomItemDefinition;
 import org.geysermc.geyser.api.item.custom.v2.component.*;
-import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
@@ -24,6 +19,8 @@ import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
+import org.geysermc.hydraulic.pack.converter.ComponentConverter;
+import org.geysermc.hydraulic.util.HydraulicKey;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
@@ -36,7 +33,8 @@ import java.util.*;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
-    private final List<String> itemsWith2dIcon = new ArrayList<>();
+    private final List<ResourceLocation> itemsWith2dIcon = new ArrayList<>();
+    private final List<ResourceLocation> handheldItems = new ArrayList<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
 
     public ItemPackModule() {
@@ -48,10 +46,18 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
         for (Model model : context.assets(ResourcePack::models)) {
-            // If the parent is item/generated, it's a 2D icon
             Key modelParent = model.parent();
-            if (modelParent != null && modelParent.value().equals("item/generated")) {
-                itemsWith2dIcon.add(model.key().toString().replace("item/", ""));
+            if (modelParent != null) {
+                if (modelParent.value().equals("item/generated")) { // If the parent is item/generated, it's a 2D icon
+                    HydraulicKey key = HydraulicKey.of(model.key());
+                    key.path(key.path().replace("/item", ""));
+                    itemsWith2dIcon.add(key.location());
+                } else if (modelParent.value().equals("item/handheld")) { // If the parent is item/handheld, it's handheld
+                    HydraulicKey key = HydraulicKey.of(model.key());
+                    key.path(key.path().replace("/item", ""));
+                    itemsWith2dIcon.add(key.location()); // item/handheld has the parent item/generated, so lets assume it's 2D
+                    handheldItems.add(key.location());
+                }
             }
         }
 
@@ -75,10 +81,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 continue;
             }
 
-            ModelTexture layer0 = layers.getFirst();
+            Key layer0 = layers.getFirst().key();
 
-            if (layer0.key().namespace().equals(Key.MINECRAFT_NAMESPACE)) {
-                itemBuiltinTexture.put(itemLocation.toString(), PackUtil.getTextureName(layer0.key().toString()));
+            if (layer0 != null && layer0.namespace().equals(Key.MINECRAFT_NAMESPACE)) {
+                itemBuiltinTexture.put(itemLocation.toString(), PackUtil.getTextureName(layer0.toString()));
             }
         }
     }
@@ -114,7 +120,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             }
 
             ModelTexture layer0 = layers.getFirst();
-            String outputLoc = getOutputFromModel(context, layer0.key());
+            String outputLoc = getOutputFromModel(context, layer0.key()); // TODO: sort this out, layer0.key() can be null, but the method we use doesn't want that
             bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
         }
     }
@@ -131,114 +137,56 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;
         for (Item item : items) {
             ResourceLocation itemLocation = registry.getKey(item);
-            DataComponentMap components = item.components();
 
-            // Check if the item has a 2D icon
-            //boolean flatIcon = itemsWith2dIcon.contains(itemLocation.toString());
             NonVanillaCustomItemDefinition.Builder customItemDefinition = NonVanillaCustomItemDefinition.builder(
                     Identifier.of(itemLocation.toString()),
-                    Identifier.of(itemLocation.toString()/* + (flatIcon ? "_item" : "")*/), // Lets do a little test... Doesn't seem needed
+                    Identifier.of(itemLocation.toString()),
                     registry.getId(item)
             )
                     .displayName("%" + item.getDescriptionId())
                     .component(DataComponent.MAX_STACK_SIZE, item.getDefaultMaxStackSize());
 
             CustomItemBedrockOptions.Builder customItemOptions = CustomItemBedrockOptions.builder()
-                    .allowOffhand(true)
-                    .icon(itemLocation.toString());
+                    .allowOffhand(true);
 
             // Allow minecraft namespace texture to be used (remapped as hydraulic)
             if (itemBuiltinTexture.containsKey(itemLocation.toString())) {
                 customItemOptions.icon(itemBuiltinTexture.get(itemLocation.toString()));
             }
 
-            // Enchantment glint by default
-            if (item.isFoil(item.getDefaultInstance())) {
-                customItemDefinition.component(DataComponent.ENCHANTMENT_GLINT_OVERRIDE, true);
+            // Add the icon if it should have an icon
+            boolean is2d = itemsWith2dIcon.contains(itemLocation);
+            if (is2d) {
+                customItemOptions.icon(itemLocation.toString());
             }
 
-            net.minecraft.world.food.FoodProperties foodProperties = components.get(DataComponents.FOOD);
-            if (foodProperties != null) {
-                customItemOptions
-                        .creativeCategory(CreativeCategory.EQUIPMENT)
-                        .creativeGroup("itemGroup.name.miscFood");
-
-                net.minecraft.world.item.component.Consumable consumable = components.get(DataComponents.CONSUMABLE);
-                if (consumable != null) {
-                    Consumable.Animation animation;
-                    try { // The names mostly line up, but bedrock is sadly missing 2, so we need to fallback
-                        animation = Consumable.Animation.valueOf(consumable.animation().getSerializedName().toUpperCase());
-                    } catch (IllegalArgumentException e) {
-                        animation = Consumable.Animation.EAT;
-                    }
-
-                    customItemDefinition.component(
-                            DataComponent.CONSUMABLE,
-                            new Consumable(consumable.consumeSeconds(), animation)
-                    );
-                } else {
-                    customItemDefinition.component(
-                            DataComponent.CONSUMABLE,
-                            new Consumable(1.61f, Consumable.Animation.EAT) // Default for food, needed so bedrock will actually play animation
-                    );
-                }
-
-                customItemDefinition.component(
-                        DataComponent.FOOD,
-                        new FoodProperties(foodProperties.nutrition(), foodProperties.saturation(), foodProperties.canAlwaysEat())
-                );
+            // Make it handheld if need be
+            if (handheldItems.contains(itemLocation)) {
+                customItemOptions.displayHandheld(true);
             }
 
+            // Set the creative mappings
             CreativeMappings.setup(item, customItemOptions);
 
-            net.minecraft.world.item.equipment.Equippable equippable = components.get(DataComponents.EQUIPPABLE);
-            if (equippable != null) {
-                ItemAttributeModifiers itemAttributeModifiers = components.get(DataComponents.ATTRIBUTE_MODIFIERS);
-                if (itemAttributeModifiers != null) {
-                    customItemOptions.protectionValue((int) itemAttributeModifiers.compute(0, equippable.slot()));
-                }
+            // Set all bedrock components using what java components we have
+            ComponentConverter.setGeyserComponents(
+                    item.components(),
+                    customItemDefinition,
+                    customItemOptions
+            );
 
-                customItemOptions.tag(Identifier.of("minecraft", "is_armor"));
-
-//                switch (item.getDefaultInstance().get(DataComponents.EQUIPPABLE).slot()) {
-//                    case HEAD -> customItemOptions.armorType("helmet").creativeGroup("itemGroup.name.helmet");
-//                    case CHEST -> customItemOptions.armorType("chestplate").creativeGroup("itemGroup.name.chestplate");
-//                    case LEGS -> customItemOptions.armorType("leggings").creativeGroup("itemGroup.name.leggings");
-//                    case FEET -> customItemOptions.armorType("boots").creativeGroup("itemGroup.name.boots");
-//                }
-                switch (equippable.slot()) {
-                    case HEAD -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.HEAD));
-                        customItemOptions.creativeGroup("itemGroup.name.helmet");
-                    }
-                    case CHEST -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.CHEST));
-                        customItemOptions.creativeGroup("itemGroup.name.chestplate");
-                    }
-                    case LEGS -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.LEGS));
-                        customItemOptions.creativeGroup("itemGroup.name.leggings");
-                    }
-                    case FEET -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.FEET));
-                        customItemOptions.creativeGroup("itemGroup.name.boots");
-                    }
-                    case BODY -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.BODY));
-                        //customItemOptions.creativeGroup("itemGroup.name.helmet"); // TODO: Find this creative group
-                    }
-                    case SADDLE -> {
-                        customItemDefinition.component(DataComponent.EQUIPPABLE, new Equippable(Equippable.EquipmentSlot.SADDLE));
-                        //customItemOptions.creativeGroup("itemGroup.name.helmet"); // TODO: Find this creative group
-                    }
-                }
+            if (item instanceof BowItem) {
+                customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
+                        1f,
+                        false
+                ));
             }
 
-            Tool tool = components.get(DataComponents.TOOL);
-            if (tool != null) {
-                customItemOptions.displayHandheld(true); // So we hold the tool right
-
-                customItemDefinition.component(DataComponent.TOOL, new ToolProperties(tool.canDestroyBlocksInCreative()));
+            if (item instanceof CrossbowItem) {
+                customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
+                        0f,
+                        true
+                ));
             }
 
             if (item instanceof BlockItem blockItem) {
@@ -246,7 +194,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 // This fixes animations sometimes not showing
                 Block block = blockItem.getBlock();
 
-                customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), true));
+                customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), !is2d));
 
                 CreativeMappings.setupBlock(block, customItemOptions);
             }

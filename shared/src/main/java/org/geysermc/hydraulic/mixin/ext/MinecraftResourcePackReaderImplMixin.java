@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import team.unnamed.creative.overlay.ResourceContainer;
+import team.unnamed.creative.part.ResourcePackPart;
 import team.unnamed.creative.serialize.minecraft.GsonUtil;
 import team.unnamed.creative.serialize.minecraft.io.JsonResourceDeserializer;
 
@@ -61,5 +63,18 @@ public abstract class MinecraftResourcePackReaderImplMixin {
         }
 
         return null;
+    }
+
+    @Redirect(
+            method = "read(Lteam/unnamed/creative/serialize/minecraft/fs/FileTreeReader;)Lteam/unnamed/creative/ResourcePack;",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lteam/unnamed/creative/part/ResourcePackPart;addTo(Lteam/unnamed/creative/overlay/ResourceContainer;)V"
+            )
+    )
+    private void addTo(ResourcePackPart instance, ResourceContainer resourceContainer) {
+        if (instance != null) {
+            instance.addTo(resourceContainer);
+        }
     }
 }
