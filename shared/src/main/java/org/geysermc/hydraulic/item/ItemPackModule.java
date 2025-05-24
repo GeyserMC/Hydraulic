@@ -38,7 +38,6 @@ import java.util.*;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
-    private static final Logger log = LoggerFactory.getLogger(ItemPackModule.class);
     private final List<ResourceLocation> itemsWith2dIcon = new ArrayList<>();
     private final List<ResourceLocation> handheldItems = new ArrayList<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
@@ -102,10 +101,6 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 //                }
 //            }
 //        }
-
-        for (ResourceLocation location : itemsWith2dIcon) {
-            log.info(location.toString());
-        }
 
         List<Item> items = context.registryValues(BuiltInRegistries.ITEM);
         PackLogListener packLogListener = new PackLogListener(context.logger());
