@@ -56,6 +56,7 @@ import team.unnamed.creative.blockstate.Condition;
 import team.unnamed.creative.blockstate.MultiVariant;
 import team.unnamed.creative.blockstate.Selector;
 import team.unnamed.creative.blockstate.Variant;
+import team.unnamed.creative.metadata.animation.AnimationMeta;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
 import team.unnamed.creative.model.ModelTextures;
@@ -165,7 +166,16 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 String cleanPath = value.replace("block/", "").replace(".png", "");
 
                 String outputLoc = String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + cleanPath).replace(".png", "");
-                bedrockPack.addBlockTexture(key.namespace() + ":" + cleanPath, outputLoc);
+                String id = key.namespace() + ":" + cleanPath;
+                bedrockPack.addBlockTexture(id, outputLoc);
+
+                // If the texture is animated, add it to the flipbook textures
+                if (texture.hasMetadata()) {
+                    AnimationMeta animationMeta = texture.meta().meta(AnimationMeta.class);
+                    if (animationMeta != null) {
+                        bedrockPack.addFlipbookTexture(id, outputLoc, animationMeta.frameTime());
+                    }
+                }
             }
         }
     }
