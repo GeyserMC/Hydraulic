@@ -268,6 +268,11 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 // https://wiki.bedrock.dev/blocks/block-components.html#render-methods
                 String renderMethod = state.canOcclude() ? "opaque" : "blend";
 
+                // If the model is a cross block (EG a flower), we need to use alpha_test_single_sided
+                if (model.parent() != null && model.parent().value().equals("block/cross")) {
+                    renderMethod = "alpha_test_single_sided";
+                }
+
                 Materials materials = context.storage().materials();
                 Materials.Material material = materials.material(key.toString());
                 if (material != null) {
