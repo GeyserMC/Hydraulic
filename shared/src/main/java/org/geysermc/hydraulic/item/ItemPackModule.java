@@ -27,8 +27,6 @@ import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.item.*;
 import team.unnamed.creative.model.Model;
