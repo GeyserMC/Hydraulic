@@ -55,18 +55,6 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
         context.logger().info("Armor to convert: {} in mod {}", armorItems.size(), context.mod().id());
 
-        // enchanted_actor_glint.png is from https://github.com/Mojang/bedrock-samples/blob/main/resource_pack/textures/misc/enchanted_actor_glint.png
-        try (InputStream stream = ArmorPackModule.class.getClassLoader().getResourceAsStream("textures/enchanted_actor_glint.png")) {
-            // getResourceAsStream returns null if an IOException happens, so it's already been handled, but an IOException can still occur
-            // while closing the stream. In this case, just throw an IOException just to state it couldn't be loaded, since it couldn't be
-            if (stream == null) {
-                throw new IOException();
-            }
-            context.bedrockResourcePack().addExtraFile(stream.readAllBytes(), "textures/misc/enchanted_actor_glint.png");
-        } catch (IOException e) {
-            context.logger().warn("Failed to load enchanted_actor_glint.png, enchanted armor will not have a glint effect");
-        }
-
         for (Item armorItem : armorItems) {
             Equippable equippable = armorItem.components().get(DataComponents.EQUIPPABLE);
 

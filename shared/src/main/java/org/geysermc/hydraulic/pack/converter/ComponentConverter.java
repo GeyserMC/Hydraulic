@@ -9,6 +9,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemDefinition;
 import org.geysermc.geyser.api.item.custom.v2.component.*;
+import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.hydraulic.util.HydraulicKey;
 
@@ -71,6 +72,7 @@ public class ComponentConverter {
         });
         addComponentConversion(DataComponents.EQUIPPABLE, (component, map, definition, options) -> {
             options.tag(Identifier.of("minecraft", "is_armor"));
+            options.creativeCategory(CreativeCategory.EQUIPMENT);
 
             Equippable.EquipmentSlot slot = switch (component.slot()) {
                 case FEET -> {

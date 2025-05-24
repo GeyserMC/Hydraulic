@@ -1,11 +1,13 @@
 package org.geysermc.hydraulic.item;
 
 import com.google.auto.service.AutoService;
+import com.google.common.collect.Lists;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.exception.CustomItemDefinitionRegisterException;
@@ -25,7 +27,10 @@ import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.converter.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import team.unnamed.creative.ResourcePack;
+import team.unnamed.creative.item.*;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
 
@@ -33,6 +38,7 @@ import java.util.*;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
+    private static final Logger log = LoggerFactory.getLogger(ItemPackModule.class);
     private final List<ResourceLocation> itemsWith2dIcon = new ArrayList<>();
     private final List<ResourceLocation> handheldItems = new ArrayList<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
@@ -44,21 +50,61 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         this.postProcess(this::postProcess);
     }
 
-    private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
-        for (Model model : context.assets(ResourcePack::models)) {
+    private void handleModel(@NotNull PackPreProcessContext<ItemPackModule> context, ItemModel itemModel, ResourceLocation itemLocation) {
+        if (itemModel instanceof ReferenceItemModel referenceModel) {
+            Key modelKey = referenceModel.model();
+
+            List<Model> modelList = Lists.newArrayList(context.assets((pack) -> { // This can probably be done easier, but im not sure how
+                Model model = pack.model(modelKey);
+                if (model == null) return List.of();
+
+                return List.of(model);
+            }));
+            if (modelList.isEmpty()) return;
+
+            Model model = modelList.getFirst();
             Key modelParent = model.parent();
-            if (modelParent != null) {
-                if (modelParent.value().equals("item/generated")) { // If the parent is item/generated, it's a 2D icon
-                    HydraulicKey key = HydraulicKey.of(model.key());
-                    key.path(key.path().replace("/item", ""));
-                    itemsWith2dIcon.add(key.location());
-                } else if (modelParent.value().equals("item/handheld")) { // If the parent is item/handheld, it's handheld
-                    HydraulicKey key = HydraulicKey.of(model.key());
-                    key.path(key.path().replace("/item", ""));
-                    itemsWith2dIcon.add(key.location()); // item/handheld has the parent item/generated, so lets assume it's 2D
-                    handheldItems.add(key.location());
-                }
+            if (modelParent == null) return;
+
+            if (modelParent.value().equals("item/generated")) { // If the parent is item/generated, it's a 2D icon
+                itemsWith2dIcon.add(itemLocation);
+            } else if (modelParent.value().equals("item/handheld")) { // If the parent is item/handheld, it's handheld
+                itemsWith2dIcon.add(itemLocation); // item/handheld has the parent item/generated, so lets assume it's 2D
+                handheldItems.add(itemLocation);
             }
+        } else if (itemModel instanceof SelectItemModel selectModel) { // See if we can actually do select models here
+            handleModel(context, selectModel.fallback(), itemLocation);
+        } else if (itemModel instanceof CompositeItemModel compositeModel) { // TODO: See if we can stitch together item models, for now this will use just the first model
+            handleModel(context, compositeModel.models().getFirst(), itemLocation);
+        } else if (itemModel instanceof RangeDispatchItemModel rangeDispatchModel) {
+            handleModel(context, rangeDispatchModel.fallback(), itemLocation);
+        }
+    }
+
+    private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
+        for (team.unnamed.creative.item.Item item : context.assets(ResourcePack::items)) {
+            ResourceLocation itemLocation = HydraulicKey.of(item.key()).location();
+            handleModel(context, item.model(), itemLocation);
+        }
+
+//        for (Model model : context.assets(ResourcePack::models)) {
+//            Key modelParent = model.parent();
+//            if (modelParent != null) {
+//                if (modelParent.value().equals("item/generated")) { // If the parent is item/generated, it's a 2D icon
+//                    HydraulicKey key = HydraulicKey.of(model.key());
+//                    key.path(key.path().replace("item/", ""));
+//                    itemsWith2dIcon.add(key.location());
+//                } else if (modelParent.value().equals("item/handheld")) { // If the parent is item/handheld, it's handheld
+//                    HydraulicKey key = HydraulicKey.of(model.key());
+//                    key.path(key.path().replace("item/", ""));
+//                    itemsWith2dIcon.add(key.location()); // item/handheld has the parent item/generated, so lets assume it's 2D
+//                    handheldItems.add(key.location());
+//                }
+//            }
+//        }
+
+        for (ResourceLocation location : itemsWith2dIcon) {
+            log.info(location.toString());
         }
 
         List<Item> items = context.registryValues(BuiltInRegistries.ITEM);
