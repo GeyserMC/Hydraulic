@@ -219,6 +219,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                         1f,
                         false
                 ));
+
+                customItemOptions.icon(itemLocation.toString());
             }
 
             if (item instanceof CrossbowItem) {
@@ -226,6 +228,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                         0f,
                         true
                 ));
+                customItemOptions.icon(itemLocation.toString());
             }
 
             if (item instanceof BlockItem blockItem) {
