@@ -5,6 +5,8 @@ import net.minecraft.server.MinecraftServer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
@@ -61,6 +63,8 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
 
     @Override
     public void registerServerStop(Consumer<MinecraftServer> listenerAction) {
-        // TODO Add for neofrgoe
+        NeoForge.EVENT_BUS.addListener(ServerStoppingEvent.class, event -> {
+            listenerAction.accept(event.getServer());
+        });
     }
 }

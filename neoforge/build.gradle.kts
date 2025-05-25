@@ -4,6 +4,7 @@ val modId = project.property("mod_id") as String
 
 provided("org.jetbrains", "annotations")
 provided("commons-io", "commons-io")
+provided("com.google.errorprone", "error_prone_annotations")
 
 architectury {
     platformSetupLoomIde()
