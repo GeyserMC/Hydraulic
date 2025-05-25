@@ -214,20 +214,25 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                     customItemOptions
             );
 
+            // Set the needed component for bows to work correctly
             if (item instanceof BowItem) {
                 customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
                         1f,
                         false
                 ));
 
+                // Include the default icon, this won't change in the hotbar when used but this works the best for now
                 customItemOptions.icon(itemLocation.toString());
             }
 
+            // Set the needed component for crossbows to work correctly
             if (item instanceof CrossbowItem) {
                 customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
                         0f,
                         true
                 ));
+
+                // Include the default icon, this won't change in the hotbar when used but this works the best for now
                 customItemOptions.icon(itemLocation.toString());
             }
 
@@ -246,7 +251,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             try {
                 event.register(customItemDefinition.build());
             } catch (CustomItemDefinitionRegisterException e) {
-                // TODO: Handle this exception, perhaps make it for PackModule?
+                context.logger().error("Unable to register {}:", itemLocation, e);
             }
         }
     }
