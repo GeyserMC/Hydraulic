@@ -78,6 +78,6 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
 
     @Override
     public void registerServerStop(Consumer<MinecraftServer> listenerAction) {
-        ServerLifecycleEvents.SERVER_STOPPING.register(minecraftServer -> listenerAction.accept(minecraftServer));
+        ServerLifecycleEvents.SERVER_STOPPING.register(listenerAction::accept);
     }
 }

@@ -6,7 +6,11 @@ import com.mojang.logging.LogUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.geysermc.event.subscribe.Subscribe;
 import org.geysermc.geyser.api.GeyserApi;
+import org.geysermc.geyser.api.event.lifecycle.GeyserDefineResourcePacksEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
+import org.geysermc.geyser.api.pack.PackCodec;
+import org.geysermc.geyser.api.pack.PathPackCodec;
+import org.geysermc.geyser.api.pack.ResourcePack;
 import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -60,8 +64,12 @@ public class PackListener {
     }
 
     @Subscribe
-    public void onLoadResourcePacks(GeyserLoadResourcePacksEvent event) {
+    public void onLoadResourcePacks(GeyserDefineResourcePacksEvent event) {
         Path packsPath = GeyserApi.api().packDirectory();
+        List<Path> localPacks = event.resourcePacks().stream() // This is because the new event can include URL packs, we just want local ones
+                .filter(pack -> pack.codec() instanceof PathPackCodec)
+                .map(pack -> ((PathPackCodec) pack.codec()).path())
+                .toList();
 
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
         for (ModInfo mod : this.hydraulic.mods()) {
@@ -75,7 +83,7 @@ public class PackListener {
             }
 
             Path packPath = packsPath.resolve(mod.id() + ".zip");
-            if (this.hydraulic.isDev() || !event.resourcePacks().contains(packPath) || checkNeedsConversion(mod, packPath)) {
+            if (this.hydraulic.isDev() || !localPacks.contains(packPath) || checkNeedsConversion(mod, packPath)) {
                 packsToLoad.put(mod.id(), Pair.of(mod, packPath));
             }
         }
@@ -94,7 +102,10 @@ public class PackListener {
                 LOGGER.info("Converting pack for mod {}", entry.getKey());
                 try {
                     if (this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight())) {
-                        event.resourcePacks().add(entry.getValue().getRight());
+                        event.resourcePacks().add(
+                                ResourcePack.builder(PackCodec.path(entry.getValue().getRight()))
+                                        .build()
+                        );
                     }
                 } catch (Throwable t) {
                     LOGGER.error("Failed to convert pack for mod {}", entry.getKey(), t);
