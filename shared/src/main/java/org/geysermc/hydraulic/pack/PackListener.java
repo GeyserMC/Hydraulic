@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.gson.Gson;
 import com.mojang.logging.LogUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.geysermc.event.PostOrder;
 import org.geysermc.event.subscribe.Subscribe;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineResourcePacksEvent;
@@ -11,6 +12,8 @@ import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
 import org.geysermc.geyser.api.pack.PackCodec;
 import org.geysermc.geyser.api.pack.PathPackCodec;
 import org.geysermc.geyser.api.pack.ResourcePack;
+import org.geysermc.geyser.api.pack.option.PriorityOption;
+import org.geysermc.geyser.api.pack.option.ResourcePackOption;
 import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -63,7 +66,7 @@ public class PackListener {
         });
     }
 
-    @Subscribe
+    @Subscribe(postOrder = PostOrder.LATE)
     public void onLoadResourcePacks(GeyserDefineResourcePacksEvent event) {
         Path packsPath = GeyserApi.api().packDirectory();
         List<Path> localPacks = event.resourcePacks().stream() // This is because the new event can include URL packs, we just want local ones
@@ -102,10 +105,7 @@ public class PackListener {
                 LOGGER.info("Converting pack for mod {}", entry.getKey());
                 try {
                     if (this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight())) {
-                        event.resourcePacks().add(
-                                ResourcePack.builder(PackCodec.path(entry.getValue().getRight()))
-                                        .build()
-                        );
+                        event.register(ResourcePack.create(PackCodec.path(entry.getValue().getRight())), PriorityOption.NORMAL);
                     }
                 } catch (Throwable t) {
                     LOGGER.error("Failed to convert pack for mod {}", entry.getKey(), t);
