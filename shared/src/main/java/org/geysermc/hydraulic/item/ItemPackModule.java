@@ -21,7 +21,7 @@ import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
-import org.geysermc.hydraulic.pack.converter.ComponentConverter;
+import org.geysermc.hydraulic.component.ComponentConverter;
 import org.geysermc.hydraulic.util.HydraulicKey;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;

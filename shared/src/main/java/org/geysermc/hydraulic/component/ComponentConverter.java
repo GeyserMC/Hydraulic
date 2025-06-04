@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.pack.converter;
+package org.geysermc.hydraulic.component;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentMap;
