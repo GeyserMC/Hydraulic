@@ -21,29 +21,40 @@ public class ComponentConverter {
     private static final Map<DataComponentType<?>, Converter<Object>> COMPONENT_CONVERT_MAP = new HashMap<>();
 
     private static <T> void addComponentConversion(DataComponentType<T> dataComponent, Converter<T> conversion) {
+        // Yellow lines make me sad, this is safe, so no worries
+        //noinspection unchecked
         COMPONENT_CONVERT_MAP.put(dataComponent, (Converter<Object>) conversion);
+    }
+
+    private static <T> void addSimpleConversion(DataComponentType<T> javaDataComponent, DataComponent<T> bedrock) {
+        addComponentConversion(javaDataComponent, (component, map, definition, options) -> {
+            definition.component(bedrock, component);
+        });
     }
 
     public static void setGeyserComponents(DataComponentMap componentMap, CustomItemDefinition.Builder definition, CustomItemBedrockOptions.Builder options) {
         for (TypedDataComponent<?> dataComponent : componentMap) {
             DataComponentType<?> dataComponentType = dataComponent.type();
-            Converter<Object> triConsumer = COMPONENT_CONVERT_MAP.get(dataComponentType);
-            if (triConsumer != null) {
-                triConsumer.convert(dataComponent.value(), componentMap, definition, options);
-            }
+            Optional<Converter<Object>> potentialConverter = Optional.ofNullable(COMPONENT_CONVERT_MAP.get(dataComponentType));
+            potentialConverter.ifPresent(
+                    converter ->
+                            converter.convert(
+                                    dataComponent.value(),
+                                    componentMap,
+                                    definition,
+                                    options
+                            )
+            );
         }
     }
 
     static {
-        addComponentConversion(DataComponents.MAX_STACK_SIZE, (component, map, definition, options) -> {
-            definition.component(DataComponent.MAX_STACK_SIZE, component);
-        });
-        addComponentConversion(DataComponents.MAX_DAMAGE, (component, map, definition, options) -> {
-            definition.component(DataComponent.MAX_DAMAGE, component);
-        });
-        addComponentConversion(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, (component, map, definition, options) -> {
-            definition.component(DataComponent.ENCHANTMENT_GLINT_OVERRIDE, component);
-        });
+        // Same types, so we can just passthrough these values
+        addSimpleConversion(DataComponents.MAX_STACK_SIZE, DataComponent.MAX_STACK_SIZE);
+        addSimpleConversion(DataComponents.MAX_DAMAGE, DataComponent.MAX_DAMAGE);
+        addSimpleConversion(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, DataComponent.ENCHANTMENT_GLINT_OVERRIDE);
+
+        // These components are a little different or too complex, so we need a more powerful conversion
         addComponentConversion(DataComponents.FOOD, (component, map, definition, options) -> {
             definition.component(DataComponent.FOOD, new FoodProperties(component.nutrition(), component.saturation(), component.canAlwaysEat()));
         });
