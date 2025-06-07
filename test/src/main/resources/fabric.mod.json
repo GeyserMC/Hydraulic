@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "hydraulic_test_mod",
+  "version": "${version}",
+  "name": "Hydraulic Test Mod",
+  "description": "A mod to test Hydraulic",
+  "authors": [
+    "${author}"
+  ],
+  "contact": {
+    "homepage": "https://geysermc.org/",
+    "sources": "https://github.com/GeyserMC/Hydraulic"
+  },
+
+  "license": "CC0-1.0",
+  "icon": "assets/hydraulic_test_mod/logo.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "org.geysermc.hydraulic.fabric.test.HydraulicTestMod"
+    ],
+    "fabric-datagen": [
+      "org.geysermc.hydraulic.fabric.test.DataGeneration"
+    ]
+  },
+  "mixins": [
+    "hydraulic_test_mod.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.15",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}",
+    "java": ">=21"
+  }
+}

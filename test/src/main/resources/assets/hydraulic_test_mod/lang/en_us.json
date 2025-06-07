@@ -1,0 +1,16 @@
+{
+    "block.hydraulic_test_mod.golden_barrel": "Golden Barrel",
+
+    "item.hydraulic_test_mod.barrel_sword": "Barrel Sword",
+    "item.hydraulic_test_mod.barrel_pickaxe": "Barrel Pickaxe",
+    "item.hydraulic_test_mod.barrel_axe": "Barrel Axe",
+    "item.hydraulic_test_mod.barrel_shovel": "Barrel Shovel",
+    "item.hydraulic_test_mod.barrel_hoe": "Barrel Hoe",
+    "item.hydraulic_test_mod.barrel_helmet": "Barrel Helmet",
+    "item.hydraulic_test_mod.barrel_chestplate": "Barrel Chestplate",
+    "item.hydraulic_test_mod.barrel_leggings": "Barrel Leggings",
+    "item.hydraulic_test_mod.barrel_horse_armor": "Barrel Horse Armor",
+    "item.hydraulic_test_mod.barrel_boots": "Barrel Boots",
+    "item.hydraulic_test_mod.barrel_stick": "Barrel Stick",
+    "item.hydraulic_test_mod.barrel_pack": "Barrel Pack"
+}
