@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.UseCooldown;
@@ -31,7 +32,8 @@ public class ModItems {
             2.0F,
             5.0F,
             30,
-            ConventionalItemTags.BARRELS
+            //ConventionalItemTags.BARRELS
+            ItemTags.PLANKS
     );
     public static final Item BARREL_SWORD = register(
             "barrel_sword",
@@ -67,7 +69,7 @@ public class ModItems {
     );
 
     public static final ResourceKey<EquipmentAsset> BARREL_ARMOR_MATERIAL_KEY = ResourceKey.create(
-            EquipmentAssets.ROOT_ID, ResourceLocation.fromNamespaceAndPath("htm", "barrel")
+            EquipmentAssets.ROOT_ID, ResourceLocation.fromNamespaceAndPath(HydraulicTestMod.MOD_ID, "barrel")
     );
     public static final ArmorMaterial BARREL_ARMOR_MATERIAL = new ArmorMaterial(
             15,
@@ -82,7 +84,8 @@ public class ModItems {
             SoundEvents.ARMOR_EQUIP_GENERIC,
             0.0F,
             0.0F,
-            ConventionalItemTags.BARRELS,
+            //ConventionalItemTags.BARRELS,
+            ItemTags.PLANKS,
             BARREL_ARMOR_MATERIAL_KEY
     );
     public static final Item BARREL_HELMET = register(
@@ -133,7 +136,7 @@ public class ModItems {
     );
 
     public static Item register(String name, Function<Item.Properties, Item> itemFactory, Item.Properties properties) {
-        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("hydraulic_test_mod", name));
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(HydraulicTestMod.MOD_ID, name));
         Item item = itemFactory.apply(properties.setId(itemKey));
         Registry.register(BuiltInRegistries.ITEM, itemKey, item);
 

@@ -39,11 +39,11 @@ public class ModBlocks {
     }
 
     private static ResourceKey<Block> keyOfBlock(String name) {
-        return ResourceKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath("hydraulic_test_mod", name));
+        return ResourceKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(HydraulicTestMod.MOD_ID, name));
     }
 
     private static ResourceKey<Item> keyOfItem(String name) {
-        return ResourceKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("hydraulic_test_mod", name));
+        return ResourceKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(HydraulicTestMod.MOD_ID, name));
     }
 
     public static void init() {}

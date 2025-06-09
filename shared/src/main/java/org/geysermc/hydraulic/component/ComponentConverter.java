@@ -125,7 +125,7 @@ public class ComponentConverter {
             if (equippable != null)
                 options.protectionValue((int) component.compute(0, equippable.slot()));
 
-            definition.component(GeyserDataComponent.ATTACK_DAMAGE, (int) component.compute(0, EquipmentSlot.MAINHAND));
+            definition.component(GeyserDataComponent.ATTACK_DAMAGE, Math.max(0, (int) component.compute(0, EquipmentSlot.MAINHAND)));
         });
     }
 

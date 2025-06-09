@@ -21,7 +21,7 @@
       "org.geysermc.hydraulic.fabric.test.HydraulicTestMod"
     ],
     "fabric-datagen": [
-      "org.geysermc.hydraulic.fabric.test.DataGeneration"
+        "org.geysermc.hydraulic.fabric.test.datagen.DataGeneration"
     ]
   },
   "mixins": [

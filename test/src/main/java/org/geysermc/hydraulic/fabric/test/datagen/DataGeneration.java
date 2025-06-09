@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.fabric.test;
+package org.geysermc.hydraulic.fabric.test.datagen;
 
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
@@ -8,9 +8,10 @@ public class DataGeneration implements DataGeneratorEntrypoint {
     public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
         FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
 
-        ModItems.init();
-        ModBlocks.init();
-
         pack.addProvider(ModelGeneration::new);
+        pack.addProvider(LanguageGeneration::new);
+        pack.addProvider(TagGeneration.Blocks::new);
+        pack.addProvider(TagGeneration.Items::new);
+        pack.addProvider((FabricDataGenerator.Pack.Factory<EquipmentGeneration>) EquipmentGeneration::new);
     }
 }

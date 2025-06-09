@@ -2,10 +2,14 @@ package org.geysermc.hydraulic.item;
 
 import com.google.auto.service.AutoService;
 import net.kyori.adventure.key.Key;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.equipment.Equippable;
@@ -60,7 +64,23 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
             EquipmentLayerType layerType = getEquipmentLayer(equippable.slot());
             if (layerType == null) {
-                continue; // There is no layer we can give the bedrock currently, so we can skip this
+                // This might be something else... lets just check
+                Optional<HolderSet<EntityType<?>>> optionalEntityType = equippable.allowedEntities();
+                if (optionalEntityType.isPresent()) {
+                    for (Holder<EntityType<?>> holderEntityType : optionalEntityType.get()) {
+                        if (holderEntityType.is(EntityTypeTags.CAN_WEAR_HORSE_ARMOR)) {
+                            layerType = EquipmentLayerType.HORSE_BODY;
+                        } else if (holderEntityType.is(EntityType.getKey(EntityType.WOLF))) {
+                            layerType = EquipmentLayerType.WOLF_BODY;
+                        } else if (holderEntityType.is(EntityType.getKey(EntityType.LLAMA)) || holderEntityType.is(EntityType.getKey(EntityType.TRADER_LLAMA))) {
+                            layerType = EquipmentLayerType.LLAMA_BODY;
+                        }
+                    }
+                }
+
+                if (layerType == null) { // We recheck as above can change how things go
+                    continue; // There is no layer we can give the bedrock currently, so we can skip this
+                }
             }
 
             ResourceLocation armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
@@ -95,23 +115,28 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             }};
             description.item(items);
 
+            EquipmentLayerType finalLayerType = layerType;
             description.textures(new HashMap<>() {
                 {
-                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, layerTexture.namespace(), layerType.name().toLowerCase(), layerTexture.value()));
+                    put("default", String.format(BEDROCK_ARMOR_TEXTURE_LOCATION, layerTexture.namespace(), finalLayerType.name().toLowerCase(), layerTexture.value()));
                     put("enchanted", "textures/misc/enchanted_actor_glint");
                 }
             });
 
             String geometryType = "";
-            switch (equippable.slot()) {
-                case EquipmentSlot.HEAD -> geometryType = "helmet";
-                case EquipmentSlot.CHEST -> geometryType = "chestplate";
-                case EquipmentSlot.LEGS -> geometryType = "leggings";
-                case EquipmentSlot.FEET -> geometryType = "boots";
+            switch (layerType) {
+                case EquipmentLayerType.HUMANOID -> {
+                    switch (equippable.slot()) {
+                        case EquipmentSlot.HEAD -> geometryType = "geometry.player.armor.helmet";
+                        case EquipmentSlot.CHEST -> geometryType = "geometry.player.armor.chestplate";
+                        case EquipmentSlot.FEET -> geometryType = "geometry.player.armor.boots";
+                    }
+                }
+                case EquipmentLayerType.HUMANOID_LEGGINGS -> geometryType = "geometry.player.armor.leggings";
+                case EquipmentLayerType.HORSE_BODY -> {} // TODO: Handle adding horse armor, might need to PR geyser for the slot
             }
 
-            final String finalGeometryType = geometryType;
-            description.geometry(Map.of("default", "geometry.player.armor." + finalGeometryType));
+            description.geometry(Map.of("default", geometryType));
 
             Attachable attachable = new Attachable();
             attachable.description(description);
