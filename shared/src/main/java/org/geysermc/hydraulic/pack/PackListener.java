@@ -64,6 +64,16 @@ public class PackListener {
 
     @Subscribe(postOrder = PostOrder.LATE)
     public void onLoadResourcePacks(GeyserDefineResourcePacksEvent event) {
+        // Check if hydraulic has updated since the last pack conversion
+        // This is so we can regenerate packs on update in case the pack generation logic has changed
+        ModInfo hydraulicMod = this.hydraulic.mod(Constants.MOD_ID);
+        boolean hydraulicUpdated = checkNeedsConversion(hydraulicMod, this.hydraulic.modStorage(hydraulicMod).pack());
+
+        if (hydraulicUpdated) {
+            LOGGER.info("Hydraulic has updated since the last pack conversion, regenerating all packs!");
+        }
+
+        // Go over all mods and load the pack or mark them for conversion
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
         for (ModInfo mod : this.hydraulic.mods()) {
             if (PackManager.IGNORED_MODS.contains(mod.id())) {
@@ -75,10 +85,10 @@ public class PackListener {
                 continue;
             }
 
-            ModStorage storage = HydraulicImpl.instance().modStorage(mod);
+            ModStorage storage = this.hydraulic.modStorage(mod);
 
             Path packPath = storage.pack();
-            if (this.hydraulic.isDev() || checkNeedsConversion(mod, packPath)) {
+            if (this.hydraulic.isDev() || hydraulicUpdated || checkNeedsConversion(mod, packPath)) {
                 packsToLoad.put(mod.id(), Pair.of(mod, packPath));
             } else {
                 // We don't need to convert the pack, just register it
@@ -124,7 +134,6 @@ public class PackListener {
      * @return {@code true} if the pack needs to be converted.
      */
     private boolean checkNeedsConversion(ModInfo mod, Path packPath) {
-        // TODO Check if hydraulic has updated since the pack was generated as it might have changed the pack generation logic
         // Read the uuid from the pack manifest
         String packUUID;
         try (
