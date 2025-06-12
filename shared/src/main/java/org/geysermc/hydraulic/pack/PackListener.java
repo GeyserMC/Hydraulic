@@ -6,17 +6,14 @@ import com.mojang.logging.LogUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.geysermc.event.PostOrder;
 import org.geysermc.event.subscribe.Subscribe;
-import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineResourcePacksEvent;
-import org.geysermc.geyser.api.event.lifecycle.GeyserLoadResourcePacksEvent;
 import org.geysermc.geyser.api.pack.PackCodec;
-import org.geysermc.geyser.api.pack.PathPackCodec;
 import org.geysermc.geyser.api.pack.ResourcePack;
 import org.geysermc.geyser.api.pack.option.PriorityOption;
-import org.geysermc.geyser.api.pack.option.ResourcePackOption;
 import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.FormatUtil;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.Manifest;
@@ -33,7 +30,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipFile;
 
 /**
@@ -68,12 +64,16 @@ public class PackListener {
 
     @Subscribe(postOrder = PostOrder.LATE)
     public void onLoadResourcePacks(GeyserDefineResourcePacksEvent event) {
-        Path packsPath = GeyserApi.api().packDirectory();
-        List<Path> localPacks = event.resourcePacks().stream() // This is because the new event can include URL packs, we just want local ones
-                .filter(pack -> pack.codec() instanceof PathPackCodec)
-                .map(pack -> ((PathPackCodec) pack.codec()).path())
-                .toList();
+        // Check if hydraulic has updated since the last pack conversion
+        // This is so we can regenerate packs on update in case the pack generation logic has changed
+        ModInfo hydraulicMod = this.hydraulic.mod(Constants.MOD_ID);
+        boolean hydraulicUpdated = checkNeedsConversion(hydraulicMod, this.hydraulic.modStorage(hydraulicMod).pack());
 
+        if (hydraulicUpdated) {
+            LOGGER.info("Hydraulic has updated since the last pack conversion, regenerating all packs!");
+        }
+
+        // Go over all mods and load the pack or mark them for conversion
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
         for (ModInfo mod : this.hydraulic.mods()) {
             if (PackManager.IGNORED_MODS.contains(mod.id())) {
@@ -85,9 +85,15 @@ public class PackListener {
                 continue;
             }
 
-            Path packPath = packsPath.resolve(mod.id() + ".zip");
-            if (this.hydraulic.isDev() || !localPacks.contains(packPath) || checkNeedsConversion(mod, packPath)) {
+            ModStorage storage = this.hydraulic.modStorage(mod);
+
+            Path packPath = storage.pack();
+            if (this.hydraulic.isDev() || hydraulicUpdated || checkNeedsConversion(mod, packPath)) {
                 packsToLoad.put(mod.id(), Pair.of(mod, packPath));
+            } else {
+                // We don't need to convert the pack, just register it
+                LOGGER.info("Registering already converted pack for mod {}", mod.id());
+                event.register(ResourcePack.create(PackCodec.path(packPath)), PriorityOption.NORMAL);
             }
         }
 

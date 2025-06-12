@@ -22,9 +22,11 @@ public class ModStorage {
 
     private ModInfo mod;
     private Materials materials = new Materials();
+    private Path pack;
 
     private ModStorage(@NotNull ModInfo mod) {
         this.mod = mod;
+        this.pack = storagePath(mod).resolve(mod.id() + ".mcpack");
     }
 
     /**
@@ -44,6 +46,16 @@ public class ModStorage {
      */
     public void materials(@NotNull Materials materials) {
         this.materials = materials;
+    }
+
+    /**
+     * Gets the path to the pack for this mod.
+     *
+     * @return the path to the pack
+     */
+    @NotNull
+    public Path pack() {
+        return this.pack;
     }
 
     /**
@@ -72,20 +84,22 @@ public class ModStorage {
      */
     public static ModStorage load(@NotNull ModInfo mod) {
         Path path = storagePath(mod);
+        ModStorage storage = new ModStorage(mod);
+
         if (Files.notExists(path)) {
-            return new ModStorage(mod);
+            return storage;
         }
 
         try {
             try (BufferedReader reader = Files.newBufferedReader(path.resolve("materials.json"))) {
-                ModStorage storage = Constants.GSON.fromJson(reader, ModStorage.class);
-                storage.mod = mod;
-                return storage;
+                Materials materials = Constants.GSON.fromJson(reader, Materials.class);
+                storage.materials(materials);
             }
         } catch (IOException e) {
             LOGGER.error("Failed to load mod storage for {}", mod.id());
-            return new ModStorage(mod);
         }
+
+        return storage;
     }
 
     private static Path storagePath(@NotNull ModInfo mod) {
