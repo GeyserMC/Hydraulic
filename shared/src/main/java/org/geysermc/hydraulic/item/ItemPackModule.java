@@ -3,6 +3,7 @@ package org.geysermc.hydraulic.item;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.Lists;
 import net.kyori.adventure.key.Key;
+import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -177,80 +178,80 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         for (Item item : items) {
             ResourceLocation itemLocation = registry.getKey(item);
 
-            NonVanillaCustomItemDefinition.Builder customItemDefinition = NonVanillaCustomItemDefinition.builder(
-                    Identifier.of(itemLocation.toString()),
-                    Identifier.of(itemLocation.toString()),
-                    registry.getId(item)
-            )
-                    .displayName("%" + item.getDescriptionId())
-                    .component(DataComponent.MAX_STACK_SIZE, item.getDefaultMaxStackSize());
-
-            CustomItemBedrockOptions.Builder customItemOptions = CustomItemBedrockOptions.builder()
-                    .allowOffhand(true);
-
-            // Allow minecraft namespace texture to be used (remapped as hydraulic)
-            if (itemBuiltinTexture.containsKey(itemLocation.toString())) {
-                customItemOptions.icon(itemBuiltinTexture.get(itemLocation.toString()));
-            }
-
-            // Add the icon if it should have an icon
-            boolean is2d = itemsWith2dIcon.contains(itemLocation);
-            if (is2d) {
-                customItemOptions.icon(itemLocation.toString());
-            }
-
-            // Make it handheld if need be
-            if (handheldItems.contains(itemLocation)) {
-                customItemOptions.displayHandheld(true);
-            }
-
-            // Set the creative mappings
-            CreativeMappings.setup(item, customItemOptions);
-
-            // Set all bedrock components using what java components we have
-            ComponentConverter.setGeyserComponents(
-                    item.components(),
-                    customItemDefinition,
-                    customItemOptions
-            );
-
-            // Set the needed component for bows to work correctly
-            if (item instanceof BowItem) {
-                customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
-                        1f,
-                        false
-                ));
-
-                // Include the default icon, this won't change in the hotbar when used but this works the best for now
-                customItemOptions.icon(itemLocation.toString());
-            }
-
-            // Set the needed component for crossbows to work correctly
-            if (item instanceof CrossbowItem) {
-                customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
-                        0f,
-                        true
-                ));
-
-                // Include the default icon, this won't change in the hotbar when used but this works the best for now
-                customItemOptions.icon(itemLocation.toString());
-            }
-
-            if (item instanceof BlockItem blockItem) {
-                // Set the block_placer component to the correct block
-                // This fixes animations sometimes not showing
-                Block block = blockItem.getBlock();
-
-                customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), !is2d));
-
-                CreativeMappings.setupBlock(block, customItemOptions);
-            }
-
-            customItemDefinition.bedrockOptions(customItemOptions);
-
             try {
+                NonVanillaCustomItemDefinition.Builder customItemDefinition = NonVanillaCustomItemDefinition.builder(
+                        Identifier.of(itemLocation.toString()),
+                        Identifier.of(itemLocation.toString()),
+                        registry.getId(item)
+                )
+                        .displayName("%" + item.getDescriptionId())
+                        .component(DataComponent.MAX_STACK_SIZE, item.getDefaultMaxStackSize());
+
+                CustomItemBedrockOptions.Builder customItemOptions = CustomItemBedrockOptions.builder()
+                        .allowOffhand(true);
+
+                // Allow minecraft namespace texture to be used (remapped as hydraulic)
+                if (itemBuiltinTexture.containsKey(itemLocation.toString())) {
+                    customItemOptions.icon(itemBuiltinTexture.get(itemLocation.toString()));
+                }
+
+                // Add the icon if it should have an icon
+                boolean is2d = itemsWith2dIcon.contains(itemLocation);
+                if (is2d) {
+                    customItemOptions.icon(itemLocation.toString());
+                }
+
+                // Make it handheld if need be
+                if (handheldItems.contains(itemLocation)) {
+                    customItemOptions.displayHandheld(true);
+                }
+
+                // Set the creative mappings
+                CreativeMappings.setup(item, customItemOptions);
+
+                // Set all bedrock components using what java components we have
+                ComponentConverter.setGeyserComponents(
+                        item.components(),
+                        customItemDefinition,
+                        customItemOptions
+                );
+
+                // Set the needed component for bows to work correctly
+                if (item instanceof BowItem) {
+                    customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
+                            1f,
+                            false
+                    ));
+
+                    // Include the default icon, this won't change in the hotbar when used but this works the best for now
+                    customItemOptions.icon(itemLocation.toString());
+                }
+
+                // Set the needed component for crossbows to work correctly
+                if (item instanceof CrossbowItem) {
+                    customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
+                            0f,
+                            true
+                    ));
+
+                    // Include the default icon, this won't change in the hotbar when used but this works the best for now
+                    customItemOptions.icon(itemLocation.toString());
+                }
+
+                if (item instanceof BlockItem blockItem) {
+                    // Set the block_placer component to the correct block
+                    // This fixes animations sometimes not showing
+                    Block block = blockItem.getBlock();
+
+                    customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), !is2d));
+
+                    CreativeMappings.setupBlock(block, customItemOptions);
+                }
+
+                customItemDefinition.bedrockOptions(customItemOptions);
+
                 event.register(customItemDefinition.build());
-            } catch (CustomItemDefinitionRegisterException e) {
+            } catch (Exception e) {
                 context.logger().error("Unable to register {}:", itemLocation, e);
             }
         }
