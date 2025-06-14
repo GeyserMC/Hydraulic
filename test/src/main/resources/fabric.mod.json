@@ -12,7 +12,7 @@
     "sources": "https://github.com/GeyserMC/Hydraulic"
   },
 
-  "license": "CC0-1.0",
+  "license": "mIT",
   "icon": "assets/hydraulic_test_mod/logo.png",
 
   "environment": "*",
@@ -30,7 +30,7 @@
 
   "depends": {
     "fabricloader": ">=0.15",
-    "fabric": "*",
+    "fabric-api": "*",
     "minecraft": "${minecraft_version}",
     "java": ">=21"
   }

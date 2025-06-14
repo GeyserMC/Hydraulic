@@ -67,14 +67,14 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
                 // This might be something else... lets just check
                 Optional<HolderSet<EntityType<?>>> optionalEntityType = equippable.allowedEntities();
                 if (optionalEntityType.isPresent()) {
-                    for (Holder<EntityType<?>> holderEntityType : optionalEntityType.get()) {
-                        if (holderEntityType.is(EntityTypeTags.CAN_WEAR_HORSE_ARMOR)) {
-                            layerType = EquipmentLayerType.HORSE_BODY;
-                        } else if (holderEntityType.is(EntityType.getKey(EntityType.WOLF))) {
-                            layerType = EquipmentLayerType.WOLF_BODY;
-                        } else if (holderEntityType.is(EntityType.getKey(EntityType.LLAMA)) || holderEntityType.is(EntityType.getKey(EntityType.TRADER_LLAMA))) {
-                            layerType = EquipmentLayerType.LLAMA_BODY;
-                        }
+                    HolderSet<EntityType<?>> entityTypeHolderSet = optionalEntityType.get();
+
+                    if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityType.HORSE))) {
+                        layerType = EquipmentLayerType.HORSE_BODY;
+                    } else if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityType.WOLF))) {
+                        layerType = EquipmentLayerType.WOLF_BODY;
+                    } else if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityType.LLAMA))) {
+                        layerType = EquipmentLayerType.LLAMA_BODY;
                     }
                 }
 

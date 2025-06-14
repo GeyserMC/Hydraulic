@@ -18,14 +18,10 @@ import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 public class ModItems {
-    public static final List<Item> ITEMS = new ArrayList<>();
-
     public static final ToolMaterial BARREL_TOOL_MATERIAL = new ToolMaterial(
             BlockTags.INCORRECT_FOR_NETHERITE_TOOL,
             9999,
@@ -139,8 +135,6 @@ public class ModItems {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(HydraulicTestMod.MOD_ID, name));
         Item item = itemFactory.apply(properties.setId(itemKey));
         Registry.register(BuiltInRegistries.ITEM, itemKey, item);
-
-        ITEMS.add(item);
 
         return item;
     }

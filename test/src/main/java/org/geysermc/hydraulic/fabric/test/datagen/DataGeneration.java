@@ -12,6 +12,6 @@ public class DataGeneration implements DataGeneratorEntrypoint {
         pack.addProvider(LanguageGeneration::new);
         pack.addProvider(TagGeneration.Blocks::new);
         pack.addProvider(TagGeneration.Items::new);
-        pack.addProvider((FabricDataGenerator.Pack.Factory<EquipmentGeneration>) EquipmentGeneration::new);
+        pack.addProvider(EquipmentGeneration::new);
     }
 }
