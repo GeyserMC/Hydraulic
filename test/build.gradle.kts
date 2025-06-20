@@ -22,6 +22,10 @@ configurations {
 }
 
 tasks {
+    sourcesJar {
+        dependsOn(named("runDatagen")) // Make sure the sources jar gets our generated files
+    }
+
     remapJar {
         dependsOn(shadowJar)
         inputFile.set(shadowJar.get().archiveFile)
@@ -38,6 +42,9 @@ tasks {
         archiveClassifier.set("dev")
     }
 }
+
+// Always ensure datagen is up to date before building
+tasks.named("build") { dependsOn(tasks.named("runDatagen")) }
 
 dependencies {
     modImplementation(libs.fabric.loader)

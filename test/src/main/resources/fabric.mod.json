@@ -12,7 +12,7 @@
     "sources": "https://github.com/GeyserMC/Hydraulic"
   },
 
-  "license": "mIT",
+  "license": "MIT",
   "icon": "assets/hydraulic_test_mod/logo.png",
 
   "environment": "*",
