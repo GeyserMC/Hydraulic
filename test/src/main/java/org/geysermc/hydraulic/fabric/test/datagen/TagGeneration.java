@@ -3,8 +3,10 @@ package org.geysermc.hydraulic.fabric.test.datagen;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagEntry;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import org.geysermc.hydraulic.fabric.test.ModBlocks;
@@ -19,11 +21,11 @@ public class TagGeneration {
 
         @Override
         protected void addTags(HolderLookup.Provider provider) {
-            getOrCreateTagBuilder(BlockTags.NEEDS_IRON_TOOL)
-                    .add(ModBlocks.GOLDEN_BARREL);
+            getOrCreateRawBuilder(BlockTags.NEEDS_IRON_TOOL)
+                    .add(TagEntry.element(BuiltInRegistries.BLOCK.getKey(ModBlocks.GOLDEN_BARREL)));
 
-            getOrCreateTagBuilder(BlockTags.MINEABLE_WITH_PICKAXE)
-                    .add(ModBlocks.GOLDEN_BARREL);
+            getOrCreateRawBuilder(BlockTags.MINEABLE_WITH_PICKAXE)
+                    .add(TagEntry.element(BuiltInRegistries.BLOCK.getKey(ModBlocks.GOLDEN_BARREL)));
         }
     }
 
