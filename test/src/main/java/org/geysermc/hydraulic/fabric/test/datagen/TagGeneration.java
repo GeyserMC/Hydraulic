@@ -14,24 +14,24 @@ import org.geysermc.hydraulic.fabric.test.ModBlocks;
 import java.util.concurrent.CompletableFuture;
 
 public class TagGeneration {
-    public static class Blocks extends FabricTagProvider<Block> {
+    public static class Blocks extends FabricTagProvider.BlockTagProvider {
         public Blocks(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registriesFuture) {
-            super(output, Registries.BLOCK, registriesFuture);
+            super(output, registriesFuture);
         }
 
         @Override
         protected void addTags(HolderLookup.Provider provider) {
-            getOrCreateRawBuilder(BlockTags.NEEDS_IRON_TOOL)
-                    .add(TagEntry.element(BuiltInRegistries.BLOCK.getKey(ModBlocks.GOLDEN_BARREL)));
+            valueLookupBuilder(BlockTags.NEEDS_IRON_TOOL)
+                    .add(ModBlocks.GOLDEN_BARREL);
 
-            getOrCreateRawBuilder(BlockTags.MINEABLE_WITH_PICKAXE)
-                    .add(TagEntry.element(BuiltInRegistries.BLOCK.getKey(ModBlocks.GOLDEN_BARREL)));
+            valueLookupBuilder(BlockTags.MINEABLE_WITH_PICKAXE)
+                    .add(ModBlocks.GOLDEN_BARREL);
         }
     }
 
-    public static class Items extends FabricTagProvider<Item> {
+    public static class Items extends FabricTagProvider.ItemTagProvider {
         public Items(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registriesFuture) {
-            super(output, Registries.ITEM, registriesFuture);
+            super(output, registriesFuture);
         }
 
         @Override
