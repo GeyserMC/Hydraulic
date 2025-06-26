@@ -53,11 +53,18 @@ public class PackManager {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     static final Set<String> IGNORED_MODS = Set.of(
+            // Fabric
             "geyser-fabric",
+            "fabric-permissions-api-v0",
+
+            // NeoForge
             "geyser-neoforge",
+            "neoforge",
+            "minecraft",
+
+            // Common
             "floodgate",
             "mixinextras",
-            "fabric-permissions-api-v0",
             "cloud"
     );
 

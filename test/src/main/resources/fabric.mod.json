@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "${id}",
+  "id": "hydraulic_test_mod",
   "version": "${version}",
-  "name": "${name}",
-  "description": "A companion mod to Geyser which allows for Bedrock players to join modded Minecraft: Java Edition servers.",
+  "name": "Hydraulic Test Mod",
+  "description": "A mod to test Hydraulic",
   "authors": [
     "${author}"
   ],
@@ -13,23 +13,24 @@
   },
 
   "license": "MIT",
-  "icon": "assets/hydraulic/logo.png",
+  "icon": "assets/hydraulic_test_mod/logo.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "org.geysermc.hydraulic.fabric.HydraulicFabricMod"
+      "org.geysermc.hydraulic.fabric.test.HydraulicTestMod"
+    ],
+    "fabric-datagen": [
+        "org.geysermc.hydraulic.fabric.test.datagen.DataGeneration"
     ]
   },
   "mixins": [
-    "hydraulic.mixins.json",
-    "hydraulic-fabric.mixins.json"
+    "hydraulic_test_mod.mixins.json"
   ],
 
   "depends": {
     "fabricloader": ">=0.15",
-    "fabric": "*",
-    "geyser-fabric": "*",
+    "fabric-api": "*",
     "minecraft": "${minecraft_version}",
     "java": ">=21"
   }
