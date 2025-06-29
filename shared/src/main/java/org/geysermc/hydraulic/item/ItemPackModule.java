@@ -15,6 +15,9 @@ import org.geysermc.geyser.api.exception.CustomItemDefinitionRegisterException;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.NonVanillaCustomItemDefinition;
 import org.geysermc.geyser.api.item.custom.v2.component.*;
+import org.geysermc.geyser.api.item.custom.v2.component.geyser.BlockPlacer;
+import org.geysermc.geyser.api.item.custom.v2.component.geyser.Chargeable;
+import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserDataComponent;
 import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
@@ -184,8 +187,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                         Identifier.of(itemLocation.toString()),
                         registry.getId(item)
                 )
-                        .displayName("%" + item.getDescriptionId())
-                        .component(DataComponent.MAX_STACK_SIZE, item.getDefaultMaxStackSize());
+                        .displayName("%" + item.getDescriptionId());
 
                 CustomItemBedrockOptions.Builder customItemOptions = CustomItemBedrockOptions.builder()
                         .allowOffhand(true);
@@ -218,10 +220,13 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
                 // Set the needed component for bows to work correctly
                 if (item instanceof BowItem) {
-                    customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
-                            1f,
-                            false
-                    ));
+                    customItemDefinition.component(
+                            GeyserDataComponent.CHARGEABLE,
+                            Chargeable.builder()
+                                    .maxDrawDuration(1f)
+                                    .chargeOnDraw(false)
+                                    .build()
+                    );
 
                     // Include the default icon, this won't change in the hotbar when used but this works the best for now
                     customItemOptions.icon(itemLocation.toString());
@@ -229,10 +234,13 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
                 // Set the needed component for crossbows to work correctly
                 if (item instanceof CrossbowItem) {
-                    customItemDefinition.component(GeyserDataComponent.CHARGEABLE, new Chargeable(
-                            0f,
-                            true
-                    ));
+                    customItemDefinition.component(
+                            GeyserDataComponent.CHARGEABLE,
+                            Chargeable.builder()
+                                    .maxDrawDuration(0f)
+                                    .chargeOnDraw(true)
+                                    .build()
+                    );
 
                     // Include the default icon, this won't change in the hotbar when used but this works the best for now
                     customItemOptions.icon(itemLocation.toString());
@@ -243,7 +251,13 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                     // This fixes animations sometimes not showing
                     Block block = blockItem.getBlock();
 
-                    customItemDefinition.component(GeyserDataComponent.BLOCK_PLACER, new BlockPlacer(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()), !is2d));
+                    customItemDefinition.component(
+                            GeyserDataComponent.BLOCK_PLACER,
+                            BlockPlacer.builder()
+                                    .block(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()))
+                                    .useBlockIcon(!is2d)
+                                    .build()
+                    );
 
                     CreativeMappings.setupBlock(block, customItemOptions);
                 }
