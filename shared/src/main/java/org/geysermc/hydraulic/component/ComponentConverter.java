@@ -5,13 +5,17 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.TypedDataComponent;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.component.Tool;
+import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemDefinition;
 import org.geysermc.geyser.api.item.custom.v2.component.*;
 import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserDataComponent;
 import org.geysermc.geyser.api.item.custom.v2.component.java.*;
 import org.geysermc.geyser.api.util.CreativeCategory;
+import org.geysermc.geyser.api.util.Holders;
 import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.hydraulic.util.HydraulicKey;
 
@@ -90,11 +94,37 @@ public class ComponentConverter {
             );
         });
         addComponentConversion(DataComponents.TOOL, (component, map, definition, options) -> {
+            ToolProperties.Builder toolProperties = ToolProperties.builder()
+                    .canDestroyBlocksInCreative(component.canDestroyBlocksInCreative())
+                    .defaultMiningSpeed(component.defaultMiningSpeed());
+
+            for (Tool.Rule toolRule : component.rules()) {
+                if (toolRule.speed().isEmpty()) continue;
+
+                toolProperties.rule(
+                        ToolProperties.Rule.builder()
+                                .speed(toolRule.speed().get())
+                                .block(
+                                        toolRule.blocks().unwrap()
+                                                .map(
+                                                        tag -> Holders.ofTag(HydraulicKey.of(tag.location())),
+                                                        holders -> Holders.of(
+                                                                holders.stream()
+                                                                        .map(holder -> (Identifier) HydraulicKey.of(
+                                                                                holder.unwrapKey().map(ResourceKey::location)
+                                                                                        .orElseThrow()
+                                                                        ))
+                                                                        .toList()
+                                                        )
+                                                )
+                                )
+                                .build()
+                );
+            }
+
             definition.component(
                     ItemDataComponents.TOOL,
-                    ToolProperties.builder()
-                            .canDestroyBlocksInCreative(component.canDestroyBlocksInCreative())
-                            .build()
+                    toolProperties
             );
         });
         addComponentConversion(DataComponents.ENCHANTABLE, (component, map, definition, options) -> {
@@ -132,22 +162,18 @@ public class ComponentConverter {
                 );
         });
         addComponentConversion(DataComponents.REPAIRABLE, (component, map, definition, options) -> {
-            List<HydraulicKey> repairableItems = component.items().stream()
+            Repairable.Builder repairableComponent = Repairable.builder();
+
+            component.items().stream()
                     .map(Holder::unwrapKey)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .map(HydraulicKey::of)
-                    .toList();
-
-            Repairable.Builder repairableComponent = Repairable.builder();
-
-            for (HydraulicKey repairableItem : repairableItems) {
-                repairableComponent.item(repairableItem);
-            }
+                    .forEach(repairableComponent::item);
 
             definition.component(
                     ItemDataComponents.REPAIRABLE,
-                    repairableComponent.build()
+                    repairableComponent
             );
         });
         addComponentConversion(DataComponents.ATTRIBUTE_MODIFIERS, (component, map, definition, options) -> {
