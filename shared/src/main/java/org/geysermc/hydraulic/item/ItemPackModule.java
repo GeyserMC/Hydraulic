@@ -225,7 +225,6 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                             Chargeable.builder()
                                     .maxDrawDuration(1f)
                                     .chargeOnDraw(false)
-                                    .build()
                     );
 
                     // Include the default icon, this won't change in the hotbar when used but this works the best for now
@@ -239,7 +238,6 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                             Chargeable.builder()
                                     .maxDrawDuration(0f)
                                     .chargeOnDraw(true)
-                                    .build()
                     );
 
                     // Include the default icon, this won't change in the hotbar when used but this works the best for now
@@ -253,10 +251,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
                     customItemDefinition.component(
                             GeyserDataComponent.BLOCK_PLACER,
-                            BlockPlacer.builder()
-                                    .block(Identifier.of(BuiltInRegistries.BLOCK.getKey(block).toString()))
-                                    .useBlockIcon(!is2d)
-                                    .build()
+                            BlockPlacer.of(HydraulicKey.of(BuiltInRegistries.BLOCK.getKey(block)), !is2d)
                     );
 
                     CreativeMappings.setupBlock(block, customItemOptions);

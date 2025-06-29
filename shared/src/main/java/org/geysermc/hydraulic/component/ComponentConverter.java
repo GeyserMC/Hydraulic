@@ -61,11 +61,7 @@ public class ComponentConverter {
         addComponentConversion(DataComponents.FOOD, (component, map, definition, options) -> {
             definition.component(
                     ItemDataComponents.FOOD,
-                    FoodProperties.builder()
-                            .nutrition(component.nutrition())
-                            .saturation(component.saturation())
-                            .canAlwaysEat(component.canAlwaysEat())
-                            .build()
+                    FoodProperties.of(component.nutrition(), component.saturation(), component.canAlwaysEat())
             );
         });
         addComponentConversion(DataComponents.CONSUMABLE, (component, map, definition, options) -> {
@@ -81,10 +77,7 @@ public class ComponentConverter {
             };
             definition.component(
                     ItemDataComponents.CONSUMABLE,
-                    Consumable.builder()
-                            .consumeSeconds(component.consumeSeconds())
-                            .animation(animation)
-                            .build()
+                    Consumable.of(component.consumeSeconds(), animation)
             );
         });
         addComponentConversion(DataComponents.USE_COOLDOWN, (component, map, definition, options) -> {
@@ -94,7 +87,6 @@ public class ComponentConverter {
                     UseCooldown.builder()
                             .seconds(component.seconds())
                             .cooldownGroup(location)
-                            .build()
             );
         });
         addComponentConversion(DataComponents.TOOL, (component, map, definition, options) -> {
@@ -136,9 +128,7 @@ public class ComponentConverter {
             if (slot != null)
                 definition.component(
                         ItemDataComponents.EQUIPPABLE,
-                        Equippable.builder()
-                                .slot(slot)
-                                .build()
+                        Equippable.of(slot)
                 );
         });
         addComponentConversion(DataComponents.REPAIRABLE, (component, map, definition, options) -> {
