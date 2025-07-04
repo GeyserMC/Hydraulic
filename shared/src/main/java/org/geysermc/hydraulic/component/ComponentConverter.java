@@ -1,19 +1,27 @@
 package org.geysermc.hydraulic.component;
 
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.TypedDataComponent;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.component.Tool;
+import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemDefinition;
 import org.geysermc.geyser.api.item.custom.v2.component.*;
+import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserDataComponent;
+import org.geysermc.geyser.api.item.custom.v2.component.java.*;
 import org.geysermc.geyser.api.util.CreativeCategory;
+import org.geysermc.geyser.api.util.Holders;
 import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.hydraulic.util.HydraulicKey;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -50,13 +58,16 @@ public class ComponentConverter {
 
     static {
         // Same types, so we can just passthrough these values
-        addSimpleConversion(DataComponents.MAX_STACK_SIZE, DataComponent.MAX_STACK_SIZE);
-        addSimpleConversion(DataComponents.MAX_DAMAGE, DataComponent.MAX_DAMAGE);
-        addSimpleConversion(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, DataComponent.ENCHANTMENT_GLINT_OVERRIDE);
+        addSimpleConversion(DataComponents.MAX_STACK_SIZE, ItemDataComponents.MAX_STACK_SIZE);
+        addSimpleConversion(DataComponents.MAX_DAMAGE, ItemDataComponents.MAX_DAMAGE);
+        addSimpleConversion(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, ItemDataComponents.ENCHANTMENT_GLINT_OVERRIDE);
 
         // These components are a little different or too complex, so we need a more powerful conversion
         addComponentConversion(DataComponents.FOOD, (component, map, definition, options) -> {
-            definition.component(DataComponent.FOOD, new FoodProperties(component.nutrition(), component.saturation(), component.canAlwaysEat()));
+            definition.component(
+                    ItemDataComponents.FOOD,
+                    FoodProperties.of(component.nutrition(), component.saturation(), component.canAlwaysEat())
+            );
         });
         addComponentConversion(DataComponents.CONSUMABLE, (component, map, definition, options) -> {
             Consumable.Animation animation = switch (component.animation()) {
@@ -69,17 +80,40 @@ public class ComponentConverter {
                 case BRUSH -> Consumable.Animation.BRUSH;
                 default -> Consumable.Animation.EAT;
             };
-            definition.component(DataComponent.CONSUMABLE, new Consumable(component.consumeSeconds(), animation));
+            definition.component(
+                    ItemDataComponents.CONSUMABLE,
+                    Consumable.of(component.consumeSeconds(), animation)
+            );
         });
         addComponentConversion(DataComponents.USE_COOLDOWN, (component, map, definition, options) -> {
             Identifier location = component.cooldownGroup().map(HydraulicKey::of).orElse(null);
-            definition.component(DataComponent.USE_COOLDOWN, new UseCooldown(component.seconds(), location));
+            definition.component(
+                    ItemDataComponents.USE_COOLDOWN,
+                    UseCooldown.builder()
+                            .seconds(component.seconds())
+                            .cooldownGroup(location)
+            );
         });
         addComponentConversion(DataComponents.TOOL, (component, map, definition, options) -> {
-            definition.component(DataComponent.TOOL, new ToolProperties(component.canDestroyBlocksInCreative()));
+            ToolProperties.Builder toolProperties = ToolProperties.builder()
+                    .canDestroyBlocksInCreative(component.canDestroyBlocksInCreative())
+                    .defaultMiningSpeed(component.defaultMiningSpeed());
+
+            for (Tool.Rule toolRule : component.rules()) {
+                if (toolRule.speed().isEmpty()) continue;
+
+                toolProperties.rule(
+                        ToolProperties.Rule.of(toHolders(toolRule.blocks()), toolRule.speed().get())
+                );
+            }
+
+            definition.component(
+                    ItemDataComponents.TOOL,
+                    toolProperties
+            );
         });
         addComponentConversion(DataComponents.ENCHANTABLE, (component, map, definition, options) -> {
-            definition.component(DataComponent.ENCHANTABLE, component.value());
+            definition.component(ItemDataComponents.ENCHANTABLE, component.value());
         });
         addComponentConversion(DataComponents.EQUIPPABLE, (component, map, definition, options) -> {
             options.tag(Identifier.of("minecraft", "is_armor"));
@@ -107,18 +141,20 @@ public class ComponentConverter {
                 default -> null;
             };
             if (slot != null)
-                definition.component(DataComponent.EQUIPPABLE, new Equippable(slot));
+                definition.component(
+                        ItemDataComponents.EQUIPPABLE,
+                        Equippable.of(slot)
+                );
         });
         addComponentConversion(DataComponents.REPAIRABLE, (component, map, definition, options) -> {
-            definition.component(DataComponent.REPAIRABLE, new Repairable(
-                    component.items().stream()
-                            .map(Holder::unwrapKey)
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .map(HydraulicKey::of)
-                            .toList()
-                            .toArray(new Identifier[]{})
-            ));
+            Repairable.Builder repairableComponent = Repairable.builder();
+
+            repairableComponent.items(toHolders(component.items()));
+
+            definition.component(
+                    ItemDataComponents.REPAIRABLE,
+                    repairableComponent
+            );
         });
         addComponentConversion(DataComponents.ATTRIBUTE_MODIFIERS, (component, map, definition, options) -> {
             net.minecraft.world.item.equipment.Equippable equippable = map.get(DataComponents.EQUIPPABLE); // only one stinky inline import. thanks "protectionValue" :pensive:
@@ -127,6 +163,21 @@ public class ComponentConverter {
 
             definition.component(GeyserDataComponent.ATTACK_DAMAGE, Math.max(0, (int) component.compute(0, EquipmentSlot.MAINHAND)));
         });
+    }
+
+    private static Holders toHolders(HolderSet<?> holderSet) {
+        return holderSet.unwrap()
+                .map(
+                        tag -> Holders.ofTag(HydraulicKey.of(tag.location())),
+                        holders -> Holders.of(
+                                holders.stream()
+                                        .map(holder -> (Identifier) HydraulicKey.of(
+                                                holder.unwrapKey().map(ResourceKey::location)
+                                                        .orElseThrow()
+                                        ))
+                                        .toList()
+                        )
+                );
     }
 
     @FunctionalInterface
