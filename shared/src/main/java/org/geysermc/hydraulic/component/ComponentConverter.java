@@ -1,6 +1,7 @@
 package org.geysermc.hydraulic.component;
 
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
@@ -102,21 +103,7 @@ public class ComponentConverter {
                 if (toolRule.speed().isEmpty()) continue;
 
                 toolProperties.rule(
-                        ToolProperties.Rule.of(
-                                toolRule.blocks().unwrap()
-                                        .map(
-                                                tag -> Holders.ofTag(HydraulicKey.of(tag.location())),
-                                                holders -> Holders.of(
-                                                        holders.stream()
-                                                                .map(holder -> (Identifier) HydraulicKey.of(
-                                                                        holder.unwrapKey().map(ResourceKey::location)
-                                                                                .orElseThrow()
-                                                                ))
-                                                                .toList()
-                                                )
-                                        ),
-                                toolRule.speed().get()
-                        )
+                        ToolProperties.Rule.of(toHolders(toolRule.blocks()), toolRule.speed().get())
                 );
             }
 
@@ -162,20 +149,7 @@ public class ComponentConverter {
         addComponentConversion(DataComponents.REPAIRABLE, (component, map, definition, options) -> {
             Repairable.Builder repairableComponent = Repairable.builder();
 
-            repairableComponent.items(
-                    component.items().unwrap()
-                            .map(
-                                    tag -> Holders.ofTag(HydraulicKey.of(tag.location())),
-                                    holders -> Holders.of(
-                                            holders.stream()
-                                                    .map(holder -> (Identifier) HydraulicKey.of(
-                                                            holder.unwrapKey().map(ResourceKey::location)
-                                                                    .orElseThrow()
-                                                    ))
-                                                    .toList()
-                                    )
-                            )
-            );
+            repairableComponent.items(toHolders(component.items()));
 
             definition.component(
                     ItemDataComponents.REPAIRABLE,
@@ -189,6 +163,21 @@ public class ComponentConverter {
 
             definition.component(GeyserDataComponent.ATTACK_DAMAGE, Math.max(0, (int) component.compute(0, EquipmentSlot.MAINHAND)));
         });
+    }
+
+    private static Holders toHolders(HolderSet<?> holderSet) {
+        return holderSet.unwrap()
+                .map(
+                        tag -> Holders.ofTag(HydraulicKey.of(tag.location())),
+                        holders -> Holders.of(
+                                holders.stream()
+                                        .map(holder -> (Identifier) HydraulicKey.of(
+                                                holder.unwrapKey().map(ResourceKey::location)
+                                                        .orElseThrow()
+                                        ))
+                                        .toList()
+                        )
+                );
     }
 
     @FunctionalInterface
