@@ -102,23 +102,21 @@ public class ComponentConverter {
                 if (toolRule.speed().isEmpty()) continue;
 
                 toolProperties.rule(
-                        ToolProperties.Rule.builder()
-                                .speed(toolRule.speed().get())
-                                .block(
-                                        toolRule.blocks().unwrap()
-                                                .map(
-                                                        tag -> Holders.ofTag(HydraulicKey.of(tag.location())),
-                                                        holders -> Holders.of(
-                                                                holders.stream()
-                                                                        .map(holder -> (Identifier) HydraulicKey.of(
-                                                                                holder.unwrapKey().map(ResourceKey::location)
-                                                                                        .orElseThrow()
-                                                                        ))
-                                                                        .toList()
-                                                        )
+                        ToolProperties.Rule.of(
+                                toolRule.blocks().unwrap()
+                                        .map(
+                                                tag -> Holders.ofTag(HydraulicKey.of(tag.location())),
+                                                holders -> Holders.of(
+                                                        holders.stream()
+                                                                .map(holder -> (Identifier) HydraulicKey.of(
+                                                                        holder.unwrapKey().map(ResourceKey::location)
+                                                                                .orElseThrow()
+                                                                ))
+                                                                .toList()
                                                 )
-                                )
-                                .build()
+                                        ),
+                                toolRule.speed().get()
+                        )
                 );
             }
 
@@ -164,12 +162,20 @@ public class ComponentConverter {
         addComponentConversion(DataComponents.REPAIRABLE, (component, map, definition, options) -> {
             Repairable.Builder repairableComponent = Repairable.builder();
 
-            component.items().stream()
-                    .map(Holder::unwrapKey)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .map(HydraulicKey::of)
-                    .forEach(repairableComponent::item);
+            repairableComponent.items(
+                    component.items().unwrap()
+                            .map(
+                                    tag -> Holders.ofTag(HydraulicKey.of(tag.location())),
+                                    holders -> Holders.of(
+                                            holders.stream()
+                                                    .map(holder -> (Identifier) HydraulicKey.of(
+                                                            holder.unwrapKey().map(ResourceKey::location)
+                                                                    .orElseThrow()
+                                                    ))
+                                                    .toList()
+                                    )
+                            )
+            );
 
             definition.component(
                     ItemDataComponents.REPAIRABLE,

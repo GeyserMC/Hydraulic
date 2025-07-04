@@ -13,10 +13,10 @@ asm = "5.2"
 
 # fabric
 fabric-loader = "0.16.14"
-fabric-api = "0.128.0+1.21.6"
+fabric-api = "0.128.1+1.21.7"
 
 # neoforge
-neoforge-version = "21.6.19-beta"
+neoforge-version = "21.7.1-beta"
 
 [libraries]
 mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }
