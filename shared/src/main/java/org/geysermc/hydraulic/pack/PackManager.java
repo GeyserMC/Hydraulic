@@ -241,6 +241,8 @@ public class PackManager {
                 if (checkFile != null) {
                     modsToBlocks.put(mod.id(), block);
                     break;
+                } else {
+                    LOGGER.warn("Failed to find path for block state {}, skipping", block);
                 }
             }
         }
@@ -252,10 +254,12 @@ public class PackManager {
         for (final ResourceLocation item : BuiltInRegistries.ITEM.keySet()) {
             if (item.getNamespace().equals("minecraft")) continue;
             for (final ModInfo mod : namespacesToMods.get(item.getNamespace())) {
-                final Path checkFile = mod.resolveFile("assets/" + item.getNamespace() + "/models/item/" + item.getPath() + ".json");
+                final Path checkFile = mod.resolveFile("assets/" + item.getNamespace() + "/items/" + item.getPath() + ".json");
                 if (checkFile != null) {
                     modsToItems.put(mod.id(), item);
                     break;
+                } else {
+                    LOGGER.warn("Failed to find path for item {}, skipping", item);
                 }
             }
         }
