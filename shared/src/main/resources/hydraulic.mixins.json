@@ -10,7 +10,8 @@
     "ext.MinecraftResourcePackReaderImplMixin",
     "ext.InventoryUtilsMixin",
     "ext.LocationAwareSlf4JLoggerMixin",
-    "ext.ModelSerializerMixin"
+    "ext.ModelSerializerMixin",
+    "ext.MinecraftLocaleMixin"
   ],
   "injectors": {
     "defaultRequire": 1
