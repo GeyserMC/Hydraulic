@@ -400,6 +400,7 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                         .identifier(BlockStateParser.serialize(state))
                         .javaId(Block.getId(state))
                         .blockHardness(block.defaultDestroyTime()) // TODO: Check
+                        .canBreakWithHand(!state.requiresCorrectToolForDrops())
                         .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
                         .stateGroupId(blockId)
                         .pistonBehavior(pistonBehavior.name());
