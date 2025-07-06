@@ -5,8 +5,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.mojang.logging.LogUtils;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import org.geysermc.event.Event;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.hydraulic.Constants;
@@ -241,6 +243,8 @@ public class PackManager {
                 if (checkFile != null) {
                     modsToBlocks.put(mod.id(), block);
                     break;
+                } else {
+                    LOGGER.warn("Failed to find path for block state {}, skipping", block);
                 }
             }
         }
@@ -249,13 +253,24 @@ public class PackManager {
         // There's no ordering requirement between this and Step 2.
         final Multimap<String, ResourceLocation> modsToItems = this.modsToItems;
         modsToItems.clear();
-        for (final ResourceLocation item : BuiltInRegistries.ITEM.keySet()) {
-            if (item.getNamespace().equals("minecraft")) continue;
-            for (final ModInfo mod : namespacesToMods.get(item.getNamespace())) {
-                final Path checkFile = mod.resolveFile("assets/" + item.getNamespace() + "/models/item/" + item.getPath() + ".json");
+        for (final ResourceLocation itemId : BuiltInRegistries.ITEM.keySet()) {
+            if (itemId.getNamespace().equals("minecraft")) continue;
+
+            Item item = BuiltInRegistries.ITEM.getValue(itemId);
+            ResourceLocation itemModel = item.components().get(DataComponents.ITEM_MODEL);
+            // Item model is missing, can't do much here
+            if (itemModel == null) {
+                LOGGER.warn("Failed to find item model component for item {}, skipping", item);
+                continue;
+            }
+
+            for (final ModInfo mod : namespacesToMods.get(itemId.getNamespace())) {
+                final Path checkFile = mod.resolveFile("assets/" + itemModel.getNamespace() + "/items/" + itemModel.getPath() + ".json");
                 if (checkFile != null) {
-                    modsToItems.put(mod.id(), item);
+                    modsToItems.put(mod.id(), itemId);
                     break;
+                } else {
+                    LOGGER.warn("Failed to find path for item {}, skipping", item);
                 }
             }
         }
