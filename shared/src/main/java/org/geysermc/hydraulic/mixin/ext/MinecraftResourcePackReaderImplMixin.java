@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 import team.unnamed.creative.overlay.ResourceContainer;
 import team.unnamed.creative.part.ResourcePackPart;
 import team.unnamed.creative.serialize.minecraft.GsonUtil;
@@ -76,5 +78,18 @@ public abstract class MinecraftResourcePackReaderImplMixin {
         if (instance != null) {
             instance.addTo(resourceContainer);
         }
+    }
+
+    //Key key = Key.key(namespace, keyValue);
+    @ModifyArgs(
+            method = "read(Lteam/unnamed/creative/serialize/minecraft/fs/FileTreeReader;)Lteam/unnamed/creative/ResourcePack;",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/kyori/adventure/key/Key;key(Ljava/lang/String;Ljava/lang/String;)Lnet/kyori/adventure/key/Key;",
+                    ordinal = 2
+            )
+    )
+    private void injectKeyCreation(Args args) {
+        args.set(1, ((String) args.get(1)).toLowerCase());
     }
 }
