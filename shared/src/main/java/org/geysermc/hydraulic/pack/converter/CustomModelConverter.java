@@ -15,6 +15,6 @@ public class CustomModelConverter extends ModelConverter {
 
     @Override
     public ModelConversionData createConversionData(@NotNull Converter.ConversionDataCreationContext context) {
-        return new ModelConversionData(context.inputDirectory(), context.outputDirectory(), modelProvider);
+        return new ModelConversionData(context.inputDirectory(), context.outputDirectory(), modelProvider, context.vanillaResourcePack());
     }
 }
