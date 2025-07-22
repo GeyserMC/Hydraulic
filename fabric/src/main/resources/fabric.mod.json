@@ -30,7 +30,7 @@
     "fabricloader": ">=0.15",
     "fabric": "*",
     "geyser-fabric": "*",
-    "minecraft": "${minecraft_version}",
+    "minecraft": ">=${minecraft_version}",
     "java": ">=21"
   }
 }
