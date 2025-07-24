@@ -278,8 +278,11 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                 if (material != null) {
                     // Add a default texture, can be replaced by the below (I think)
                     Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
+
+                    String name = PackUtil.getTextureName(firstEntry.getValue());
+
                     componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(PackUtil.getTextureName(firstEntry.getValue()))
+                            .texture(name)
                             .renderMethod(renderMethod)
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
@@ -290,10 +293,10 @@ public class BlockPackModule extends ConvertablePackModule<BlockPackModule, Mode
                         for (Map.Entry<String, String> face : faceMapping.entrySet()) {
                             if (!material.textures().containsKey(face.getValue())) continue;
 
-                            String textureName = material.textures().get(face.getValue());
+                            String textureName = PackUtil.getTextureName(material.textures().get(face.getValue()));
 
                             componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
-                                    .texture(PackUtil.getTextureName(textureName))
+                                    .texture(textureName)
                                     .renderMethod(renderMethod)
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())

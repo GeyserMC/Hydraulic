@@ -8,6 +8,7 @@ import org.geysermc.hydraulic.util.GeoUtil;
 import org.geysermc.pack.converter.converter.texture.TextureMappings;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 
 @AutoService(PackModule.class)
@@ -15,13 +16,25 @@ public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
     public HydraulicPackModule() {
         this.postProcess(context -> {
             // Map all block textures files as valid names
-            for (Map.Entry<String, String> entry : ((Map<String, String>) TextureMappings.textureMappings().textures("block")).entrySet()) {
-                context.bedrockResourcePack().addBlockTexture(Constants.MOD_ID + ":" + entry.getValue(), "textures/blocks/" + entry.getValue());
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) TextureMappings.textureMappings().textures("block")).entrySet()) {
+                if (entry.getValue() instanceof String str) {
+                    context.bedrockResourcePack().addBlockTexture(Constants.MOD_ID + ":" + str, "textures/blocks/" + str);
+                } else if (entry.getValue() instanceof List<?> list) {
+                    for (String str : (List<String>) list) {
+                        context.bedrockResourcePack().addBlockTexture(Constants.MOD_ID + ":" + str, "textures/blocks/" + str);
+                    }
+                }
             }
 
             // Map all item textures files as valid names
-            for (Map.Entry<String, String> entry : ((Map<String, String>) TextureMappings.textureMappings().textures("item")).entrySet()) {
-                context.bedrockResourcePack().addItemTexture(Constants.MOD_ID + ":" + entry.getValue(), "textures/items/" + entry.getValue());
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) TextureMappings.textureMappings().textures("item")).entrySet()) {
+                if (entry.getValue() instanceof String str) {
+                    context.bedrockResourcePack().addItemTexture(Constants.MOD_ID + ":" + str, "textures/items/" + str);
+                } else if (entry.getValue() instanceof List<?> list) {
+                    for (String str : (List<String>) list) {
+                        context.bedrockResourcePack().addItemTexture(Constants.MOD_ID + ":" + str, "textures/items/" + str);
+                    }
+                }
             }
 
             // Add the empty geometry

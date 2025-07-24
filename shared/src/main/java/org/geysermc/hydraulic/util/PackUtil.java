@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -36,9 +37,12 @@ public class PackUtil {
             String value = modelValue.substring(modelValue.indexOf("/") + 1);
 
             // Need to use the Bedrock value for vanilla textures
-            Map<String, String> textures = (Map<String, String>) TextureMappings.textureMappings().textures(type);
+            Map<String, Object> textures = (Map<String, Object>) TextureMappings.textureMappings().textures(type);
             if (textures != null) {
-                String textureName = textures.getOrDefault(value, "");
+                Object textureValue = textures.getOrDefault(value, "");
+
+                String textureName = textureValue instanceof List<?> ? ((List<String>) textureValue).getFirst() : (String) textureValue;
+
                 if (textureName.isEmpty()) {
                     textureName = value;
                 } else {

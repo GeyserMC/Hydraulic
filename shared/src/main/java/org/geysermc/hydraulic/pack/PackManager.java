@@ -71,6 +71,7 @@ public class PackManager {
     );
 
     private final HydraulicImpl hydraulic;
+    private final Path vanillaPath;
     private final List<PackModule<?>> modules = new ArrayList<>();
 
     private final ListMultimap<String, ModInfo> namespacesToMods = MultimapBuilder.hashKeys().arrayListValues(1).build();
@@ -82,6 +83,7 @@ public class PackManager {
 
     public PackManager(HydraulicImpl hydraulic) {
         this.hydraulic = hydraulic;
+        this.vanillaPath = hydraulic.dataFolder(Constants.MOD_ID).resolve("cache/vanilla-assets.zip");
     }
 
     /**
@@ -101,7 +103,19 @@ public class PackManager {
                     .toList()
             );
         }
-        modelProvider = createModelProvider(mods, modPacks);
+
+        try {
+            Files.createDirectories(this.getVanillaPath().getParent());
+        } catch (IOException e) {
+            LOGGER.error("Failed to create cache dir");
+        }
+
+        VanillaPackProvider.create(
+                this.getVanillaPath(),
+                new PackLogListener(LOGGER)
+        );
+
+        modelProvider = createModelProvider(mods, modPacks, this.getVanillaPath());
 
         this.packConverters = ServiceLoader.load(Converter.class)
             .stream()
@@ -154,6 +168,7 @@ public class PackManager {
                 .logListener(new PackLogListener(LoggerFactory.getLogger(LOGGER.getName() + "/" + mod.id())))
                 .converters(packConverters)
                 .output(packPath)
+                .vanillaPackPath(vanillaPath)
                 .textureSubdirectory(mod.namespace())
                 .packageHandler(new PackPackager());
 
@@ -287,7 +302,8 @@ public class PackManager {
      */
     private static ModelStitcher.Provider createModelProvider(
         Collection<ModInfo> mods,
-        Map<String, List<ResourcePack>> modPacks
+        Map<String, List<ResourcePack>> modPacks,
+        Path vanillaPath
     ) {
         final List<ResourcePack> flattenedPacks = mods.stream()
             .map(ModInfo::id)
@@ -295,16 +311,7 @@ public class PackManager {
             .flatMap(List::stream)
             .toList();
 
-        Path vanillaPackPath = HydraulicImpl.instance()
-            .dataFolder(Constants.MOD_ID)
-            .resolve("cache/vanilla-pack.zip");
-        try {
-            Files.createDirectories(vanillaPackPath.getParent());
-        } catch (IOException e) {
-            LOGGER.error("Failed to create cache dir");
-        }
-        VanillaPackProvider.create(vanillaPackPath, new PackLogListener(LOGGER));
-        ResourcePack vanillaResourcePack = MinecraftResourcePackReader.minecraft().readFromZipFile(vanillaPackPath);
+        ResourcePack vanillaResourcePack = MinecraftResourcePackReader.minecraft().readFromZipFile(vanillaPath);
 
         return key -> {
             for (final ResourcePack pack : flattenedPacks) {
@@ -327,5 +334,9 @@ public class PackManager {
 
     public ListMultimap<String, ResourceLocation> getModsToItems() {
         return modsToItems;
+    }
+
+    public Path getVanillaPath() {
+        return vanillaPath;
     }
 }
