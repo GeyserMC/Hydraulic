@@ -26,6 +26,7 @@ tasks {
 
     shadowJar {
         archiveClassifier.set("dev-shadow")
+        relocate("org.cloudburstmc", "org.geysermc.geyser.shaded.org.cloudburstmc")
     }
 
     jar {
