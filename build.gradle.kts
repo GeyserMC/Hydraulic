@@ -34,7 +34,5 @@ allprojects {
 
         maven("https://maven.fabricmc.net/")
         maven("https://maven.neoforged.net/releases")
-        maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-        maven("https://oss.sonatype.org/content/repositories/snapshots/")
     }
 }
