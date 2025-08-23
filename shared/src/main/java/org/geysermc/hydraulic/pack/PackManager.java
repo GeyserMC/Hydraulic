@@ -165,6 +165,7 @@ public class PackManager {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     boolean createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
         PackConverter converter = new PackConverter()
+                .packName(mod.name())
                 .logListener(new PackLogListener(LoggerFactory.getLogger(LOGGER.getName() + "/" + mod.id())))
                 .converters(packConverters)
                 .output(packPath)
