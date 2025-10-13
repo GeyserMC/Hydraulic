@@ -1,6 +1,6 @@
 package org.geysermc.hydraulic.block;
 
-import org.geysermc.pack.converter.converter.model.ModelStitcher;
+import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
 import team.unnamed.creative.blockstate.BlockState;
 

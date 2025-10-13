@@ -1,24 +1,33 @@
 package org.geysermc.hydraulic.fabric.test;
 
-import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.Consumable;
+import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.UseCooldown;
+import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
 import net.minecraft.world.item.equipment.ArmorMaterial;
 import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class ModItems {
@@ -129,6 +138,28 @@ public class ModItems {
                     .component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
                     .component(DataComponents.MAX_STACK_SIZE, 16)
                     .component(DataComponents.USE_COOLDOWN, new UseCooldown(3))
+    );
+
+    public static final Item IRAURI_INGOT = register(
+            "irauri_ingot",
+            Item::new,
+            new Item.Properties()
+                    .component(DataComponents.MAX_STACK_SIZE, 3)
+                    .component(DataComponents.RARITY, Rarity.EPIC)
+                    .component(DataComponents.LORE, new ItemLore(List.of(Component.literal("You cheater, there is no Irauri ore!").withStyle(ChatFormatting.YELLOW))))
+                    .component(DataComponents.CONSUMABLE, new Consumable(
+                            2.5f,
+                            ItemUseAnimation.NONE,
+                            Holder.direct(SoundEvents.HORSE_DEATH),
+                            false,
+                            List.of(new ApplyStatusEffectsConsumeEffect(
+                                    new MobEffectInstance(
+                                            MobEffects.LEVITATION,
+                                            -1, 255, false, false, false
+                                    )
+                            ))
+                    ))
+                    .component(DataComponents.USE_COOLDOWN, new UseCooldown(999999f, Optional.of(ResourceLocation.fromNamespaceAndPath(HydraulicTestMod.MOD_ID, "irauri_says_fly"))))
     );
 
     public static Item register(String name, Function<Item.Properties, Item> itemFactory, Item.Properties properties) {

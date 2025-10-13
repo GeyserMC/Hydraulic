@@ -5,7 +5,7 @@ import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.util.GeoUtil;
-import org.geysermc.pack.converter.converter.texture.TextureMappings;
+import org.geysermc.pack.converter.type.texture.TextureMappings;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

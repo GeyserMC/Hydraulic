@@ -5,7 +5,7 @@ import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.PackConverter;
-import org.geysermc.pack.converter.converter.model.ModelStitcher;
+import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
 import team.unnamed.creative.ResourcePack;
 

@@ -17,13 +17,13 @@ import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.pack.converter.CustomModelConverter;
+import org.geysermc.hydraulic.pack.modules.MetadataPackModule;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.converter.PackConverter;
-import org.geysermc.pack.converter.converter.ActionListener;
-import org.geysermc.pack.converter.converter.Converter;
-import org.geysermc.pack.converter.converter.model.ModelConverter;
-import org.geysermc.pack.converter.converter.model.ModelStitcher;
-import org.geysermc.pack.converter.data.ConversionData;
+import org.geysermc.pack.converter.pipeline.AssetConverters;
+import org.geysermc.pack.converter.pipeline.ConverterPipeline;
+import org.geysermc.pack.converter.type.model.ModelConverter;
+import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.geysermc.pack.converter.util.NioDirectoryFileTreeReader;
 import org.geysermc.pack.converter.util.VanillaPackProvider;
 import org.jetbrains.annotations.NotNull;
@@ -78,7 +78,7 @@ public class PackManager {
     private final ListMultimap<String, ResourceLocation> modsToBlocks = MultimapBuilder.hashKeys().arrayListValues().build();
     private final ListMultimap<String, ResourceLocation> modsToItems = MultimapBuilder.hashKeys().arrayListValues().build();
 
-    private List<? extends Converter<?>> packConverters;
+    private List<ConverterPipeline<?, ?>> packConverters;
     private ModelStitcher.Provider modelProvider;
 
     public PackManager(HydraulicImpl hydraulic) {
@@ -117,17 +117,14 @@ public class PackManager {
 
         modelProvider = createModelProvider(mods, modPacks, this.getVanillaPath());
 
-        this.packConverters = ServiceLoader.load(Converter.class)
-            .stream()
-            .map(ServiceLoader.Provider::get)
-            .map(c -> (Converter<?>)c)
-            .filter(Predicate.not(Converter::isExperimental))
-            .map(converter ->
-                converter instanceof ModelConverter && modelProvider != null
-                    ? new CustomModelConverter(modelProvider)
-                    : converter
-            )
-            .toList();
+        this.packConverters = new ArrayList<>(AssetConverters.converters(hydraulic.isDev())); // TODO CustomModelConverter, probably needs to be a packconverter option
+        this.packConverters.remove(AssetConverters.MODEL);
+        this.packConverters.remove(AssetConverters.MANIFEST);
+        this.packConverters.add(AssetConverters.create(
+                new CustomModelConverter(modelProvider),
+                AssetConverters.MODEL,
+                AssetConverters.MODEL
+        ));
 
         for (PackModule<?> module : ServiceLoader.load(PackModule.class)) {
             this.modules.add(module);
@@ -164,24 +161,18 @@ public class PackManager {
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
     boolean createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
+        List<ConverterPipeline<?, ?>> pipelines = new ArrayList<>(packConverters);
+        pipelines.add(AssetConverters.create(new MetadataPackModule(mod)));
+
         PackConverter converter = new PackConverter()
                 .packName(mod.name())
                 .logListener(new PackLogListener(LoggerFactory.getLogger(LOGGER.getName() + "/" + mod.id())))
-                .converters(packConverters)
+                .converters(pipelines)
                 .output(packPath)
                 .vanillaPackPath(vanillaPath)
                 .textureSubdirectory(mod.namespace())
                 .packageHandler(new PackPackager());
 
-        Map<Class<ConversionData>, List<ActionListener<ConversionData>>> actionListeners = new IdentityHashMap<>();
-        for (PackModule<?> module : this.modules) {
-            if (module instanceof ConvertablePackModule<?, ?> convertableModule) {
-                actionListeners.computeIfAbsent((Class<ConversionData>) convertableModule.conversionType(),
-                        e -> new ArrayList<>()).add((ConvertablePackModule<?, ConversionData>) convertableModule);
-            }
-        }
-
-        converter.actionListeners(actionListeners);
         converter.postProcessor((javaPack, bedrockPack) -> {
             for (PackModule<?> module : this.modules) {
                 PackPostProcessContext context = new PackPostProcessContext(this.hydraulic, mod, module, converter, javaPack, bedrockPack, packPath, modelProvider);

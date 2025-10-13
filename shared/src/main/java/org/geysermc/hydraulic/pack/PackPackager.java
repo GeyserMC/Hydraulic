@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
+// TODO Probably just do an empty pack check in PackConverter?
 /**
  * Packs the pack into a zip file unless its empty.
  * <p>
