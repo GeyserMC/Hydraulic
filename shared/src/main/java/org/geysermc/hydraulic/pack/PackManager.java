@@ -117,7 +117,7 @@ public class PackManager {
 
         modelProvider = createModelProvider(mods, modPacks, this.getVanillaPath());
 
-        this.packConverters = new ArrayList<>(AssetConverters.converters(hydraulic.isDev())); // TODO CustomModelConverter, probably needs to be a packconverter option
+        this.packConverters = new ArrayList<>(AssetConverters.converters(hydraulic.isDev()));
         this.packConverters.remove(AssetConverters.MODEL);
         this.packConverters.remove(AssetConverters.MANIFEST);
         this.packConverters.add(AssetConverters.create(

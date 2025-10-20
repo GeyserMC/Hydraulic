@@ -17,7 +17,6 @@ public class CustomModelConverter implements AssetExtractor<Model> {
 
     @Override
     public Collection<Model> extract(ResourcePack pack, ExtractionContext context) {
-        // TODO maybe parallel, if model stitching takes a lot of time
         return pack.models().stream()
                 .map(model -> new ModelStitcher(this.modelProvider, model, context.logListener()).stitch())
                 .toList();
