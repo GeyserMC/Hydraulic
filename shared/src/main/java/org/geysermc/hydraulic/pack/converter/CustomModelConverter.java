@@ -1,12 +1,14 @@
 package org.geysermc.hydraulic.pack.converter;
 
-import org.geysermc.pack.converter.converter.Converter;
-import org.geysermc.pack.converter.converter.model.ModelConverter;
-import org.geysermc.pack.converter.converter.model.ModelStitcher;
-import org.geysermc.pack.converter.data.ModelConversionData;
-import org.jetbrains.annotations.NotNull;
+import org.geysermc.pack.converter.pipeline.AssetExtractor;
+import org.geysermc.pack.converter.pipeline.ExtractionContext;
+import org.geysermc.pack.converter.type.model.ModelStitcher;
+import team.unnamed.creative.ResourcePack;
+import team.unnamed.creative.model.Model;
 
-public class CustomModelConverter extends ModelConverter {
+import java.util.Collection;
+
+public class CustomModelConverter implements AssetExtractor<Model> {
     private final ModelStitcher.Provider modelProvider;
 
     public CustomModelConverter(ModelStitcher.Provider modelProvider) {
@@ -14,7 +16,9 @@ public class CustomModelConverter extends ModelConverter {
     }
 
     @Override
-    public ModelConversionData createConversionData(@NotNull Converter.ConversionDataCreationContext context) {
-        return new ModelConversionData(context.inputDirectory(), context.outputDirectory(), modelProvider, context.vanillaResourcePack());
+    public Collection<Model> extract(ResourcePack pack, ExtractionContext context) {
+        return pack.models().stream()
+                .map(model -> new ModelStitcher(this.modelProvider, model, context.logListener()).stitch())
+                .toList();
     }
 }

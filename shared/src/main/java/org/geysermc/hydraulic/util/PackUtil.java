@@ -5,7 +5,7 @@ import com.google.common.hash.HashingOutputStream;
 import com.mojang.logging.LogUtils;
 import net.kyori.adventure.key.Key;
 import org.geysermc.hydraulic.Constants;
-import org.geysermc.pack.converter.converter.texture.TextureMappings;
+import org.geysermc.pack.converter.type.texture.TextureMappings;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 

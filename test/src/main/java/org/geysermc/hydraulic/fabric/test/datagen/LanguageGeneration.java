@@ -27,6 +27,7 @@ public class LanguageGeneration extends FabricLanguageProvider {
         translationBuilder.add(ModItems.BARREL_HORSE_ARMOR, "Barrel Horse Armor");
         translationBuilder.add(ModItems.BARREL_STICK, "Barrel Stick");
         translationBuilder.add(ModItems.BARREL_PACK, "Barrel Pack");
+        translationBuilder.add(ModItems.IRAURI_INGOT, "Irauri Ingot");
 
         translationBuilder.add(ModBlocks.GOLDEN_BARREL, "Golden Barrel");
     }

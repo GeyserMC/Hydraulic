@@ -36,7 +36,6 @@ import org.geysermc.geyser.util.MathUtils;
 import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.item.CreativeMappings;
-import org.geysermc.hydraulic.pack.ConvertablePackModule;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.context.PackContext;
@@ -47,8 +46,7 @@ import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.util.SingletonBlockGetter;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
-import org.geysermc.pack.converter.converter.model.ModelStitcher;
-import org.geysermc.pack.converter.data.ModelConversionData;
+import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import team.unnamed.creative.ResourcePack;
@@ -72,15 +70,13 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 @AutoService(PackModule.class)
-public class BlockPackModule extends ConvertablePackModule<BlockPackModule, ModelConversionData> {
+public class BlockPackModule extends PackModule<BlockPackModule> {
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
 
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
     private final Set<String> emptyModels = new HashSet<>();
 
     public BlockPackModule() {
-        super(ModelConversionData.class);
-
         this.listenOn(GeyserDefineCustomBlocksEvent.class, this::onDefineCustomBlocks);
 
         this.preProcess(this::preProcess);

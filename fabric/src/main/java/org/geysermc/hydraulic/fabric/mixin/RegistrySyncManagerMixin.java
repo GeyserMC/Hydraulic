@@ -17,6 +17,6 @@ public class RegistrySyncManagerMixin {
             cancellable = true
     )
     private static void doNotConfigureBedrock(ServerConfigurationPacketListenerImpl handler, MinecraftServer server, CallbackInfo ci) {
-        if (GeyserApi.api().isBedrockPlayer(handler.getOwner().getId())) ci.cancel();
+        if (GeyserApi.api().isBedrockPlayer(handler.getOwner().id())) ci.cancel();
     }
 }
