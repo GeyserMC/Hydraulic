@@ -2,8 +2,6 @@ package org.geysermc.hydraulic.pack.modules;
 
 import org.apache.commons.lang3.StringUtils;
 import org.geysermc.hydraulic.Constants;
-import org.geysermc.hydraulic.pack.PackModule;
-import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
@@ -12,10 +10,7 @@ import org.geysermc.pack.bedrock.resource.manifest.Header;
 import org.geysermc.pack.bedrock.resource.manifest.Modules;
 import org.geysermc.pack.converter.pipeline.*;
 import org.geysermc.pack.converter.type.base.PackManifestConverter;
-import org.geysermc.pack.converter.util.LogListener;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.metadata.pack.PackMeta;
 

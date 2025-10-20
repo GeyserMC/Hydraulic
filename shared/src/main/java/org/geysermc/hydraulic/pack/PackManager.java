@@ -22,7 +22,6 @@ import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.converter.PackConverter;
 import org.geysermc.pack.converter.pipeline.AssetConverters;
 import org.geysermc.pack.converter.pipeline.ConverterPipeline;
-import org.geysermc.pack.converter.type.model.ModelConverter;
 import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.geysermc.pack.converter.util.NioDirectoryFileTreeReader;
 import org.geysermc.pack.converter.util.VanillaPackProvider;
@@ -38,12 +37,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
