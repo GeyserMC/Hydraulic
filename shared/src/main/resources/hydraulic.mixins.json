@@ -9,7 +9,6 @@
     "ext.ItemTranslatorMixin",
     "ext.MinecraftResourcePackReaderImplMixin",
     "ext.InventoryUtilsMixin",
-    "ext.LocationAwareSlf4JLoggerMixin",
     "ext.ModelSerializerMixin"
   ],
   "injectors": {
