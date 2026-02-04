@@ -96,7 +96,7 @@ public class ComponentConverter {
             );
         });
         addComponentConversion(DataComponents.TOOL, (component, map, definition, options) -> {
-            JavaToolProperties.Builder toolProperties = JavaToolProperties.builder()
+            JavaTool.Builder toolProperties = JavaTool.builder()
                     .canDestroyBlocksInCreative(component.canDestroyBlocksInCreative())
                     .defaultMiningSpeed(component.defaultMiningSpeed());
 
@@ -104,7 +104,7 @@ public class ComponentConverter {
                 if (toolRule.speed().isEmpty()) continue;
 
                 toolProperties.rule(
-                        JavaToolProperties.Rule.of(toHolders(toolRule.blocks()), toolRule.speed().get())
+                        JavaTool.Rule.of(toHolders(toolRule.blocks()), toolRule.speed().get())
                 );
             }
 
