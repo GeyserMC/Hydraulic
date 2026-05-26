@@ -1,5 +1,8 @@
 package org.geysermc.hydraulic.mixin.ext;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -40,5 +43,21 @@ public class ModelSerializerMixin {
         }
 
         return instance.put(k, v);
+    }
+
+    @Redirect(
+        method = "readTextures(Lcom/google/gson/JsonElement;)Lteam/unnamed/creative/model/ModelTextures;",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/google/gson/JsonObject;get(Ljava/lang/String;)Lcom/google/gson/JsonElement;"
+        )
+    )
+    private static JsonElement redirectTextureFieldGet(JsonObject object, String memberName) {
+        JsonElement element = object.get(memberName);
+        if (element == null && "force_translucent".equals(memberName)) {
+            return new JsonPrimitive(false);
+        }
+
+        return element;
     }
 }

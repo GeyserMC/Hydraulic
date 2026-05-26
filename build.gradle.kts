@@ -1,3 +1,5 @@
+import org.gradle.api.plugins.JavaPluginExtension
+
 plugins {
     id("hydraulic.build-logic")
 }
@@ -9,10 +11,31 @@ val platforms = setOf(
     projects.test
 ).map { it -> project.project(it.path) }
 
+val localPackConverterProjects = setOf(
+    ":converter",
+    ":pack-schema-api",
+    ":bedrock-pack-schema"
+)
+
 subprojects {
     when (this) {
         in platforms -> plugins.apply("hydraulic.platform-conventions")
-        else -> plugins.apply("hydraulic.base-conventions")
+        else -> {
+            if (path in localPackConverterProjects) {
+                plugins.apply("java-library")
+
+                extensions.configure<JavaPluginExtension>("java") {
+                    sourceCompatibility = JavaVersion.VERSION_21
+                    targetCompatibility = JavaVersion.VERSION_21
+                }
+
+                tasks.withType<JavaCompile> {
+                    options.release.set(21)
+                }
+            } else {
+                plugins.apply("hydraulic.base-conventions")
+            }
+        }
     }
 }
 

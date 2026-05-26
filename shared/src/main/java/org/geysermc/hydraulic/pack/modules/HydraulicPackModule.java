@@ -9,11 +9,18 @@ import org.geysermc.pack.converter.util.JsonMappings;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
 @AutoService(PackModule.class)
 public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
+    private static final String POLYMER_BLOCK_PLACEHOLDER_TEXTURE_ID = "hydraulic:polymer_placeholder_block";
+    private static final String POLYMER_BLOCK_PLACEHOLDER_TEXTURE_PATH = "textures/blocks/hydraulic/polymer_placeholder_block";
+    private static final byte[] POLYMER_BLOCK_PLACEHOLDER_TEXTURE = Base64.getDecoder().decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+    );
+
     public HydraulicPackModule() {
         this.postProcess(context -> {
             Map<String, List<String>> mappings;
@@ -47,6 +54,10 @@ public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
 
             // Add the empty geometry
             context.bedrockResourcePack().addBlockModel(GeoUtil.empty("geometry." + Constants.MOD_ID + ".empty"), "empty.json");
+
+            // Add a visible last-resort Polymer block texture so fallback custom blocks are not invisible.
+            context.bedrockResourcePack().addExtraFile(POLYMER_BLOCK_PLACEHOLDER_TEXTURE, POLYMER_BLOCK_PLACEHOLDER_TEXTURE_PATH + ".png");
+            context.bedrockResourcePack().addBlockTexture(POLYMER_BLOCK_PLACEHOLDER_TEXTURE_ID, POLYMER_BLOCK_PLACEHOLDER_TEXTURE_PATH);
         });
     }
 

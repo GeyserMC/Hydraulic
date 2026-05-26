@@ -7,6 +7,7 @@ import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.HydraulicPlatform;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.storage.ModStorage;
+import org.geysermc.hydraulic.util.ImagePipelineDiagnostics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -49,6 +50,11 @@ public class HydraulicImpl implements EventRegistrar {
      */
     public void onServerStarting(@NotNull MinecraftServer server) {
         this.server = server;
+
+        if (!ImagePipelineDiagnostics.validate(this.dataFolder(Constants.MOD_ID).resolve("cache/imageio-diagnostics"))) {
+            LOGGER.error("Skipping Hydraulic pack manager initialization because the local Java image pipeline is not usable");
+            return;
+        }
 
         this.packManager.initialize();
     }

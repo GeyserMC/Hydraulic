@@ -72,6 +72,7 @@ import java.util.function.BiFunction;
 @AutoService(PackModule.class)
 public class BlockPackModule extends PackModule<BlockPackModule> {
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
+    private static final String POLYMER_BLOCK_PLACEHOLDER_TEXTURE_ID = "hydraulic:polymer_placeholder_block";
 
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
     private final Set<String> emptyModels = new HashSet<>();
@@ -212,6 +213,10 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                 ModelDefinition definition = getModel(context, blockLocation, state);
                 if (definition == null) {
+                    if (state.equals(block.defaultBlockState())) {
+                        context.logger().warn("Using visible fallback block model for {} because no generated blockstate/model mapping was available", blockLocation);
+                        baseComponentBuilder = fallbackVisibleBlockComponents(state);
+                    }
                     continue;
                 }
 
@@ -438,7 +443,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     private ModelDefinition getModel(@NotNull PackContext<?> context, @NotNull Identifier blockLocation, @NotNull BlockState state) {
         StateDefinition definition = this.blockStates.get(blockLocation.toString());
         if (definition == null) {
-            context.logger().warn("Missing blockstate for block {}", blockLocation);
+            context.logger().debug("Missing blockstate for block {}", blockLocation);
             return null;
         }
 
@@ -646,6 +651,20 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         return mapping;
+    }
+
+    private static CustomBlockComponents.Builder fallbackVisibleBlockComponents(BlockState state) {
+        String renderMethod = state.canOcclude() ? "opaque" : "blend";
+        return CustomBlockComponents.builder()
+                .geometry(GeometryComponent.builder()
+                        .identifier("minecraft:geometry.full_block")
+                        .build())
+                .materialInstance("*", MaterialInstance.builder()
+                        .texture(POLYMER_BLOCK_PLACEHOLDER_TEXTURE_ID)
+                        .renderMethod(renderMethod)
+                        .faceDimming(true)
+                        .ambientOcclusion(true)
+                        .build());
     }
 
     private static BoxComponent createBoxComponent(VoxelShape shape) {

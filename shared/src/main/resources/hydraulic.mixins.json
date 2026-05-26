@@ -9,7 +9,10 @@
     "ext.ItemTranslatorMixin",
     "ext.MinecraftResourcePackReaderImplMixin",
     "ext.InventoryUtilsMixin",
-    "ext.ModelSerializerMixin"
+    "ext.ModelSerializerMixin",
+    "ext.PackMetaCodecMixin",
+    "ext.PackFormatMixin",
+    "ext.PackFormatSerializerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

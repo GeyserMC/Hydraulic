@@ -65,3 +65,18 @@ include(":fabric")
 include(":neoforge")
 
 include(":test")
+
+val packConverterProjectDir = providers.gradleProperty("packConverterProjectDir")
+    .map { file(it) }
+    .orElse(file("../PackConverter"))
+    .get()
+
+if (packConverterProjectDir.isDirectory) {
+    include(":converter")
+    include(":pack-schema-api")
+    include(":bedrock-pack-schema")
+
+    project(":converter").projectDir = packConverterProjectDir.resolve("converter")
+    project(":pack-schema-api").projectDir = packConverterProjectDir.resolve("pack-schema/api")
+    project(":bedrock-pack-schema").projectDir = packConverterProjectDir.resolve("pack-schema/bedrock")
+}

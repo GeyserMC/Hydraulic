@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,6 +65,18 @@ public class PackListener {
 
     @Subscribe(postOrder = PostOrder.LATE)
     public void onLoadResourcePacks(GeyserDefineResourcePacksEvent event) {
+        PolymerDiagnosticReport diagnosticReport = this.manager.polymerDiagnosticReport();
+        boolean touchedPolymer = diagnosticReport != null && diagnosticReport.shouldWrite();
+
+        if (this.manager.hasPolymerInstalled() && !this.manager.hasGeneratedPolymerPacks()) {
+            if (this.manager.refreshPolymerResourcePacks("resource-pack-event", 0L)) {
+                LOGGER.info("Polymer generated resource pack appeared after the initial scan; continuing with conversion");
+                touchedPolymer = true;
+            } else if (this.manager.delayedPolymerDiscoveryIfNeeded()) {
+                touchedPolymer = true;
+            }
+        }
+
         // Check if hydraulic has updated since the last pack conversion
         // This is so we can regenerate packs on update in case the pack generation logic has changed
         ModInfo hydraulicMod = this.hydraulic.mod(Constants.MOD_ID);
@@ -75,7 +88,7 @@ public class PackListener {
 
         // Go over all mods and load the pack or mark them for conversion
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
-        for (ModInfo mod : this.hydraulic.mods()) {
+        for (ModInfo mod : this.manager.conversionTargets()) {
             if (PackManager.IGNORED_MODS.contains(mod.id())) {
                 continue;
             }
@@ -85,9 +98,49 @@ public class PackListener {
                 continue;
             }
 
+            if (!PackManager.isPolymerGeneratedPack(mod) && this.manager.shouldSkipDirectConversionForGeneratedPolymerPack(mod)) {
+                LOGGER.info("Skipping direct conversion for Polymer-backed mod {} because generated Polymer pack is available", mod.id());
+                if (diagnosticReport != null) {
+                    diagnosticReport.recordDirectConversionSkipped(
+                            mod,
+                            "generated Polymer pack is available and direct mod-pack conversion is known to duplicate or fail for this Polymer-backed mod"
+                    );
+                }
+                touchedPolymer = true;
+                continue;
+            }
+
             ModStorage storage = this.hydraulic.modStorage(mod);
 
             Path packPath = storage.pack();
+            boolean polymerPack = PackManager.isPolymerGeneratedPack(mod);
+            if (polymerPack) {
+                touchedPolymer = true;
+            }
+
+            if (polymerPack && !this.hydraulic.isDev()) {
+                if (this.manager.isPolymerCacheCurrent(mod, packPath)) {
+                    LOGGER.info("Using cached Polymer conversion for {} ({} bytes)", mod.id(), fileSize(packPath));
+                    if (diagnosticReport != null) {
+                        diagnosticReport.recordCacheStatus(mod, "hit", packPath);
+                        diagnosticReport.recordConversionResult(mod, packPath, fileSize(packPath), 0, 0);
+                    }
+                    event.register(ResourcePack.create(PackCodec.path(packPath)), PriorityOption.NORMAL);
+                    continue;
+                }
+
+                LOGGER.info("Polymer pack changed, reconverting {}", mod.id());
+                if (diagnosticReport != null) {
+                    diagnosticReport.recordCacheStatus(mod, "miss", packPath);
+                }
+                packsToLoad.put(mod.id(), Pair.of(mod, packPath));
+                continue;
+            }
+
+            if (polymerPack && diagnosticReport != null) {
+                diagnosticReport.recordCacheStatus(mod, "miss", packPath);
+            }
+
             if (this.hydraulic.isDev() || hydraulicUpdated || checkNeedsConversion(mod, packPath)) {
                 packsToLoad.put(mod.id(), Pair.of(mod, packPath));
             } else {
@@ -98,6 +151,9 @@ public class PackListener {
         }
 
         if (packsToLoad.isEmpty()) {
+            if (touchedPolymer && diagnosticReport != null) {
+                diagnosticReport.write();
+            }
             return;
         }
 
@@ -110,11 +166,44 @@ public class PackListener {
             futures.add(CompletableFuture.runAsync(() -> {
                 LOGGER.info("Converting pack for mod {}", entry.getKey());
                 try {
-                    if (this.manager.createPack(entry.getValue().getLeft(), entry.getValue().getRight())) {
-                        event.register(ResourcePack.create(PackCodec.path(entry.getValue().getRight())), PriorityOption.NORMAL);
+                    ModInfo mod = entry.getValue().getLeft();
+                    Path packPath = entry.getValue().getRight();
+                    if (this.manager.createPack(mod, packPath)) {
+                        if (PackManager.isPolymerGeneratedPack(mod)) {
+                            this.manager.writePolymerCacheMetadata(mod, packPath);
+                            if (diagnosticReport != null) {
+                                diagnosticReport.recordCacheStatus(mod, "reconverted", packPath);
+                            }
+                        }
+                        event.register(ResourcePack.create(PackCodec.path(packPath)), PriorityOption.NORMAL);
+                    } else if (PackManager.isPolymerGeneratedPack(mod) && this.manager.hasPolymerCache(packPath)) {
+                        LOGGER.warn("Polymer conversion failed for {}; registering last known good cached conversion at {}", mod.id(), packPath);
+                        if (diagnosticReport != null) {
+                            diagnosticReport.recordCacheStatus(mod, "last-known-good", packPath);
+                            diagnosticReport.recordConversionResult(mod, packPath, fileSize(packPath), 0, 0);
+                        }
+                        event.register(ResourcePack.create(PackCodec.path(packPath)), PriorityOption.NORMAL);
+                    } else if (PackManager.isPolymerGeneratedPack(mod)) {
+                        LOGGER.warn("Polymer conversion failed for {}; no cached conversion is available, skipping this generated pack", mod.id());
+                        if (diagnosticReport != null) {
+                            diagnosticReport.recordCacheStatus(mod, "failed-no-cache", packPath);
+                        }
                     }
                 } catch (Throwable t) {
+                    ModInfo mod = entry.getValue().getLeft();
+                    Path packPath = entry.getValue().getRight();
                     LOGGER.error("Failed to convert pack for mod {}", entry.getKey(), t);
+                    if (PackManager.isPolymerGeneratedPack(mod) && diagnosticReport != null) {
+                        diagnosticReport.recordFatalError(mod, t);
+                    }
+                    if (PackManager.isPolymerGeneratedPack(mod) && this.manager.hasPolymerCache(packPath)) {
+                        LOGGER.warn("Registering last known good cached Polymer conversion for {} after conversion error", mod.id());
+                        if (diagnosticReport != null) {
+                            diagnosticReport.recordCacheStatus(mod, "last-known-good", packPath);
+                            diagnosticReport.recordConversionResult(mod, packPath, fileSize(packPath), 0, 0);
+                        }
+                        event.register(ResourcePack.create(PackCodec.path(packPath)), PriorityOption.NORMAL);
+                    }
                 }
             }, THREAD_POOL));
         }
@@ -123,6 +212,9 @@ public class PackListener {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         LOGGER.info("Converted {} packs for mods in {}", packsToLoad.size(), FormatUtil.humanReadableFormat(System.currentTimeMillis() - start));
+        if (touchedPolymer && diagnosticReport != null) {
+            diagnosticReport.write();
+        }
     }
 
     /**
@@ -149,5 +241,16 @@ public class PackListener {
         String modUUID = PackUtil.getModUUID(mod.roots()).toString();
 
         return !modUUID.equals(packUUID);
+    }
+
+    private static long fileSize(Path path) {
+        try {
+            if (Files.isRegularFile(path)) {
+                return Files.size(path);
+            }
+        } catch (IOException ex) {
+            LOGGER.debug("Unable to read file size for {}", path, ex);
+        }
+        return -1L;
     }
 }
