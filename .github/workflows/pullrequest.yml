@@ -29,4 +29,3 @@ jobs:
         with:
           artifacts: | 
             fabric/build/libs/hydraulic-fabric.jar
-            neoforge/build/libs/hydraulic-neoforge.jar
