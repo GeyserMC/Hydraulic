@@ -25,7 +25,7 @@ you're interested in helping out with Hydraulic.
 
 ## Links:
 - Website: https://geysermc.org
-- Docs: https://wiki.geysermc.org/geyser/
-- Download: https://geysermc.org/download
+- Docs: https://geysermc.org/wiki/other/hydraulic
+- Download: https://geysermc.org/download?project=other-projects&hydraulic=expanded
 - Discord: https://discord.gg/geysermc
 - Donate: https://opencollective.com/geysermc
