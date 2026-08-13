@@ -12,6 +12,7 @@ import org.geysermc.geyser.api.pack.ResourcePack;
 import org.geysermc.geyser.api.pack.option.PriorityOption;
 import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
+import org.geysermc.hydraulic.pack.dump.DumpRegistry;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.FormatUtil;
@@ -75,6 +76,7 @@ public class PackListener {
 
         // Go over all mods and load the pack or mark them for conversion
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
+        List<DumpRegistry.PackEntry> allPacks = new ArrayList<>();
         for (ModInfo mod : this.hydraulic.mods()) {
             if (PackManager.IGNORED_MODS.contains(mod.id())) {
                 continue;
@@ -88,6 +90,7 @@ public class PackListener {
             ModStorage storage = this.hydraulic.modStorage(mod);
 
             Path packPath = storage.pack();
+            allPacks.add(new DumpRegistry.PackEntry(mod.id(), packPath));
             if (this.hydraulic.isDev() || hydraulicUpdated || checkNeedsConversion(mod, packPath)) {
                 packsToLoad.put(mod.id(), Pair.of(mod, packPath));
             } else {
@@ -123,6 +126,13 @@ public class PackListener {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         LOGGER.info("Converted {} packs for mods in {}", packsToLoad.size(), FormatUtil.humanReadableFormat(System.currentTimeMillis() - start));
+
+        // Write the standalone dump if configured (system property hydraulic.dumpDir or
+        // environment variable HYDRAULIC_DUMP_DIR) (#18)
+        Path dumpDir = DumpRegistry.configuredDir();
+        if (dumpDir != null) {
+            this.hydraulic.getDumpRegistry().write(dumpDir, allPacks);
+        }
     }
 
     /**

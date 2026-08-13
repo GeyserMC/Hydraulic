@@ -284,7 +284,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
                 customItemDefinition.bedrockOptions(customItemOptions);
 
-                event.register(customItemDefinition.build());
+                // Capture the definition for standalone dump support (#18)
+                NonVanillaCustomItemDefinition built = customItemDefinition.build();
+                context.hydraulic().getDumpRegistry().addItem(built);
+                event.register(built);
             } catch (Exception e) {
                 context.logger().error("Unable to register {}:", itemLocation, e);
             }

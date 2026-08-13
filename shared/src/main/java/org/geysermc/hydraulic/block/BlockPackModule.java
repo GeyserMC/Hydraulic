@@ -389,6 +389,13 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             builder.components(componentsBuilder.build());
 
             CustomBlockData blockData = builder.build();
+            // Capture the definition for standalone dump support (#18); never let a dump failure
+            // prevent the actual block registration
+            try {
+                context.hydraulic().getDumpRegistry().addBlock(blockData);
+            } catch (Throwable t) {
+                context.logger().warn("Failed to capture block {} for dump", blockLocation, t);
+            }
             try {
                 event.register(blockData);
             } catch (IllegalArgumentException e) {
