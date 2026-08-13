@@ -5,6 +5,7 @@ import org.geysermc.geyser.api.event.EventRegistrar;
 import org.geysermc.hydraulic.config.ConfigLoader;
 import org.geysermc.hydraulic.config.HydraulicConfig;
 import org.geysermc.hydraulic.pack.PackManager;
+import org.geysermc.hydraulic.pack.dump.DumpRegistry;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.HydraulicPlatform;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -33,6 +34,7 @@ public class HydraulicImpl implements EventRegistrar {
     private final HydraulicBootstrap bootstrap;
     private final PackManager packManager;
     private final HydraulicConfig config;
+    private final DumpRegistry dumpRegistry = new DumpRegistry();
 
     private final Map<String, ModStorage> modStorage = new HashMap<>();
 
@@ -152,7 +154,11 @@ public class HydraulicImpl implements EventRegistrar {
     }
 
     public PackManager getPackManager() {
-        return packManager;
+        return this.packManager;
+    }
+
+    public DumpRegistry getDumpRegistry() {
+        return this.dumpRegistry;
     }
 
     public boolean isDev() {
