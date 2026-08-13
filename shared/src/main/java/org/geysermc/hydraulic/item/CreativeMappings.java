@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.item;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -108,7 +109,9 @@ public class CreativeMappings {
                 List.of(BlockTags.LOGS)
             ), new CreativeMapping(ItemGroup.LOGS, CreativeCategory.NATURE));
 
-            // TODO Remove, these are added differently to bedrock https://wiki.bedrock.dev/visuals/retexturing-spawn-eggs.html
+            // Vanilla spawn eggs are retextured on Bedrock rather than added as custom items
+            // (https://wiki.bedrock.dev/visuals/retexturing-spawn-eggs.html), but modded spawn
+            // eggs still benefit from landing in the mob eggs creative group.
             put(new CreativeMappingTarget(
                 List.of(SpawnEggItem.class),
                 List.of(),
@@ -249,7 +252,7 @@ public class CreativeMappings {
             ), new CreativeMapping(CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
-                List.of(BowItem.class, ShearsItem.class), // TODO: Armor item class is now missing, would require components to check or a tag
+                List.of(BowItem.class, ShearsItem.class),
                 List.of(),
                 List.of(),
                 List.of()
@@ -298,6 +301,12 @@ public class CreativeMappings {
     private static CreativeMapping getMapping(Item item) {
         Class<? extends Item> itemClass = item.getClass();
         ItemStack itemStack = item.getDefaultInstance();
+
+        // Armor items no longer have a common superclass in 26.2, so detect them by component.
+        // This must run before the generic Item.class fallback below.
+        if (item.components().has(DataComponents.EQUIPPABLE)) {
+            return new CreativeMapping(CreativeCategory.EQUIPMENT);
+        }
 
         for (Map.Entry<CreativeMappingTarget, CreativeMapping> entry : CREATIVE_MAPPINGS.entrySet()) {
             CreativeMappingTarget target = entry.getKey();

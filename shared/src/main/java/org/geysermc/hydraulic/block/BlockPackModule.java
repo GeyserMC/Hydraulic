@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.api.block.custom.CustomBlockPermutation;
@@ -247,10 +248,17 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .identifier(geoName)
                             .build());
 
-                    // TODO: This is not fully correct. On Bedrock, the shape rotates with
-                    //       the block, so the collision box will need to be rotated back here
+                    // Bedrock rotates the rendered model by the transformation component above,
+                    // and takes the collision/selection box with it. Rotate the Java shape back
+                    // so the box matches the rotated model.
                     VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+                    int rx = definition.variant().x();
+                    int ry = definition.variant().y();
+                    if (rx != 0 || ry != 0) {
+                        shape = rotateShape(shape, rx, ry);
+                        collisionShape = rotateShape(collisionShape, rx, ry);
+                    }
 
                     componentsBuilder.selectionBox(createBoxComponent(shape));
                     componentsBuilder.collisionBox(createBoxComponent(collisionShape));
@@ -260,13 +268,21 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .build());
                 }
 
-                // TODO: Work this out based on block state/texture? as this isn't perfect
+                // Work out the render method from the model parent. Cross models (flowers etc.)
+                // and cutout-style models need alpha testing, everything else follows occlusion.
                 // https://wiki.bedrock.dev/blocks/block-components.html#render-methods
                 String renderMethod = state.canOcclude() ? "opaque" : "blend";
-
-                // If the model is a cross block (EG a flower), we need to use alpha_test_single_sided
-                if (model.parent() != null && model.parent().value().equals("block/cross")) {
-                    renderMethod = "alpha_test_single_sided";
+                if (model.parent() != null) {
+                    String parent = model.parent().value();
+                    if (parent.equals("block/cross") || parent.equals("block/tinted_cross")
+                            || parent.equals("block/crop") || parent.equals("block/template_orientable_trapdoor")
+                            || parent.endsWith("_cross") || parent.contains("/cross")) {
+                        renderMethod = "alpha_test_single_sided";
+                    } else if (parent.equals("block/template_glazed_terracotta") || parent.contains("glass")
+                            || parent.contains("ice") || parent.contains("leaves") || parent.contains("carpet")) {
+                        // Semi-transparent blocks render best with blend
+                        renderMethod = "blend";
+                    }
                 }
 
                 Materials materials = context.storage().materials();
@@ -398,7 +414,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 JavaBlockState.Builder javaBlockStateBuilder = JavaBlockState.builder()
                         .identifier(BlockStateParser.serialize(state))
                         .javaId(Block.getId(state))
-                        .blockHardness(block.defaultDestroyTime()) // TODO: Check
+                        .blockHardness(Math.max(0, block.defaultDestroyTime())) // Bedrock requires non-negative; bedrock-like blocks report -1
                         .canBreakWithHand(!state.requiresCorrectToolForDrops())
                         .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
                         .stateGroupId(blockId)
@@ -645,6 +661,40 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         return mapping;
+    }
+
+    /**
+     * Rotates a voxel shape around the block center (0.5, 0.5, 0.5), Y axis first then X axis,
+     * by the given angles in degrees. Used to counteract Bedrock rotating the collision box
+     * along with the block model.
+     */
+    private static VoxelShape rotateShape(VoxelShape shape, int rx, int ry) {
+        if (rx == 0 && ry == 0) {
+            return shape;
+        }
+
+        double cosY = Math.cos(Math.toRadians(ry));
+        double sinY = Math.sin(Math.toRadians(ry));
+        double cosX = Math.cos(Math.toRadians(rx));
+        double sinX = Math.sin(Math.toRadians(rx));
+
+        VoxelShape result = Shapes.empty();
+        for (AABB box : shape.toAabbs()) {
+            // Rotate around Y axis
+            double minX = 0.5 + (box.minX - 0.5) * cosY - (box.minZ - 0.5) * sinY;
+            double minZ = 0.5 + (box.minX - 0.5) * sinY + (box.minZ - 0.5) * cosY;
+            double maxX = 0.5 + (box.maxX - 0.5) * cosY - (box.maxZ - 0.5) * sinY;
+            double maxZ = 0.5 + (box.maxX - 0.5) * sinY + (box.maxZ - 0.5) * cosY;
+
+            // Rotate around X axis
+            double minY = 0.5 + (box.minY - 0.5) * cosX - (minZ - 0.5) * sinX;
+            double rotZ1 = 0.5 + (box.minY - 0.5) * sinX + (minZ - 0.5) * cosX;
+            double maxY = 0.5 + (box.maxY - 0.5) * cosX - (maxZ - 0.5) * sinX;
+            double rotZ2 = 0.5 + (box.maxY - 0.5) * sinX + (maxZ - 0.5) * cosX;
+
+            result = Shapes.or(result, Shapes.create(minX, minY, Math.min(rotZ1, rotZ2), maxX, maxY, Math.max(rotZ1, rotZ2)));
+        }
+        return result;
     }
 
     private static BoxComponent createBoxComponent(VoxelShape shape) {

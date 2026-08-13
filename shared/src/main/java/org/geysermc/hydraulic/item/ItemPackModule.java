@@ -71,8 +71,23 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             }
         } else if (itemModel instanceof SelectItemModel selectModel) { // See if we can actually do select models here
             handleModel(context, selectModel.fallback(), itemLocation);
-        } else if (itemModel instanceof CompositeItemModel compositeModel) { // TODO: See if we can stitch together item models, for now this will use just the first model
-            handleModel(context, compositeModel.models().getFirst(), itemLocation);
+        } else if (itemModel instanceof CompositeItemModel compositeModel) {
+            // Composite models contain multiple models selected by condition (e.g. damage-based
+            // items). We can't stitch them yet, so use the first model that resolves to a known
+            // item shape (2D icon / handheld); fall back to the first model otherwise.
+            boolean matched = false;
+            for (ItemModel subModel : compositeModel.models()) {
+                int iconsBefore = itemsWith2dIcon.size();
+                int handheldBefore = handheldItems.size();
+                handleModel(context, subModel, itemLocation);
+                if (itemsWith2dIcon.size() > iconsBefore || handheldItems.size() > handheldBefore) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched && !compositeModel.models().isEmpty()) {
+                handleModel(context, compositeModel.models().getFirst(), itemLocation);
+            }
         } else if (itemModel instanceof RangeDispatchItemModel rangeDispatchModel) {
             handleModel(context, rangeDispatchModel.fallback(), itemLocation);
         }
@@ -159,7 +174,15 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             }
 
             ModelTexture layer0 = layers.getFirst();
-            String outputLoc = getOutputFromModel(context, layer0.key()); // TODO: sort this out, layer0.key() can be null, but the method we use doesn't want that
+            Key layer0Key = layer0.key();
+            if (layer0Key == null) {
+                // The model didn't reference a texture by key (rare - usually only happens with
+                // composite/dynamic models). Fall back to the item's own id as the texture name.
+                context.logger().warn("Item {} has no layer0 texture key, using item id as texture", itemLocation);
+                bedrockPack.addItemTexture(itemLocation.toString(), itemLocation.getPath());
+                continue;
+            }
+            String outputLoc = getOutputFromModel(context, layer0Key);
             bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
         }
     }

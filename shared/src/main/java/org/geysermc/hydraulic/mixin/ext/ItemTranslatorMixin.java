@@ -1,59 +1,60 @@
 package org.geysermc.hydraulic.mixin.ext;
 
-import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.geysermc.geyser.registry.type.ItemMapping;
+import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.item.ItemTranslator;
 import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
+import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponents;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Adds a lore line with the owning mod's name to non-vanilla items so Bedrock players can tell
+ * where an item comes from. Replaces the pre-1.20.5 translateDisplayProperties approach.
+ */
 @Mixin(value = ItemTranslator.class, remap = false)
 public class ItemTranslatorMixin {
 
-    // TODO Rework for 1.20.5
-    //      Since translateDisplayProperties is no longer a method and the NBT library has changed
-//    @ModifyReturnValue(
-//            method = "translateDisplayProperties(Lorg/geysermc/geyser/session/GeyserSession;Lcom/github/steveice10/opennbt/tag/builtin/CompoundTag;Lorg/geysermc/geyser/registry/type/ItemMapping;C)Lcom/github/steveice10/opennbt/tag/builtin/CompoundTag;",
-//            at = @At("RETURN")
-//    )
-//    private static CompoundTag translateDisplayProperties(
-//        CompoundTag original,
-//        @Local(argsOnly = true) CompoundTag tag,
-//        @Local(argsOnly = true) ItemMapping mapping
-//    ) {
-//        CompoundTag newNbt = tag;
-//        if (newNbt == null) {
-//            newNbt = new CompoundTag("nbt");
-//            CompoundTag display = new CompoundTag("display");
-//            display.put(new ListTag("Lore"));
-//            newNbt.put(display);
-//        }
-//
-//        CompoundTag compoundTag = newNbt.get("display");
-//        if (compoundTag == null) {
-//            compoundTag = new CompoundTag("display");
-//        }
-//        ListTag listTag = compoundTag.get("Lore");
-//
-//        if (listTag == null) {
-//            listTag = new ListTag("Lore");
-//        }
-//
-//        String identifier = mapping.getJavaItem().javaIdentifier();
-//
-//        // Get the mod name from the identifier
-//        String modId = identifier.substring(0, identifier.indexOf(":"));
-//        List<ModInfo> mods = HydraulicImpl.instance().getPackManager().getNamespacesToMods().get(modId);
-//        String modName = !mods.isEmpty() ? mods.get(0).name() : "Minecraft";
-//
-//        listTag.add(new StringTag("", "§r§9§o" + modName));
-//        compoundTag.put(listTag);
-//        newNbt.put(compoundTag);
-//
-//        return newNbt;
-//    }
+    @WrapOperation(
+        method = "translateToBedrock(Lorg/geysermc/geyser/session/GeyserSession;Lorg/geysermc/mcprotocollib/protocol/data/game/item/ItemStack;)Lorg/geysermc/mcprotocollib/protocol/data/game/item/ItemData;",
+        at = @At(
+            value = "INVOKE",
+            target = "translateToBedrock(Lorg/geysermc/geyser/session/GeyserSession;Lnet/minecraft/world/item/Item;Lorg/geysermc/geyser/registry/type/ItemMapping;ILorg/geysermc/mcprotocollib/protocol/data/game/item/component/DataComponents;)Lorg/geysermc/mcprotocollib/protocol/data/game/item/ItemData$Builder;"
+        )
+    )
+    private static ItemData.Builder wrapTranslateToBedrock(Operation<ItemData.Builder> original, GeyserSession session, Item javaItem, ItemMapping bedrockItem, int count, DataComponents components) {
+        if (components != null) {
+            try {
+                Identifier identifier = BuiltInRegistries.ITEM.getKey(javaItem);
+                if (!identifier.getNamespace().equals("minecraft")) {
+                    List<ModInfo> mods = HydraulicImpl.instance().getPackManager().getNamespacesToMods().get(identifier.getNamespace());
+                    String modName = mods.isEmpty() ? identifier.getNamespace() : mods.get(0).name();
+
+                    List<Component> lore = new ArrayList<>(components.getOrDefault(DataComponentTypes.LORE, List.of()));
+                    lore.add(Component.text(modName)
+                            .color(NamedTextColor.BLUE)
+                            .decoration(TextDecoration.ITALIC, TextDecoration.State.TRUE));
+                    components.put(DataComponentTypes.LORE, lore);
+                }
+            } catch (Exception ignored) {
+                // Never break item translation because of the lore addition
+            }
+        }
+
+        return original.call(session, javaItem, bedrockItem, count, components);
+    }
 }

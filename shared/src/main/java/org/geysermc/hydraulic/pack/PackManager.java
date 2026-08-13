@@ -141,10 +141,11 @@ public class PackManager {
         }
 
         // The library's VanillaPackProvider hardcodes version "1.21.11" when downloading the vanilla
-        // client jar (TODO De-hardcode this upstream), which breaks parent model resolution for
-        // newer content (e.g. hanging sign templates missing in 1.21.11, so custom hanging signs
-        // render as missing models). Generate the vanilla pack from the server's actual Minecraft
-        // version first; the library provider then skips its own download since the file exists.
+        // client jar (upstream limitation; de-hardcoding requires a pack-converter change), which
+        // breaks parent model resolution for newer content (e.g. hanging sign templates missing in
+        // 1.21.11, so custom hanging signs render as missing models). Generate the vanilla pack from
+        // the server's actual Minecraft version first; the library provider then skips its own
+        // download since the file exists.
         ensureVanillaPack(this.getVanillaPath());
 
         VanillaPackProvider.create(
