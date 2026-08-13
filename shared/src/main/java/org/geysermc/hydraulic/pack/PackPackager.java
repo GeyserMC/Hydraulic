@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-// TODO Probably just do an empty pack check in PackConverter?
 /**
  * Packs the pack into a zip file unless its empty.
  * <p>
