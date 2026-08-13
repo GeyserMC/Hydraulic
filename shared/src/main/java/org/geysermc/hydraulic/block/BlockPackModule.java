@@ -162,7 +162,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             if (value.startsWith("block/")) {
                 String cleanPath = value.replace("block/", "").replace(".png", "");
 
-                String outputLoc = String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + cleanPath).replace(".png", "");
+                String outputLoc = PackUtil.limitPathLength(String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + cleanPath).replace(".png", ""), 75);
                 String id = key.namespace() + ":" + cleanPath;
                 bedrockPack.addBlockTexture(id, outputLoc);
 

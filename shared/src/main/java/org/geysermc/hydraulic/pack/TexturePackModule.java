@@ -4,6 +4,7 @@ import net.kyori.adventure.key.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.pack.context.PackContext;
+import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.converter.type.texture.TextureConverter;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,6 +21,6 @@ public abstract class TexturePackModule<T extends PackModule<T>> extends PackMod
         String remaining = StringUtils.substringAfter(key.value(), "/");
         String finalDir = TextureConverter.DIRECTORY_LOCATIONS.getOrDefault(directory, directory) + "/" + packContext.mod().id();
 
-        return String.format(Constants.BEDROCK_TEXTURE_LOCATION, finalDir + "/" + remaining);
+        return PackUtil.limitPathLength(String.format(Constants.BEDROCK_TEXTURE_LOCATION, finalDir + "/" + remaining), 75);
     }
 }
