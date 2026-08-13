@@ -11,6 +11,9 @@ description='''${description}'''
 [[mixins]]
 config = "hydraulic.mixins.json"
 
+[[mixins]]
+config = "hydraulic-neoforge.mixins.json"
+
 [[dependencies.hydraulic]]
     modId="neoforge"
     type="required"
