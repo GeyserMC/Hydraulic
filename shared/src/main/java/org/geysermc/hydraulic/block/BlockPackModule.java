@@ -324,7 +324,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             }
 
                             componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
-                                    .texture(PackUtil.getTextureName(entry.getValue()))
+                                    .texture(resolveTextureName(context, entry.getValue()))
                                     .renderMethod(renderMethod)
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
@@ -333,7 +333,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     }
                 } else {
                     componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(PackUtil.getTextureName(key.toString()))
+                            .texture(resolveTextureName(context, key.toString()))
                             .renderMethod(renderMethod)
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
@@ -420,7 +420,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                         .stateGroupId(blockId)
                         .pistonBehavior(pistonBehavior.name());
 
-                // TODO Work out if we need to prefix with _item so we can remove InventoryUtilsMixin
+                // Bedrock block items are registered as "<block>_item" by Geyser; the Java block id
+                // used as pick item is resolved to the bedrock item id by Geyser's item registry.
                 try {
                     ItemStack pickItem = state.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, false);
                     String itemId = BuiltInRegistries.ITEM.getKey(pickItem.getItem()).toString();
@@ -447,6 +448,22 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 event.registerOverride(javaBlockStateBuilder.build(), customBlockState);
             }
         }
+    }
+
+    /**
+     * Resolves a texture name for Bedrock. If a mod references a "minecraft:" texture that it
+     * actually ships itself (bad model references), use the mod's own texture instead.
+     */
+    private static String resolveTextureName(@NotNull PackContext<?> context, @NotNull String modelName) {
+        if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
+            String value = modelName.substring(modelName.indexOf(':') + 1);
+            // The mod's textures live under assets/<mod>/textures/<value>.png; a mod may reference
+            // a "minecraft:" texture it actually ships itself (bad model references)
+            if (context.mod().resolveFile("assets/" + context.mod().namespace() + "/textures/" + value + ".png") != null) {
+                return value;
+            }
+        }
+        return PackUtil.getTextureName(modelName);
     }
 
     @Nullable

@@ -8,7 +8,6 @@
     "ext.BlockStateSerializerMixin",
     "ext.ItemTranslatorMixin",
     "ext.MinecraftResourcePackReaderImplMixin",
-    "ext.InventoryUtilsMixin",
     "ext.ModelSerializerMixin"
   ],
   "injectors": {
