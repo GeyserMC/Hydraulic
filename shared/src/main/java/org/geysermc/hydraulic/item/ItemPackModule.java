@@ -183,7 +183,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                         org.geysermc.geyser.api.util.Identifier.of(itemLocation.toString()),
                         registry.getId(item)
                 )
-                        .displayName("%" + item.getDescriptionId());
+                        // Use the resolved display name instead of a %translation-key reference.
+                        // Some Bedrock platforms (e.g. PS5) fail to apply the language files from the
+                        // attached resource pack and would otherwise show the raw "item:mod_id_name" id (#74).
+                        .displayName(item.getName(ItemStack.EMPTY).getString());
 
                 CustomItemBedrockOptions.Builder customItemOptions = CustomItemBedrockOptions.builder()
                         .allowOffhand(true);

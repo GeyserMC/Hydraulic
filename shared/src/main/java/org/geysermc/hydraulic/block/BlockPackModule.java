@@ -417,8 +417,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     context.logger().warn("Failed to get pick item for block {}: {}", blockLocation, e.getMessage());
                 }
 
-                /*
-                List<AABB> aabbs = collisionShape.toAabbs();
+                // Send the actual collision shape so open doors/trapdoors don't stay solid on Bedrock (#70)
+                VoxelShape stateCollisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+                List<AABB> aabbs = stateCollisionShape.toAabbs();
                 JavaBoundingBox[] bbs = new JavaBoundingBox[aabbs.size()];
                 for (int i = 0; i < aabbs.size(); i++) {
                     AABB aabb = aabbs.get(i);
@@ -426,8 +427,6 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 }
 
                 javaBlockStateBuilder.collision(bbs);
-                 */
-                javaBlockStateBuilder.collision(new JavaBoundingBox[0]); // TODO
 
                 event.registerOverride(javaBlockStateBuilder.build(), customBlockState);
             }
