@@ -43,6 +43,16 @@ public class PackContext<T extends PackModule<T>> {
     }
 
     /**
+     * Gets the Hydraulic instance.
+     *
+     * @return the Hydraulic instance
+     */
+    @NotNull
+    public HydraulicImpl hydraulic() {
+        return this.hydraulic;
+    }
+
+    /**
      * Gets the storage for the mod that owns this pack.
      *
      * @return the storage for the mod that owns this pack
