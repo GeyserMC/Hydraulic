@@ -3,8 +3,10 @@ package org.geysermc.hydraulic.neoforge.mixin;
 import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener;
 import net.neoforged.neoforge.network.connection.ConnectionType;
+import net.neoforged.neoforge.network.filters.NetworkFilters;
 import net.neoforged.neoforge.network.payload.ModdedNetworkQueryComponent;
 import net.neoforged.neoforge.network.registration.ChannelAttributes;
+import net.neoforged.neoforge.network.registration.NetworkPayloadSetup;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +56,10 @@ public class NetworkRegistryMixin {
         // use mod channels, so skip the negotiation entirely.
         if (clientChannels == null || clientChannels.isEmpty()) {
             LOGGER.info("Hydraulic: skipping NeoForge channel negotiation for vanilla connection");
+            // Mirror what the original method does on a successful negotiation so the
+            // "channel negotiation not performed" check in handleConfigurationFinished passes.
+            ChannelAttributes.setPayloadSetup(listener.getConnection(), NetworkPayloadSetup.empty());
+            NetworkFilters.injectIfNecessary(listener.getConnection());
             ci.cancel();
         }
     }
