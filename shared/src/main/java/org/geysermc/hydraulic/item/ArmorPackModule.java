@@ -103,12 +103,12 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             description.scripts(ATTACHABLE_SCRIPTS);
             description.renderControllers(new String[] { "controller.render.armor" });
 
-            // Change the query to match the item
-            // This should always work as armour should have 2d item models
-            // If its 3d this will break as the item won't have the `item.` prefix
-            // TODO Register another attachable for 3d items? Or just work out which is correct from here
+            // Change the query to match the item. Both the raw item id and the "<id>_item" form are
+            // registered: Geyser's custom block items use the _item suffix, while plain custom items
+            // (2D icons and 3D models alike) keep their bedrock identifier as-is.
             Map<String, String> items = new HashMap<>() {{
                 put(armorItemLocation + "_item", "query.owner_identifier == 'minecraft:player'");
+                put(armorItemLocation.toString(), "query.owner_identifier == 'minecraft:player'");
             }};
             description.item(items);
 
@@ -130,7 +130,12 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
                     }
                 }
                 case EquipmentLayerType.HUMANOID_LEGGINGS -> geometryType = "geometry.player.armor.leggings";
-                case EquipmentLayerType.HORSE_BODY -> {} // TODO: Handle adding horse armor, might need to PR geyser for the slot
+                case EquipmentLayerType.HORSE_BODY -> {
+                    // Bedrock renders horse armor from the item id with the vanilla horse armor
+                    // geometry; the texture layer above already points at the converted texture.
+                    // End-to-end still needs Geyser to translate the horse equipment slot.
+                    geometryType = "geometry.horse.armor";
+                }
             }
 
             description.geometry(Map.of("default", geometryType));
