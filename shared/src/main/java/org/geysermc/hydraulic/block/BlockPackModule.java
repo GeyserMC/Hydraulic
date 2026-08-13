@@ -62,6 +62,7 @@ import team.unnamed.creative.model.ModelTextures;
 import team.unnamed.creative.texture.Texture;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -374,9 +375,16 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     .displayName("%" + block.getDescriptionId())
                     .friction(Math.min(1 - block.getFriction(), 0.9f))
                     .destructibleByMining(Math.max(0, block.defaultDestroyTime())) // Bedrock requires non-negative; bedrock-like blocks report -1
-                    // .unitCube(true) // TODO: Geometry conversion
+                    // Unit cube models (full blocks) render with Bedrock's built-in cube, skipping
+                    // geometry conversion; per-face textures are applied via material_instances above.
                     .selectionBox(createBoxComponent(shape))
                     .collisionBox(createBoxComponent(collisionShape));
+
+            // Full blocks don't need a converted geometry; use Bedrock's built-in cube rendering.
+            ModelDefinition defaultDefinition = getModel(context, blockLocation, defaultState);
+            if (defaultDefinition != null && isUnitCube(defaultDefinition.model().parent())) {
+                componentsBuilder.unitCube(true);
+            }
 
             builder.components(componentsBuilder.build());
 
@@ -484,8 +492,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         // Try and match the state
-        // TODO Handle multiple variants since we only take the first match
-        //      Will likely need to generate more geometry files and then alter bone visibility for each part
+        // Multiple variants are resolved below by highest weight; full support (multiple geometry
+        // files with bone visibility switching) is a large feature with limited Bedrock benefit
+        // since Java selects random variants by weight, which Bedrock custom blocks cannot do.
         if (multiVariant == null) {
             for (Selector selector : packState.multipart()) {
                 // Ignore none conditions
@@ -554,8 +563,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
         // We have a match! Now we need to find the model
         if (multiVariant != null && !multiVariant.variants().isEmpty()) {
-            // TODO: Handle multiple variants?
-            Variant variant = multiVariant.variants().get(0);
+            // Bedrock custom blocks can't do Java's weight-based random model selection, so pick
+            // the variant with the highest weight as the closest deterministic match. Variants
+            // with equal weights keep the first entry's model (Java picks one at random, any is fine).
+            Variant variant = multiVariant.variants().stream()
+                    .max(Comparator.comparingInt(Variant::weight))
+                    .orElse(multiVariant.variants().get(0));
             Key modelKey = variant.model();
 
             Model model = definition.modelProvider().model(modelKey);

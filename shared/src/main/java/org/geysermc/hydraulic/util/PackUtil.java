@@ -248,9 +248,10 @@ public class PackUtil {
     }
 
     public static String getTextureName(@NotNull String modelName) {
-        // TODO Sometimes things end up in the minecraft namespace when they shouldn't.
-        //      We should look at the current mods resources to see if we find a match there first
-        //      EG: betternether:wall_mushroom_red refrencing both mushroom_red_new (its own) and mushroom_block_inside (mc)
+        // Note: callers with mod context should prefer resolveTextureName-style lookups: mods
+        // sometimes reference "minecraft:" textures they actually ship themselves
+        // (EG: betternether:wall_mushroom_red referencing both mushroom_red_new (its own) and mushroom_block_inside (mc)).
+        // BlockPackModule resolves that case before calling this method.
         if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
             String modelValue = modelName.split(":")[1];
 
