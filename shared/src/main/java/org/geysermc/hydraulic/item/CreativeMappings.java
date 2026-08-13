@@ -24,14 +24,14 @@ public class CreativeMappings {
             // region --- Construction ---
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.DOORS),
+                List.of(ItemTags.WOODEN_DOORS),
                 List.of(DoorBlock.class),
                 List.of(BlockTags.DOORS)
             ), new CreativeMapping(ItemGroup.DOORS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FENCES),
+                List.of(ItemTags.WOODEN_FENCES),
                 List.of(FenceBlock.class),
                 List.of(BlockTags.FENCES)
             ), new CreativeMapping(ItemGroup.FENCES, CreativeCategory.CONSTRUCTION));
@@ -52,21 +52,21 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.SLABS),
+                List.of(ItemTags.WOODEN_SLABS),
                 List.of(SlabBlock.class),
                 List.of(BlockTags.SLABS)
             ), new CreativeMapping(ItemGroup.SLABS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.STAIRS),
+                List.of(ItemTags.WOODEN_STAIRS),
                 List.of(StairBlock.class),
                 List.of(BlockTags.STAIRS)
             ), new CreativeMapping(ItemGroup.STAIRS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.TRAPDOORS),
+                List.of(ItemTags.WOODEN_TRAPDOORS),
                 List.of(TrapDoorBlock.class),
                 List.of(BlockTags.TRAPDOORS)
             ), new CreativeMapping(ItemGroup.TRAPDOORS, CreativeCategory.CONSTRUCTION));
@@ -89,7 +89,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FLOWERS),
+                List.of(),
                 List.of(FlowerBlock.class, TallFlowerBlock.class),
                 List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS)
             ), new CreativeMapping(ItemGroup.FLOWERS, CreativeCategory.NATURE));
@@ -127,7 +127,7 @@ public class CreativeMappings {
                 List.of(),
                 List.of(ItemTags.SAPLINGS),
                 List.of(SaplingBlock.class),
-                List.of(BlockTags.SAPLINGS)
+                List.of()
             ), new CreativeMapping(ItemGroup.SAPLINGS, CreativeCategory.NATURE));
             // endregion
 
@@ -199,7 +199,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.BUTTONS),
+                List.of(ItemTags.WOODEN_BUTTONS),
                 List.of(ButtonBlock.class),
                 List.of(BlockTags.BUTTONS)
             ), new CreativeMapping(ItemGroup.BUTTONS, CreativeCategory.ITEMS));

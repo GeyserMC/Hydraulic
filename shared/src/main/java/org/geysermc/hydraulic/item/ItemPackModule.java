@@ -171,6 +171,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     private void onDefineCustomItems(PackEventContext<GeyserDefineCustomItemsEvent, ItemPackModule> context) {
         GeyserDefineCustomItemsEvent event = context.event();
+        // NeoForge populates the item registry after Hydraulic's constructor ran, so the initial
+        // mod->items lookup may be empty; rebuild it now that the registry is complete (#13).
+        context.hydraulic().getPackManager().ensureItemLookupsInitialized();
         List<Item> items = context.registryValues(BuiltInRegistries.ITEM);
 
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;

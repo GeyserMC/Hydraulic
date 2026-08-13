@@ -259,22 +259,58 @@ public class PackManager {
         }
     }
 
+    /**
+     * Re-runs the mod lookups. On NeoForge the initial run happens in the mod constructor, before
+     * the item registry has been fully populated, leaving {@link #modsToItems} empty. Geyser's
+     * custom item event fires after the registry is complete, so rebuild the lookups then.
+     */
+    public void ensureItemLookupsInitialized() {
+        if (this.modsToItems.isEmpty() || this.modsToBlocks.isEmpty()) {
+            initializeModLookups();
+        }
+    }
+
+    private static List<String> listAssetNamespaces(Path root) {
+        if (Files.isDirectory(root)) {
+            final Path assets = root.resolve("assets");
+            if (!Files.isDirectory(assets)) return List.of();
+            try (Stream<Path> stream = Files.list(assets)) {
+                return stream.filter(Files::isDirectory)
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .toList();
+            } catch (IOException e) {
+                return List.of();
+            }
+        }
+        // Mod roots can be jar files (NeoForge) - look inside via the zip file system
+        try (FileSystem fs = FileSystems.newFileSystem(root, (ClassLoader) null)) {
+            final Path assets = fs.getPath("assets");
+            if (!Files.isDirectory(assets)) return List.of();
+            try (Stream<Path> stream = Files.list(assets)) {
+                return stream.filter(Files::isDirectory)
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .toList();
+            } catch (IOException e) {
+                return List.of();
+            }
+        } catch (IOException e) {
+            return List.of();
+        }
+    }
+
     private void initializeModLookups() {
         // Step 1: Lookup which namespaces are contained by which mods
         final Multimap<String, ModInfo> namespacesToMods = this.namespacesToMods;
         namespacesToMods.clear();
         for (final ModInfo mod : hydraulic.mods()) {
             for (final Path root : mod.roots()) {
-                final Path assets = root.resolve("assets");
-                if (!Files.isDirectory(assets)) continue;
-                try (Stream<Path> stream = Files.list(assets)) {
-                    stream.filter(Files::isDirectory)
-                        .map(Path::getFileName)
-                        .map(Path::toString)
-                        .filter(namespace -> !namespace.equals("minecraft"))
-                        .forEach(namespace -> namespacesToMods.put(namespace, mod));
-                } catch (IOException e) {
-                    LOGGER.error("Failed to list namespaces for mod {}", mod.id(), e);
+                final List<String> namespaces = listAssetNamespaces(root);
+                for (final String namespace : namespaces) {
+                    if (!namespace.equals("minecraft")) {
+                        namespacesToMods.put(namespace, mod);
+                    }
                 }
             }
         }
