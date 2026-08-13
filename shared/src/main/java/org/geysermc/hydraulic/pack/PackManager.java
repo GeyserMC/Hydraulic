@@ -417,6 +417,10 @@ public class PackManager {
                 copyVanillaAssets(src.getPath("/assets/minecraft/models"), out);
                 copyVanillaAssets(src.getPath("/assets/minecraft/blockstates"), out);
                 copyVanillaAssets(src.getPath("/assets/minecraft/textures/font"), out);
+                // The library provider injects builtin models (parents of item/generated etc.)
+                // from its own resources - mirror that so parent model resolution works.
+                writeBuiltinModel(out, "entity.json");
+                writeBuiltinModel(out, "generated.json");
             } finally {
                 Files.deleteIfExists(tmpJar);
             }
@@ -448,6 +452,18 @@ public class PackManager {
                 }
                 out.closeEntry();
             }
+        }
+    }
+
+    private static void writeBuiltinModel(ZipOutputStream out, String name) throws IOException {
+        try (InputStream in = VanillaPackProvider.class.getResourceAsStream("/vanilla/builtin/" + name)) {
+            if (in == null) {
+                LOGGER.warn("Builtin model resource /vanilla/builtin/{} not found", name);
+                return;
+            }
+            out.putNextEntry(new ZipEntry("assets/minecraft/models/builtin/" + name));
+            in.transferTo(out);
+            out.closeEntry();
         }
     }
 
