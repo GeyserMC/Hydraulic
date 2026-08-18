@@ -6,6 +6,7 @@ dependencies {
     compileOnly(libs.mixin)
     compileOnly(libs.mixinextras)
     compileOnly(libs.geyser.api)
+    compileOnly(libs.examination.api)
     compileOnly(libs.geyser.core) {
         exclude(group = "io.netty")
         exclude(group = "io.netty.incubator")

@@ -14,7 +14,7 @@ config = "hydraulic.mixins.json"
 [[dependencies.hydraulic]]
     modId="neoforge"
     type="required"
-    versionRange="[26.1.0.1-beta,)"
+    versionRange="[26.2.0.0-beta,)"
     ordering="NONE"
     side="BOTH"
 
