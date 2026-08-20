@@ -37,7 +37,7 @@ public abstract class MinecraftResourcePackReaderImplMixin {
         try {
             return GsonUtil.parseReader(reader);
         } catch (Exception e) {
-            LOGGER.error("Failed to parse JSON: " + e.getMessage());
+            LOGGER.warn("Failed to parse JSON: " + e.getMessage());
         }
 
         return null;
@@ -62,7 +62,9 @@ public abstract class MinecraftResourcePackReaderImplMixin {
         try {
             return instance.deserializeFromJson(jsonElement, key, packFormat);
         } catch (Exception e) {
-            LOGGER.error("Failed to deserialize JSON (" + key + "): " + e.getMessage());
+            // Mods can use custom item model conditions (e.g. FarmersDelight's is_cooking) that
+            // Creative's deserializer does not know; skip that asset instead of failing the pack.
+            LOGGER.warn("Skipping unparseable asset ({}): {}", key, e.getMessage());
         }
 
         return null;

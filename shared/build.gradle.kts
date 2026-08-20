@@ -10,6 +10,9 @@ dependencies {
         exclude(group = "io.netty")
         exclude(group = "io.netty.incubator")
     }
+    // Examinable and friends - the published Geyser poms do not always surface transitive
+    // dependencies like Kyori's examination on the loom transform path.
+    compileOnly("net.kyori:examination-api:1.3.0")
 
     api(libs.pack.converter)
 

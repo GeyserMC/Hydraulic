@@ -71,8 +71,23 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             }
         } else if (itemModel instanceof SelectItemModel selectModel) { // See if we can actually do select models here
             handleModel(context, selectModel.fallback(), itemLocation);
-        } else if (itemModel instanceof CompositeItemModel compositeModel) { // TODO: See if we can stitch together item models, for now this will use just the first model
-            handleModel(context, compositeModel.models().getFirst(), itemLocation);
+        } else if (itemModel instanceof CompositeItemModel compositeModel) {
+            // Composite models contain multiple models selected by condition (e.g. damage-based
+            // items). We can't stitch them yet, so use the first model that resolves to a known
+            // item shape (2D icon / handheld); fall back to the first model otherwise.
+            boolean matched = false;
+            for (ItemModel subModel : compositeModel.models()) {
+                int iconsBefore = itemsWith2dIcon.size();
+                int handheldBefore = handheldItems.size();
+                handleModel(context, subModel, itemLocation);
+                if (itemsWith2dIcon.size() > iconsBefore || handheldItems.size() > handheldBefore) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched && !compositeModel.models().isEmpty()) {
+                handleModel(context, compositeModel.models().getFirst(), itemLocation);
+            }
         } else if (itemModel instanceof RangeDispatchItemModel rangeDispatchModel) {
             handleModel(context, rangeDispatchModel.fallback(), itemLocation);
         }
@@ -159,7 +174,15 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             }
 
             ModelTexture layer0 = layers.getFirst();
-            String outputLoc = getOutputFromModel(context, layer0.key()); // TODO: sort this out, layer0.key() can be null, but the method we use doesn't want that
+            Key layer0Key = layer0.key();
+            if (layer0Key == null) {
+                // The model didn't reference a texture by key (rare - usually only happens with
+                // composite/dynamic models). Fall back to the item's own id as the texture name.
+                context.logger().warn("Item {} has no layer0 texture key, using item id as texture", itemLocation);
+                bedrockPack.addItemTexture(itemLocation.toString(), itemLocation.getPath());
+                continue;
+            }
+            String outputLoc = getOutputFromModel(context, layer0Key);
             bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
         }
     }
@@ -171,6 +194,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     private void onDefineCustomItems(PackEventContext<GeyserDefineCustomItemsEvent, ItemPackModule> context) {
         GeyserDefineCustomItemsEvent event = context.event();
+        // NeoForge populates the item registry after Hydraulic's constructor ran, so the initial
+        // mod->items lookup may be empty; rebuild it now that the registry is complete (#13).
+        context.hydraulic().getPackManager().ensureItemLookupsInitialized();
         List<Item> items = context.registryValues(BuiltInRegistries.ITEM);
 
         DefaultedRegistry<Item> registry = BuiltInRegistries.ITEM;
@@ -183,7 +209,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                         org.geysermc.geyser.api.util.Identifier.of(itemLocation.toString()),
                         registry.getId(item)
                 )
-                        .displayName("%" + item.getDescriptionId());
+                        // Use the resolved display name instead of a %translation-key reference.
+                        // Some Bedrock platforms (e.g. PS5) fail to apply the language files from the
+                        // attached resource pack and would otherwise show the raw "item:mod_id_name" id (#74).
+                        .displayName(item.getName(ItemStack.EMPTY).getString());
 
                 CustomItemBedrockOptions.Builder customItemOptions = CustomItemBedrockOptions.builder()
                         .allowOffhand(true);
@@ -255,7 +284,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
                 customItemDefinition.bedrockOptions(customItemOptions);
 
-                event.register(customItemDefinition.build());
+                // Capture the definition for standalone dump support (#18)
+                NonVanillaCustomItemDefinition built = customItemDefinition.build();
+                context.hydraulic().getDumpRegistry().addItem(built);
+                event.register(built);
             } catch (Exception e) {
                 context.logger().error("Unable to register {}:", itemLocation, e);
             }

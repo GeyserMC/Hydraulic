@@ -1,11 +1,10 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "org.geysermc.hydraulic.fabric.mixin",
+  "package": "org.geysermc.hydraulic.neoforge.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "RegistrySyncManagerMixin",
-    "org.geysermc.hydraulic.mixin.ext.ItemTranslatorMixin"
+    "NetworkRegistryMixin"
   ],
   "injectors": {
     "defaultRequire": 1

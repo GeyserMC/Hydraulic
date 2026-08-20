@@ -16,6 +16,7 @@ import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
+import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.pack.converter.CustomModelConverter;
 import org.geysermc.hydraulic.pack.modules.MetadataPackModule;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
@@ -24,7 +25,13 @@ import org.geysermc.pack.converter.pipeline.AssetConverters;
 import org.geysermc.pack.converter.pipeline.ConverterPipeline;
 import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.geysermc.pack.converter.util.NioDirectoryFileTreeReader;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import org.geysermc.pack.converter.util.VanillaPackProvider;
+import org.geysermc.pack.converter.util.WebUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,15 +40,24 @@ import team.unnamed.creative.model.Model;
 import team.unnamed.creative.serialize.minecraft.MinecraftResourcePackReader;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Manages packs within Hydraulic. Most of the pack conversion
@@ -92,13 +108,30 @@ public class PackManager {
         final Collection<ModInfo> mods = this.hydraulic.mods();
         final Map<String, List<ResourcePack>> modPacks = Maps.newHashMapWithExpectedSize(mods.size());
         for (final ModInfo mod : mods) {
-            modPacks.put(
-                mod.id(),
-                mod.roots()
-                    .stream()
-                    .map(path -> MinecraftResourcePackReader.minecraft().read(NioDirectoryFileTreeReader.read(path)))
-                    .toList()
-            );
+            try {
+                modPacks.put(
+                    mod.id(),
+                    mod.roots()
+                        .stream()
+                        .map(path -> {
+                            try {
+                                Path readable = PackUtil.ensurePackMeta(path);
+                                // Mod roots can be either extracted directories (Fabric) or jar files (NeoForge)
+                                if (Files.isDirectory(readable)) {
+                                    return MinecraftResourcePackReader.minecraft().read(NioDirectoryFileTreeReader.read(readable));
+                                }
+                                return MinecraftResourcePackReader.minecraft().readFromZipFile(readable);
+                            } catch (Exception e) {
+                                LOGGER.error("Failed to read resource pack from mod {} at path {}: {}", mod.id(), path, e.getMessage());
+                                return null;
+                            }
+                        })
+                        .filter(pack -> pack != null)
+                        .toList()
+                );
+            } catch (Exception e) {
+                LOGGER.error("Failed to process mod {}: {}", mod.id(), e.getMessage(), e);
+            }
         }
 
         try {
@@ -106,6 +139,14 @@ public class PackManager {
         } catch (IOException e) {
             LOGGER.error("Failed to create cache dir");
         }
+
+        // The library's VanillaPackProvider hardcodes version "1.21.11" when downloading the vanilla
+        // client jar (upstream limitation; de-hardcoding requires a pack-converter change), which
+        // breaks parent model resolution for newer content (e.g. hanging sign templates missing in
+        // 1.21.11, so custom hanging signs render as missing models). Generate the vanilla pack from
+        // the server's actual Minecraft version first; the library provider then skips its own
+        // download since the file exists.
+        ensureVanillaPack(this.getVanillaPath());
 
         VanillaPackProvider.create(
                 this.getVanillaPath(),
@@ -183,7 +224,9 @@ public class PackManager {
 
         try {
             for (final Path root : mod.roots()) {
-                converter.input(root, false).convert();
+                // Mod roots can be either extracted directories (Fabric) or jar files (NeoForge)
+                final Path readable = PackUtil.ensurePackMeta(root);
+                converter.input(readable, !Files.isDirectory(readable)).convert();
             }
         } catch (IOException ex) {
             LOGGER.error("Failed to convert mod {} to pack", mod.id(), ex);
@@ -217,22 +260,58 @@ public class PackManager {
         }
     }
 
+    /**
+     * Re-runs the mod lookups. On NeoForge the initial run happens in the mod constructor, before
+     * the item registry has been fully populated, leaving {@link #modsToItems} empty. Geyser's
+     * custom item event fires after the registry is complete, so rebuild the lookups then.
+     */
+    public void ensureItemLookupsInitialized() {
+        if (this.modsToItems.isEmpty() || this.modsToBlocks.isEmpty()) {
+            initializeModLookups();
+        }
+    }
+
+    private static List<String> listAssetNamespaces(Path root) {
+        if (Files.isDirectory(root)) {
+            final Path assets = root.resolve("assets");
+            if (!Files.isDirectory(assets)) return List.of();
+            try (Stream<Path> stream = Files.list(assets)) {
+                return stream.filter(Files::isDirectory)
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .toList();
+            } catch (IOException e) {
+                return List.of();
+            }
+        }
+        // Mod roots can be jar files (NeoForge) - look inside via the zip file system
+        try (FileSystem fs = FileSystems.newFileSystem(root, (ClassLoader) null)) {
+            final Path assets = fs.getPath("assets");
+            if (!Files.isDirectory(assets)) return List.of();
+            try (Stream<Path> stream = Files.list(assets)) {
+                return stream.filter(Files::isDirectory)
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .toList();
+            } catch (IOException e) {
+                return List.of();
+            }
+        } catch (IOException e) {
+            return List.of();
+        }
+    }
+
     private void initializeModLookups() {
         // Step 1: Lookup which namespaces are contained by which mods
         final Multimap<String, ModInfo> namespacesToMods = this.namespacesToMods;
         namespacesToMods.clear();
         for (final ModInfo mod : hydraulic.mods()) {
             for (final Path root : mod.roots()) {
-                final Path assets = root.resolve("assets");
-                if (!Files.isDirectory(assets)) continue;
-                try (Stream<Path> stream = Files.list(assets)) {
-                    stream.filter(Files::isDirectory)
-                        .map(Path::getFileName)
-                        .map(Path::toString)
-                        .filter(namespace -> !namespace.equals("minecraft"))
-                        .forEach(namespace -> namespacesToMods.put(namespace, mod));
-                } catch (IOException e) {
-                    LOGGER.error("Failed to list namespaces for mod {}", mod.id(), e);
+                final List<String> namespaces = listAssetNamespaces(root);
+                for (final String namespace : namespaces) {
+                    if (!namespace.equals("minecraft")) {
+                        namespacesToMods.put(namespace, mod);
+                    }
                 }
             }
         }
@@ -327,5 +406,152 @@ public class PackManager {
 
     public Path getVanillaPath() {
         return vanillaPath;
+    }
+
+    /**
+     * Generates the trimmed vanilla assets pack from the actual Minecraft version's client jar.
+     * <p>
+     * {@link VanillaPackProvider} hardcodes version {@code 1.21.11} when downloading the client jar,
+     * which lacks models newer versions depend on (e.g. hanging sign templates), causing custom
+     * hanging signs to render as missing models. This mirrors the provider's trimming logic
+     * (models, blockstates, font textures) but uses the latest release client jar instead.
+     *
+     * @param vanillaPath the target zip path
+     */
+    private static void ensureVanillaPack(Path vanillaPath) {
+        if (Files.exists(vanillaPath)) {
+            return;
+        }
+
+        try {
+            final String manifestUrl = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
+            final JsonObject manifest = JsonParser.parseString(WebUtils.getBody(manifestUrl)).getAsJsonObject();
+            final String latestId = manifest.getAsJsonObject("latest").get("release").getAsString();
+            String versionUrl = "";
+            for (JsonElement version : manifest.getAsJsonArray("versions")) {
+                final JsonObject versionObject = version.getAsJsonObject();
+                if (versionObject.get("id").getAsString().equals(latestId)) {
+                    versionUrl = versionObject.get("url").getAsString();
+                    break;
+                }
+            }
+            if (versionUrl.isEmpty()) {
+                throw new IOException("Unable to find version " + latestId + " in the version manifest");
+            }
+
+            final String clientUrl = JsonParser.parseString(WebUtils.getBody(versionUrl)).getAsJsonObject()
+                    .getAsJsonObject("downloads").getAsJsonObject("client").get("url").getAsString();
+
+            LOGGER.info("Downloading Minecraft {} client jar for vanilla pack generation...", latestId);
+            final Path tmpJar = Files.createTempFile("hydraulic-vanilla-", ".jar");
+            try (InputStream in = new URL(clientUrl).openStream()) {
+                Files.copy(in, tmpJar, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            Files.createDirectories(vanillaPath.getParent());
+            try (FileSystem src = FileSystems.newFileSystem(tmpJar, (ClassLoader) null);
+                 ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(vanillaPath))) {
+                copyVanillaAssets(src.getPath("/assets/minecraft/models"), out);
+                copyVanillaAssets(src.getPath("/assets/minecraft/blockstates"), out);
+                copyVanillaAssets(src.getPath("/assets/minecraft/textures/font"), out);
+                // The library provider injects builtin models (parents of item/generated etc.)
+                // from its own resources - mirror that so parent model resolution works.
+                writeBuiltinModel(out, "entity.json");
+                writeBuiltinModel(out, "generated.json");
+            } finally {
+                Files.deleteIfExists(tmpJar);
+            }
+            LOGGER.info("Vanilla pack generated from Minecraft {}", latestId);
+        } catch (Exception e) {
+            LOGGER.error("Failed to generate vanilla pack, falling back to library provider", e);
+            try {
+                Files.deleteIfExists(vanillaPath);
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    private static void copyVanillaAssets(Path source, ZipOutputStream out) throws IOException {
+        if (!Files.exists(source)) {
+            return;
+        }
+        try (Stream<Path> walker = Files.walk(source)) {
+            for (Path file : walker.filter(Files::isRegularFile).toList()) {
+                final String name = file.toString().replace('\\', '/');
+                final ZipEntry entry = new ZipEntry(name.startsWith("/") ? name.substring(1) : name);
+                out.putNextEntry(entry);
+                if (name.contains("/models/") && name.endsWith(".json")) {
+                    // Newer Minecraft versions use element rotations beyond the old [-45, 45] limit
+                    // which the creative serializer rejects. Clamp them when generating the vanilla pack.
+                    out.write(clampModelRotations(Files.readAllBytes(file)));
+                } else {
+                    Files.copy(file, out);
+                }
+                out.closeEntry();
+            }
+        }
+    }
+
+    private static void writeBuiltinModel(ZipOutputStream out, String name) throws IOException {
+        try (InputStream in = VanillaPackProvider.class.getResourceAsStream("/vanilla/builtin/" + name)) {
+            if (in == null) {
+                LOGGER.warn("Builtin model resource /vanilla/builtin/{} not found", name);
+                return;
+            }
+            out.putNextEntry(new ZipEntry("assets/minecraft/models/builtin/" + name));
+            in.transferTo(out);
+            out.closeEntry();
+        }
+    }
+
+    private static byte[] clampModelRotations(byte[] data) {
+        try {
+            final JsonObject root = JsonParser.parseString(new String(data, StandardCharsets.UTF_8)).getAsJsonObject();
+            final JsonElement elements = root.get("elements");
+            if (elements == null || !elements.isJsonArray()) {
+                return data;
+            }
+            boolean changed = false;
+            for (JsonElement element : elements.getAsJsonArray()) {
+                if (!element.isJsonObject()) {
+                    continue;
+                }
+                final JsonObject elementObject = element.getAsJsonObject();
+                final JsonElement rotation = elementObject.get("rotation");
+                if (rotation == null) {
+                    continue;
+                }
+                if (rotation.isJsonArray()) {
+                    // Old-style list rotation: [x, y, z]
+                    final JsonArray rotationArray = rotation.getAsJsonArray();
+                    for (int i = 0; i < rotationArray.size(); i++) {
+                        final float value = rotationArray.get(i).getAsFloat();
+                        if (value > 45.0f) {
+                            rotationArray.set(i, new JsonPrimitive(45.0f));
+                            changed = true;
+                        } else if (value < -45.0f) {
+                            rotationArray.set(i, new JsonPrimitive(-45.0f));
+                            changed = true;
+                        }
+                    }
+                } else if (rotation.isJsonObject() && rotation.getAsJsonObject().has("angle")) {
+                    // New-style rotation object: {"origin": [...], "axis": "x", "angle": 67.5}
+                    final JsonObject rotationObject = rotation.getAsJsonObject();
+                    final float angle = rotationObject.get("angle").getAsFloat();
+                    if (angle > 45.0f) {
+                        rotationObject.addProperty("angle", 45.0f);
+                        changed = true;
+                    } else if (angle < -45.0f) {
+                        rotationObject.addProperty("angle", -45.0f);
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                return root.toString().getBytes(StandardCharsets.UTF_8);
+            }
+        } catch (Exception ignored) {
+        }
+        return data;
     }
 }

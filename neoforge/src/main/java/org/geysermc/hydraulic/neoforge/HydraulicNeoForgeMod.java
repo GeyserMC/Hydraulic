@@ -2,6 +2,7 @@ package org.geysermc.hydraulic.neoforge;
 
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.HydraulicImpl;
@@ -16,9 +17,14 @@ public class HydraulicNeoForgeMod {
         this.hydraulic = HydraulicImpl.load(HydraulicPlatform.NEOFORGE, new HydraulicNeoForgeBootstrap());
 
         NeoForge.EVENT_BUS.addListener(this::onServerStarting);
+        NeoForge.EVENT_BUS.addListener(this::onServerStarted);
     }
 
     private void onServerStarting(ServerStartingEvent event) {
         this.hydraulic.onServerStarting(event.getServer());
+    }
+
+    private void onServerStarted(ServerStartedEvent event) {
+        RecipeRegistration.register(event.getServer());
     }
 }

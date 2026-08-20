@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.api.block.custom.CustomBlockPermutation;
@@ -61,6 +62,7 @@ import team.unnamed.creative.model.ModelTextures;
 import team.unnamed.creative.texture.Texture;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -161,7 +163,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             if (value.startsWith("block/")) {
                 String cleanPath = value.replace("block/", "").replace(".png", "");
 
-                String outputLoc = String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + cleanPath).replace(".png", "");
+                String outputLoc = PackUtil.limitPathLength(String.format(Constants.BEDROCK_TEXTURE_LOCATION, "blocks/" + context.mod().id() + "/" + cleanPath).replace(".png", ""), 75);
                 String id = key.namespace() + ":" + cleanPath;
                 bedrockPack.addBlockTexture(id, outputLoc);
 
@@ -247,10 +249,17 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .identifier(geoName)
                             .build());
 
-                    // TODO: This is not fully correct. On Bedrock, the shape rotates with
-                    //       the block, so the collision box will need to be rotated back here
+                    // Bedrock rotates the rendered model by the transformation component above,
+                    // and takes the collision/selection box with it. Rotate the Java shape back
+                    // so the box matches the rotated model.
                     VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+                    int rx = definition.variant().x();
+                    int ry = definition.variant().y();
+                    if (rx != 0 || ry != 0) {
+                        shape = rotateShape(shape, rx, ry);
+                        collisionShape = rotateShape(collisionShape, rx, ry);
+                    }
 
                     componentsBuilder.selectionBox(createBoxComponent(shape));
                     componentsBuilder.collisionBox(createBoxComponent(collisionShape));
@@ -260,13 +269,21 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .build());
                 }
 
-                // TODO: Work this out based on block state/texture? as this isn't perfect
+                // Work out the render method from the model parent. Cross models (flowers etc.)
+                // and cutout-style models need alpha testing, everything else follows occlusion.
                 // https://wiki.bedrock.dev/blocks/block-components.html#render-methods
                 String renderMethod = state.canOcclude() ? "opaque" : "blend";
-
-                // If the model is a cross block (EG a flower), we need to use alpha_test_single_sided
-                if (model.parent() != null && model.parent().value().equals("block/cross")) {
-                    renderMethod = "alpha_test_single_sided";
+                if (model.parent() != null) {
+                    String parent = model.parent().value();
+                    if (parent.equals("block/cross") || parent.equals("block/tinted_cross")
+                            || parent.equals("block/crop") || parent.equals("block/template_orientable_trapdoor")
+                            || parent.endsWith("_cross") || parent.contains("/cross")) {
+                        renderMethod = "alpha_test_single_sided";
+                    } else if (parent.equals("block/template_glazed_terracotta") || parent.contains("glass")
+                            || parent.contains("ice") || parent.contains("leaves") || parent.contains("carpet")) {
+                        // Semi-transparent blocks render best with blend
+                        renderMethod = "blend";
+                    }
                 }
 
                 Materials materials = context.storage().materials();
@@ -308,7 +325,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             }
 
                             componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
-                                    .texture(PackUtil.getTextureName(entry.getValue()))
+                                    .texture(resolveTextureName(context, entry.getValue()))
                                     .renderMethod(renderMethod)
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
@@ -317,7 +334,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     }
                 } else {
                     componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(PackUtil.getTextureName(key.toString()))
+                            .texture(resolveTextureName(context, key.toString()))
                             .renderMethod(renderMethod)
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
@@ -357,14 +374,28 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
                     .displayName("%" + block.getDescriptionId())
                     .friction(Math.min(1 - block.getFriction(), 0.9f))
-                    .destructibleByMining(block.defaultDestroyTime()) // TODO: Check
-                    // .unitCube(true) // TODO: Geometry conversion
+                    .destructibleByMining(Math.max(0, block.defaultDestroyTime())) // Bedrock requires non-negative; bedrock-like blocks report -1
+                    // Unit cube models (full blocks) render with Bedrock's built-in cube, skipping
+                    // geometry conversion; per-face textures are applied via material_instances above.
                     .selectionBox(createBoxComponent(shape))
                     .collisionBox(createBoxComponent(collisionShape));
+
+            // Full blocks don't need a converted geometry; use Bedrock's built-in cube rendering.
+            ModelDefinition defaultDefinition = getModel(context, blockLocation, defaultState);
+            if (defaultDefinition != null && isUnitCube(defaultDefinition.model().parent())) {
+                componentsBuilder.unitCube(true);
+            }
 
             builder.components(componentsBuilder.build());
 
             CustomBlockData blockData = builder.build();
+            // Capture the definition for standalone dump support (#18); never let a dump failure
+            // prevent the actual block registration
+            try {
+                context.hydraulic().getDumpRegistry().addBlock(blockData);
+            } catch (Throwable t) {
+                context.logger().warn("Failed to capture block {} for dump", blockLocation, t);
+            }
             try {
                 event.register(blockData);
             } catch (IllegalArgumentException e) {
@@ -398,13 +429,14 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 JavaBlockState.Builder javaBlockStateBuilder = JavaBlockState.builder()
                         .identifier(BlockStateParser.serialize(state))
                         .javaId(Block.getId(state))
-                        .blockHardness(block.defaultDestroyTime()) // TODO: Check
+                        .blockHardness(Math.max(0, block.defaultDestroyTime())) // Bedrock requires non-negative; bedrock-like blocks report -1
                         .canBreakWithHand(!state.requiresCorrectToolForDrops())
                         .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
                         .stateGroupId(blockId)
                         .pistonBehavior(pistonBehavior.name());
 
-                // TODO Work out if we need to prefix with _item so we can remove InventoryUtilsMixin
+                // Bedrock block items are registered as "<block>_item" by Geyser; the Java block id
+                // used as pick item is resolved to the bedrock item id by Geyser's item registry.
                 try {
                     ItemStack pickItem = state.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, false);
                     String itemId = BuiltInRegistries.ITEM.getKey(pickItem.getItem()).toString();
@@ -417,8 +449,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     context.logger().warn("Failed to get pick item for block {}: {}", blockLocation, e.getMessage());
                 }
 
-                /*
-                List<AABB> aabbs = collisionShape.toAabbs();
+                // Send the actual collision shape so open doors/trapdoors don't stay solid on Bedrock (#70)
+                VoxelShape stateCollisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+                List<AABB> aabbs = stateCollisionShape.toAabbs();
                 JavaBoundingBox[] bbs = new JavaBoundingBox[aabbs.size()];
                 for (int i = 0; i < aabbs.size(); i++) {
                     AABB aabb = aabbs.get(i);
@@ -426,12 +459,26 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 }
 
                 javaBlockStateBuilder.collision(bbs);
-                 */
-                javaBlockStateBuilder.collision(new JavaBoundingBox[0]); // TODO
 
                 event.registerOverride(javaBlockStateBuilder.build(), customBlockState);
             }
         }
+    }
+
+    /**
+     * Resolves a texture name for Bedrock. If a mod references a "minecraft:" texture that it
+     * actually ships itself (bad model references), use the mod's own texture instead.
+     */
+    private static String resolveTextureName(@NotNull PackContext<?> context, @NotNull String modelName) {
+        if (modelName.startsWith(Key.MINECRAFT_NAMESPACE)) {
+            String value = modelName.substring(modelName.indexOf(':') + 1);
+            // The mod's textures live under assets/<mod>/textures/<value>.png; a mod may reference
+            // a "minecraft:" texture it actually ships itself (bad model references)
+            if (context.mod().resolveFile("assets/" + context.mod().namespace() + "/textures/" + value + ".png") != null) {
+                return value;
+            }
+        }
+        return PackUtil.getTextureName(modelName);
     }
 
     @Nullable
@@ -452,8 +499,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         // Try and match the state
-        // TODO Handle multiple variants since we only take the first match
-        //      Will likely need to generate more geometry files and then alter bone visibility for each part
+        // Multiple variants are resolved below by highest weight; full support (multiple geometry
+        // files with bone visibility switching) is a large feature with limited Bedrock benefit
+        // since Java selects random variants by weight, which Bedrock custom blocks cannot do.
         if (multiVariant == null) {
             for (Selector selector : packState.multipart()) {
                 // Ignore none conditions
@@ -522,8 +570,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
         // We have a match! Now we need to find the model
         if (multiVariant != null && !multiVariant.variants().isEmpty()) {
-            // TODO: Handle multiple variants?
-            Variant variant = multiVariant.variants().get(0);
+            // Bedrock custom blocks can't do Java's weight-based random model selection, so pick
+            // the variant with the highest weight as the closest deterministic match. Variants
+            // with equal weights keep the first entry's model (Java picks one at random, any is fine).
+            Variant variant = multiVariant.variants().stream()
+                    .max(Comparator.comparingInt(Variant::weight))
+                    .orElse(multiVariant.variants().get(0));
             Key modelKey = variant.model();
 
             Model model = definition.modelProvider().model(modelKey);
@@ -646,6 +698,40 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         return mapping;
+    }
+
+    /**
+     * Rotates a voxel shape around the block center (0.5, 0.5, 0.5), Y axis first then X axis,
+     * by the given angles in degrees. Used to counteract Bedrock rotating the collision box
+     * along with the block model.
+     */
+    private static VoxelShape rotateShape(VoxelShape shape, int rx, int ry) {
+        if (rx == 0 && ry == 0) {
+            return shape;
+        }
+
+        double cosY = Math.cos(Math.toRadians(ry));
+        double sinY = Math.sin(Math.toRadians(ry));
+        double cosX = Math.cos(Math.toRadians(rx));
+        double sinX = Math.sin(Math.toRadians(rx));
+
+        VoxelShape result = Shapes.empty();
+        for (AABB box : shape.toAabbs()) {
+            // Rotate around Y axis
+            double minX = 0.5 + (box.minX - 0.5) * cosY - (box.minZ - 0.5) * sinY;
+            double minZ = 0.5 + (box.minX - 0.5) * sinY + (box.minZ - 0.5) * cosY;
+            double maxX = 0.5 + (box.maxX - 0.5) * cosY - (box.maxZ - 0.5) * sinY;
+            double maxZ = 0.5 + (box.maxX - 0.5) * sinY + (box.maxZ - 0.5) * cosY;
+
+            // Rotate around X axis
+            double minY = 0.5 + (box.minY - 0.5) * cosX - (minZ - 0.5) * sinX;
+            double rotZ1 = 0.5 + (box.minY - 0.5) * sinX + (minZ - 0.5) * cosX;
+            double maxY = 0.5 + (box.maxY - 0.5) * cosX - (maxZ - 0.5) * sinX;
+            double rotZ2 = 0.5 + (box.maxY - 0.5) * sinX + (maxZ - 0.5) * cosX;
+
+            result = Shapes.or(result, Shapes.create(minX, minY, Math.min(rotZ1, rotZ2), maxX, maxY, Math.max(rotZ1, rotZ2)));
+        }
+        return result;
     }
 
     private static BoxComponent createBoxComponent(VoxelShape shape) {

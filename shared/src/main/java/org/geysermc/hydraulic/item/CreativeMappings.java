@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.item;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -24,14 +25,14 @@ public class CreativeMappings {
             // region --- Construction ---
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.DOORS),
+                List.of(ItemTags.WOODEN_DOORS),
                 List.of(DoorBlock.class),
                 List.of(BlockTags.DOORS)
             ), new CreativeMapping(ItemGroup.DOORS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FENCES),
+                List.of(ItemTags.WOODEN_FENCES),
                 List.of(FenceBlock.class),
                 List.of(BlockTags.FENCES)
             ), new CreativeMapping(ItemGroup.FENCES, CreativeCategory.CONSTRUCTION));
@@ -52,21 +53,21 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.SLABS),
+                List.of(ItemTags.WOODEN_SLABS),
                 List.of(SlabBlock.class),
                 List.of(BlockTags.SLABS)
             ), new CreativeMapping(ItemGroup.SLABS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.STAIRS),
+                List.of(ItemTags.WOODEN_STAIRS),
                 List.of(StairBlock.class),
                 List.of(BlockTags.STAIRS)
             ), new CreativeMapping(ItemGroup.STAIRS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.TRAPDOORS),
+                List.of(ItemTags.WOODEN_TRAPDOORS),
                 List.of(TrapDoorBlock.class),
                 List.of(BlockTags.TRAPDOORS)
             ), new CreativeMapping(ItemGroup.TRAPDOORS, CreativeCategory.CONSTRUCTION));
@@ -89,7 +90,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FLOWERS),
+                List.of(),
                 List.of(FlowerBlock.class, TallFlowerBlock.class),
                 List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS)
             ), new CreativeMapping(ItemGroup.FLOWERS, CreativeCategory.NATURE));
@@ -108,7 +109,9 @@ public class CreativeMappings {
                 List.of(BlockTags.LOGS)
             ), new CreativeMapping(ItemGroup.LOGS, CreativeCategory.NATURE));
 
-            // TODO Remove, these are added differently to bedrock https://wiki.bedrock.dev/visuals/retexturing-spawn-eggs.html
+            // Vanilla spawn eggs are retextured on Bedrock rather than added as custom items
+            // (https://wiki.bedrock.dev/visuals/retexturing-spawn-eggs.html), but modded spawn
+            // eggs still benefit from landing in the mob eggs creative group.
             put(new CreativeMappingTarget(
                 List.of(SpawnEggItem.class),
                 List.of(),
@@ -127,7 +130,7 @@ public class CreativeMappings {
                 List.of(),
                 List.of(ItemTags.SAPLINGS),
                 List.of(SaplingBlock.class),
-                List.of(BlockTags.SAPLINGS)
+                List.of()
             ), new CreativeMapping(ItemGroup.SAPLINGS, CreativeCategory.NATURE));
             // endregion
 
@@ -199,7 +202,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.BUTTONS),
+                List.of(ItemTags.WOODEN_BUTTONS),
                 List.of(ButtonBlock.class),
                 List.of(BlockTags.BUTTONS)
             ), new CreativeMapping(ItemGroup.BUTTONS, CreativeCategory.ITEMS));
@@ -249,7 +252,7 @@ public class CreativeMappings {
             ), new CreativeMapping(CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
-                List.of(BowItem.class, ShearsItem.class), // TODO: Armor item class is now missing, would require components to check or a tag
+                List.of(BowItem.class, ShearsItem.class),
                 List.of(),
                 List.of(),
                 List.of()
@@ -298,6 +301,12 @@ public class CreativeMappings {
     private static CreativeMapping getMapping(Item item) {
         Class<? extends Item> itemClass = item.getClass();
         ItemStack itemStack = item.getDefaultInstance();
+
+        // Armor items no longer have a common superclass in 26.2, so detect them by component.
+        // This must run before the generic Item.class fallback below.
+        if (item.components().has(DataComponents.EQUIPPABLE)) {
+            return new CreativeMapping(CreativeCategory.EQUIPMENT);
+        }
 
         for (Map.Entry<CreativeMappingTarget, CreativeMapping> entry : CREATIVE_MAPPINGS.entrySet()) {
             CreativeMappingTarget target = entry.getKey();

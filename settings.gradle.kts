@@ -2,7 +2,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 dependencyResolutionManagement {
     repositories {
-        // mavenLocal()
+        mavenLocal()
         mavenCentral()
 
         gradlePluginPortal()
@@ -62,6 +62,6 @@ rootProject.name = "hydraulic-parent"
 
 include(":shared")
 include(":fabric")
-// include(":neoforge")
+include(":neoforge")
 
 include(":test")
