@@ -1,6 +1,8 @@
 package org.geysermc.hydraulic.fabric;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -54,7 +56,8 @@ public class FabricUtil {
 
         final JsonObject fmj;
         try (Reader reader = Files.newBufferedReader(fmjPath)) {
-            fmj = GsonHelper.parse(reader);
+            Gson lenientGson = new GsonBuilder().setLenient().create();
+            fmj = lenientGson.fromJson(reader, JsonObject.class);
         } catch (IOException ignored) {
             return;
         }

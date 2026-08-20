@@ -26,7 +26,7 @@
     "hydraulic_test_mod.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.19.2",
+    "fabricloader": ">=0.19.3",
     "fabric-api": "*",
     "minecraft": "${minecraft_version}",
     "java": ">=25"

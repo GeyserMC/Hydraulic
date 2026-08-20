@@ -8,7 +8,7 @@ Hydraulic is a companion to Geyser which allows for Bedrock players to join modd
 Hydraulic is an open collaboration project by [CubeCraft Games](https://cubecraft.net).
 
 ## What is Hydraulic?
-Hydraulic is a server-side mod, which allows for Bedrock players to join modded Minecraft: Java Edition servers. This project works alongside [Geyser](https://github.com/GeyserMC/Geyser) to make this possible.
+Hydraulic is a server-side mod, which allows for Bedrock players to join modded Minecraft: Java Edition servers. This project works alongside [Geyser](https://github.com/GeyserMC/Geyser) to make this possible. 
 
 ### This project is still in very early development and should not be used on production setups! You can get [Hydraulic](https://geysermc.org/download?project=other-projects&hydraulic=expanded) from the GeyserMC website.
 
