@@ -24,26 +24,46 @@ public class ModBlocks {
             true
     );
 
-    private static Block register(String name, Function<BlockBehaviour.Properties, Block> blockFactory, BlockBehaviour.Properties properties, boolean shouldRegisterItem) {
+    private static Block register(
+            String name,
+            Function<BlockBehaviour.Properties, Block> blockFactory,
+            BlockBehaviour.Properties properties,
+            boolean shouldRegisterItem
+    ) {
         ResourceKey<Block> blockKey = keyOfBlock(name);
         Block block = blockFactory.apply(properties.setId(blockKey));
 
         if (shouldRegisterItem) {
             ResourceKey<Item> itemKey = keyOfItem(name);
 
-            BlockItem blockItem = new BlockItem(block, new Item.Properties().setId(itemKey));
+            BlockItem blockItem = new BlockItem(
+                    block,
+                    new Item.Properties().setId(itemKey)
+            );
             Registry.register(BuiltInRegistries.ITEM, itemKey, blockItem);
         }
 
         return Registry.register(BuiltInRegistries.BLOCK, blockKey, block);
     }
 
-    private static ResourceKey<Block> keyOfBlock(String name) {
-        return ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(HydraulicTestMod.MOD_ID, name));
+    public static ResourceKey<Block> keyOfBlock(String name) {
+        return ResourceKey.create(
+                Registries.BLOCK,
+                Identifier.fromNamespaceAndPath(
+                        HydraulicTestMod.MOD_ID,
+                        name
+                )
+        );
     }
 
     private static ResourceKey<Item> keyOfItem(String name) {
-        return ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(HydraulicTestMod.MOD_ID, name));
+        return ResourceKey.create(
+                Registries.ITEM,
+                Identifier.fromNamespaceAndPath(
+                        HydraulicTestMod.MOD_ID,
+                        name
+                )
+        );
     }
 
     public static void init() {}

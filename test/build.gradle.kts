@@ -56,4 +56,12 @@ tasks.named("build") { dependsOn(tasks.named("runDatagen")) }
 dependencies {
     implementation(libs.fabric.loader)
     api(libs.fabric.api)
+
+    implementation("net.fabricmc.fabric-api:fabric-content-registries-v0:11.3.1+37b1aa249e")
+}
+
+configurations.configureEach {
+    resolutionStrategy {
+        force("net.fabricmc.fabric-api:fabric-content-registries-v0:11.3.1+37b1aa249e")
+    }
 }
