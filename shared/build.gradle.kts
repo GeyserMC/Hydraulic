@@ -12,6 +12,7 @@ dependencies {
     }
 
     api(libs.pack.converter)
+    compileOnly(libs.examination.api)
 
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)

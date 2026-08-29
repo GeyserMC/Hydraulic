@@ -16,11 +16,11 @@ public class TagGeneration {
 
         @Override
         protected void addTags(HolderLookup.Provider provider) {
-            valueLookupBuilder(BlockTags.NEEDS_IRON_TOOL)
-                    .add(ModBlocks.GOLDEN_BARREL);
+            tag(BlockTags.NEEDS_IRON_TOOL)
+                .add(ModBlocks.GOLDEN_BARREL.properties().blockId());
 
-            valueLookupBuilder(BlockTags.MINEABLE_WITH_PICKAXE)
-                    .add(ModBlocks.GOLDEN_BARREL);
+            tag(BlockTags.MINEABLE_WITH_PICKAXE)
+                .add(ModBlocks.GOLDEN_BARREL.properties().blockId());
         }
     }
 

@@ -54,6 +54,8 @@ dependencies {
     compileOnly(libs.asm)
 
     runtimeOnly(libs.pack.converter)
+    runtimeOnly(libs.examination.api)
+    runtimeOnly(libs.examination.string)
     includeTransitive(libs.pack.converter)
 
     localRuntime(libs.geyser.fabric) {
@@ -61,6 +63,8 @@ dependencies {
         exclude(group = "io.netty.incubator")
         exclude(group = "org.incendo")
     }
+
+    localRuntime(project(":test"))
 }
 
 sourceSets {

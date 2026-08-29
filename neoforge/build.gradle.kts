@@ -38,6 +38,8 @@ dependencies {
 
     // TODO fix neoforge runServer task
     runtimeOnly(libs.pack.converter)
+    runtimeOnly(libs.examination.api)
+    runtimeOnly(libs.examination.string)
     includeTransitive(libs.pack.converter)
 }
 
