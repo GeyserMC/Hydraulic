@@ -51,8 +51,6 @@ dependencies {
         isTransitive = false
     }
 
-    compileOnly(libs.asm)
-
     runtimeOnly(libs.pack.converter)
     runtimeOnly(libs.examination.api)
     runtimeOnly(libs.examination.string)
