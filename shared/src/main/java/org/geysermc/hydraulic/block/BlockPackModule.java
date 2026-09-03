@@ -1,10 +1,12 @@
 package org.geysermc.hydraulic.block;
 
 import com.google.auto.service.AutoService;
+import com.mojang.logging.LogUtils;
 import net.kyori.adventure.key.Key;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.StringRepresentable;
@@ -19,7 +21,9 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.slf4j.Logger;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
 import org.geysermc.geyser.api.block.custom.CustomBlockPermutation;
 import org.geysermc.geyser.api.block.custom.CustomBlockState;
@@ -72,6 +76,7 @@ import java.util.function.BiFunction;
 
 @AutoService(PackModule.class)
 public class BlockPackModule extends PackModule<BlockPackModule> {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final String STATE_CONDITION = "query.block_property('%s') == %s";
 
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
@@ -248,10 +253,14 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .identifier(geoName)
                             .build());
 
-                    // TODO: This is not fully correct. On Bedrock, the shape rotates with
-                    //       the block, so the collision box will need to be rotated back here
+                    // Bedrock rotates the rendered model so the "back" face points at the
+                    // viewer; we undo that rotation for the Java-derived selection and
+                    // collision boxes so a furnace facing east on Java still has its
+                    // collision box on the east side on Bedrock. See rotateShapeForBedrock.
                     VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+                    shape = rotateShapeForBedrock(state, shape);
+                    collisionShape = rotateShapeForBedrock(state, collisionShape);
 
                     componentsBuilder.selectionBox(createBoxComponent(shape));
                     componentsBuilder.collisionBox(createBoxComponent(collisionShape));
@@ -368,7 +377,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
                     .displayName("%" + block.getDescriptionId())
                     .friction(Math.min(1 - block.getFriction(), 0.9f))
-                    .destructibleByMining(block.defaultDestroyTime()) // TODO: Check
+                    .destructibleByMining(block.defaultDestroyTime()) // Java hardness == Bedrock hardness; -1 = unbreakable
                     // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(createBoxComponent(shape))
                     .collisionBox(createBoxComponent(collisionShape));
@@ -409,7 +418,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 JavaBlockState.Builder javaBlockStateBuilder = JavaBlockState.builder()
                         .identifier(BlockStateParser.serialize(state))
                         .javaId(Block.getId(state))
-                        .blockHardness(block.defaultDestroyTime()) // TODO: Check
+                        .blockHardness(block.defaultDestroyTime()) // Java hardness == Bedrock blockHardness; -1 = unbreakable
                         .canBreakWithHand(!state.requiresCorrectToolForDrops())
                         .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
                         .stateGroupId(blockId)
@@ -700,5 +709,60 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 16 * (maxY - minY),
                 16 * (maxZ - minZ)
         );
+    }
+
+    /**
+     * Rotate a Java voxel shape so its collision box matches what Bedrock expects
+     * after Bedrock applies its own rotation to the block. Only the four
+     * horizontal {@code horizontal_facing}/{@code facing} directions are mapped;
+     * any other rotation property (stairs 8-step, banner 16-step, axis 3-step) is
+     * left as-is and a debug log records the skip so operators can audit which
+     * blocks still need manual coverage.
+     *
+     * @param state the Java block state whose rotation drives the transform
+     * @param shape the Java voxel shape to rotate; returned unchanged when no
+     *              horizontal rotation property is present
+     * @return the rotated shape, or {@code shape} if no rotation applies
+     */
+    static VoxelShape rotateShapeForBedrock(BlockState state, VoxelShape shape) {
+        if (shape == null || shape.isEmpty()) return shape;
+        Direction direction = horizontalFacingOf(state);
+        if (direction == null) return shape;
+        int steps = direction.get2DDataValue();
+        VoxelShape rotated = shape;
+        for (int i = 0; i < steps; i++) {
+            rotated = rotateY90(rotated);
+        }
+        return rotated;
+    }
+
+    private static Direction horizontalFacingOf(BlockState state) {
+        if (state == null) return null;
+        Property<?> horizontalFacing = state.getProperties().stream()
+                .filter(p -> p.getName().equals("horizontal_facing") || p.getName().equals("facing"))
+                .findFirst().orElse(null);
+        if (horizontalFacing == null) return null;
+        Object value = state.getValue(horizontalFacing);
+        if (!(value instanceof Direction direction)) {
+            LOGGER.debug("Skipping rotation for {} — facing property {} is not a Direction ({})",
+                    BuiltInRegistries.BLOCK.getKey(state.getBlock()), horizontalFacing.getName(), value);
+            return null;
+        }
+        if (direction.getAxis().isVertical()) {
+            return null;
+        }
+        return direction;
+    }
+
+    private static VoxelShape rotateY90(VoxelShape shape) {
+        VoxelShape result = Shapes.empty();
+        for (AABB box : shape.toAabbs()) {
+            double minX = -box.maxZ;
+            double maxX = -box.minZ;
+            double minZ = box.minX;
+            double maxZ = box.maxX;
+            result = Shapes.or(result, Shapes.box(minX, box.minY, minZ, maxX, box.maxY, maxZ));
+        }
+        return result;
     }
 }

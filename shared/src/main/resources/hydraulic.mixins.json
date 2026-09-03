@@ -5,7 +5,6 @@
   "compatibilityLevel": "JAVA_25",
   "mixins": [
     "ext.BlockStateSerializerMixin",
-    "ext.ItemTranslatorMixin",
     "ext.MinecraftResourcePackReaderImplMixin",
     "ext.ModelSerializerMixin"
   ],
