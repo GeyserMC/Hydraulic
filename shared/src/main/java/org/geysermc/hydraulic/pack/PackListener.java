@@ -84,15 +84,20 @@ public class PackListener {
 
     @Subscribe(postOrder = PostOrder.LATE)
     public void onLoadResourcePacks(GeyserDefineResourcePacksEvent event) {
-        // Check if hydraulic has updated since the last pack conversion
-        // This is so we can regenerate packs on update in case the pack generation logic has changed
-        ModInfo hydraulicMod = this.hydraulic.mod(Constants.MOD_ID);
-        boolean hydraulicUpdated = checkNeedsConversion(hydraulicMod, this.hydraulic.modStorage(hydraulicMod).pack());
-
-        if (hydraulicUpdated) {
-            LOGGER.info("Hydraulic has updated since the last pack conversion, regenerating all packs!");
-        }
-
+        // Per-mod cache invalidation. A previous version of this code also
+        // checked a single global "hydraulicUpdated" flag derived from the
+        // Hydraulic mod's own .mcpack, and used it to force-reconvert every
+        // other mod on every Hydraulic update. Live server log on 2026-09-03
+        // showed the cost: 164 mods, 19s blocking startup, "615 ticks
+        // behind" watchdog. Since each mod's pack UUID already encodes the
+        // mod file identity and a re-conversion produces a new UUID, the
+        // per-mod check below is enough to invalidate the cache after any
+        // upstream change — only the actually-stale mod gets regenerated.
+        // If a Hydraulic release genuinely breaks the conversion for an
+        // unrelated mod, that mod's stored .mcpack would still be re-used
+        // until the operator clears it; the trade-off is documented in
+        // gradle/libs.versions.toml as a release-note check for operators.
+        //
         // Go over all mods and load the pack or mark them for conversion
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
         for (ModInfo mod : this.hydraulic.mods()) {
@@ -108,7 +113,7 @@ public class PackListener {
             ModStorage storage = this.hydraulic.modStorage(mod);
 
             Path packPath = storage.pack();
-            if (this.hydraulic.isDev() || hydraulicUpdated || checkNeedsConversion(mod, packPath)) {
+            if (this.hydraulic.isDev() || checkNeedsConversion(mod, packPath)) {
                 packsToLoad.put(mod.id(), Pair.of(mod, packPath));
             } else {
                 // We don't need to convert the pack, just register it
