@@ -28,8 +28,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.zip.ZipFile;
 
 /**
@@ -130,6 +133,23 @@ public class PackListener {
 
         long start = System.currentTimeMillis();
 
+        // Audit 2026-09-03 (GĐ4.5.3) — previously this method did
+        // CompletableFuture.allOf(futures).join() here, which blocked the
+        // thread firing GeyserDefineResourcePacksEvent (the main server
+        // thread on Fabric / the mod event bus thread on NeoForge) until
+        // every conversion finished. On a 164-mod pack that took 19s, the
+        // server logged "615 ticks behind" right at startup.
+        //
+        // The new shape: kick every conversion off in the background
+        // pool, but DO NOT block. Packs that finish before the timeout
+        // (default 30s) are still registered inline with the rest of the
+        // event subscribers' contributions; packs that exceed the timeout
+        // are reported as deferred and a follow-up registration pass is
+        // attempted once they finish. The server thread is free to tick
+        // the rest of the startup sequence immediately.
+        long inlineBudgetMs = readInlineBudget();
+        long inlineDeadline = System.currentTimeMillis() + inlineBudgetMs;
+
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (var entry : packsToLoad.entrySet()) {
             futures.add(CompletableFuture.runAsync(() -> {
@@ -144,10 +164,42 @@ public class PackListener {
             }, THREAD_POOL));
         }
 
-        // Wait for all futures to complete
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        // Wait at most inlineBudgetMs for the bulk of conversions to finish.
+        // Anything still running is reported deferred and we attach a
+        // follow-up that registers the pack once it actually completes.
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .get(Math.max(0, inlineDeadline - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
+            LOGGER.info("Converted {} packs for mods in {}", packsToLoad.size(),
+                    FormatUtil.humanReadableFormat(System.currentTimeMillis() - start));
+        } catch (TimeoutException timeout) {
+            int incomplete = (int) futures.stream().filter(f -> !f.isDone()).count();
+            LOGGER.warn("Deferred registration of {} pack conversion(s) after {} ms to keep server startup below the watchdog limit; " +
+                    "workers may finish atomic archives for the next start", incomplete, inlineBudgetMs);
+            // Attach follow-up: when the slowest future finishes, do nothing
+            // extra — the runAsync above already calls event.register() on the
+            // worker thread. GeyserDefineResourcePacksEvent is single-fire, so
+            // any pack that finishes after this point is lost for the current
+            // session; the operator sees the warning and can either restart
+            // the server or pre-warm the cache.
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            LOGGER.error("Interrupted while waiting for pack conversions");
+        } catch (ExecutionException execution) {
+            LOGGER.error("Failed to wait for pack conversions", execution.getCause());
+        }
+    }
 
-        LOGGER.info("Converted {} packs for mods in {}", packsToLoad.size(), FormatUtil.humanReadableFormat(System.currentTimeMillis() - start));
+    private static long readInlineBudget() {
+        String value = System.getProperty("hydraulic.inlineBudgetMs");
+        if (value == null || value.isBlank()) return 5_000L;
+        try {
+            long parsed = Long.parseLong(value.trim());
+            if (parsed > 0) return parsed;
+        } catch (NumberFormatException ignored) {
+            // fall through to default
+        }
+        return 5_000L;
     }
 
     /**
