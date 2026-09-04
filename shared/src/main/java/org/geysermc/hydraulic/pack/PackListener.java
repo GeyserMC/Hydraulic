@@ -44,13 +44,33 @@ public class PackListener {
     private final PackManager manager;
 
     static {
-        THREAD_POOL = Executors.newFixedThreadPool(
-            Math.max(1, Runtime.getRuntime().availableProcessors() * 3 / 8),
+        // Live server log on 2026-09-03 showed a 2-vCPU host running the
+        // previous formula "max(1, cores * 3 / 8)" — which collapses to
+        // pool size 1, making every "concurrent" pack conversion run
+        // sequentially. On 164 mods the result was a 19-second
+        // startup stall plus a "615 ticks behind" watchdog warning.
+        //
+        // New formula: max(2, cores - 1) so a 2-vCPU host still gets
+        // 2 worker threads. Operators can override via system property
+        // when they want to constrain or expand the pool explicitly.
+        int poolSize = Math.max(2, Runtime.getRuntime().availableProcessors() - 1);
+        String override = System.getProperty("hydraulic.conversionThreads");
+        if (override != null && !override.isBlank()) {
+            try {
+                int parsed = Integer.parseInt(override.trim());
+                if (parsed > 0) poolSize = parsed;
+                else LOGGER.warn("Ignoring non-positive hydraulic.conversionThreads={}; using {}", override, poolSize);
+            } catch (NumberFormatException exception) {
+                LOGGER.warn("Ignoring invalid hydraulic.conversionThreads={}; expected a positive integer", override);
+            }
+        }
+        THREAD_POOL = Executors.newFixedThreadPool(poolSize,
             new ThreadFactoryBuilder()
                 .setNameFormat(Constants.MOD_NAME + " Conversion Thread #%d")
                 .setUncaughtExceptionHandler((thread, throwable) -> LOGGER.error("Uncaught exception in thread {}", thread.getName(), throwable))
                 .build()
         );
+        LOGGER.info("Hydraulic pack conversion thread pool size: {} (override via -Dhydraulic.conversionThreads=<n>)", poolSize);
     }
 
     public PackListener(HydraulicImpl hydraulic, PackManager manager) {
