@@ -2,7 +2,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 dependencyResolutionManagement {
     repositories {
-//        mavenLocal()
+        // mavenLocal()
         mavenCentral()
 
         gradlePluginPortal()
@@ -29,13 +29,6 @@ dependencyResolutionManagement {
 
         // Sponge Snapshots
         maven("https://repo.spongepowered.org/repository/maven-public/")
-
-        // PackConverter
-        maven("https://jitpack.io") {
-            content {
-                includeGroupByRegex("com\\.github\\..*")
-            }
-        }
     }
 }
 
@@ -43,23 +36,21 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
 
+        // Geyser, Floodgate, Cumulus etc.
         maven("https://repo.opencollab.dev/main/")
-        maven("https://jitpack.io") {
-            content {
-                includeGroupByRegex("com\\.github\\..*")
-            }
-        }
 
+        // Architectury
         maven("https://maven.architectury.dev/")
-        maven("https://maven.neoforged.net/releases")
-        maven("https://maven.fabricmc.net/")
 
-        // Java pack library
-        maven("https://repo.unnamed.team/repository/unnamed-public/")
+        // NeoForge
+        maven("https://maven.neoforged.net/releases")
+
+        // Fabric
+        maven("https://maven.fabricmc.net/")
     }
 
     plugins {
-        id("net.kyori.blossom") version "1.2.0"
+        id("net.kyori.blossom") version "2.2.0"
         id("net.kyori.indra")
         id("net.kyori.indra.git")
     }
@@ -71,6 +62,6 @@ rootProject.name = "hydraulic-parent"
 
 include(":shared")
 include(":fabric")
-include(":neoforge")
+// include(":neoforge")
 
 include(":test")

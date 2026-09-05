@@ -11,10 +11,8 @@
     "homepage": "https://geysermc.org/",
     "sources": "https://github.com/GeyserMC/Hydraulic"
   },
-
   "license": "MIT",
   "icon": "assets/hydraulic/logo.png",
-
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -25,12 +23,11 @@
     "hydraulic.mixins.json",
     "hydraulic-fabric.mixins.json"
   ],
-
   "depends": {
-    "fabricloader": ">=0.15",
-    "fabric": "*",
+    "fabricloader": ">=0.19.3",
+    "fabric-api": "*",
     "geyser-fabric": "*",
     "minecraft": ">=${minecraft_version}",
-    "java": ">=21"
+    "java": ">=25"
   }
 }

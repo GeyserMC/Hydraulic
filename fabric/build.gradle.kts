@@ -16,12 +16,19 @@ configurations {
 }
 
 tasks {
-    remapJar {
-        dependsOn(shadowJar)
-        inputFile.set(shadowJar.get().archiveFile)
+    named<Jar>("mergeShadowAndJarJar") {
+        from (
+            zipTree( shadowJar.map { it.outputs.files.singleFile } ).matching {
+                exclude("fabric.mod.json")
+                exclude("LICENSE")
+            },
+            zipTree( jar.map { it.outputs.files.singleFile } ).matching {
+                include("META-INF/jars/**")
+                include("fabric.mod.json")
+                include("LICENSE")
+            }
+        )
         archiveBaseName.set("${modId}-fabric")
-        archiveClassifier.set("")
-        archiveVersion.set("")
     }
 
     shadowJar {
@@ -35,24 +42,27 @@ tasks {
 }
 
 dependencies {
-    modImplementation(libs.fabric.loader)
-    modApi(libs.fabric.api)
-    common(project(":shared", configuration = "namedElements")) { isTransitive = false }
+    implementation(libs.fabric.loader)
+    api(libs.fabric.api)
+    common(project(":shared")) { isTransitive = false }
     compileOnly(libs.geyser.api)
 
     shadow(project(path = ":shared", configuration = "transformProductionFabric")) {
         isTransitive = false
     }
 
-    compileOnly(libs.asm)
-
-    modRuntimeOnly(libs.pack.converter)
+    runtimeOnly(libs.pack.converter)
+    runtimeOnly(libs.examination.api)
+    runtimeOnly(libs.examination.string)
     includeTransitive(libs.pack.converter)
 
-    modLocalRuntime(libs.geyser.fabric) {
+    localRuntime(libs.geyser.fabric) {
         exclude(group = "io.netty")
         exclude(group = "io.netty.incubator")
+        exclude(group = "org.incendo")
     }
+
+    localRuntime(project(":test"))
 }
 
 sourceSets {

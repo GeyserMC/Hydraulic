@@ -10,6 +10,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.TintedParticleLeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -269,6 +270,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     renderMethod = "alpha_test_single_sided";
                 }
 
+                String tintMethod = null;
+                // TODO Read this from the model data
+                if (block instanceof TintedParticleLeavesBlock) {
+                    tintMethod = "default_foliage";
+                }
+
                 Materials materials = context.storage().materials();
                 Materials.Material material = materials.material(key.toString());
                 if (material != null) {
@@ -282,6 +289,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .renderMethod(renderMethod)
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
+                            .tintMethod(tintMethod)
                             .build());
 
                     Map<String, String> faceMapping = getFaceMapping(model.parent());
@@ -296,6 +304,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                                     .renderMethod(renderMethod)
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
+                                    .tintMethod(tintMethod)
                                     .build());
                         }
                     } else {
@@ -312,6 +321,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                                     .renderMethod(renderMethod)
                                     .faceDimming(true)
                                     .ambientOcclusion(model.ambientOcclusion())
+                                    .tintMethod(tintMethod)
                                     .build());
                         }
                     }
@@ -321,6 +331,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .renderMethod(renderMethod)
                             .faceDimming(true)
                             .ambientOcclusion(model.ambientOcclusion())
+                            .tintMethod(tintMethod)
                             .build());
                     context.logger().warn("Could not find material for block {}", key);
                 }
@@ -565,10 +576,19 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
     @Nullable
     private static ModelTexture getModelTexture(@NotNull Map<String, ModelTexture> textures, @NotNull String key) {
+        return getModelTexture(textures, key, new HashSet<>());
+    }
+
+    @Nullable
+    private static ModelTexture getModelTexture(@NotNull Map<String, ModelTexture> textures, @NotNull String key, @NotNull Set<String> visited) {
+        if (!visited.add(key)) {
+            return null;
+        }
+
         // Texture references the value of another texture
         ModelTexture value = textures.get(key);
         if (value != null && value.reference() != null) {
-            return getModelTexture(textures, value.reference());
+            return getModelTexture(textures, value.reference(), visited);
         }
 
         return value;

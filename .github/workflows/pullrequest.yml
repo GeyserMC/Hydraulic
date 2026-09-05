@@ -17,7 +17,7 @@ jobs:
       - name: Setup Gradle
         uses: GeyserMC/actions/setup-gradle-composite@master
         with:
-          setup-java_java-version: 21
+          setup-java_java-version: 25
           setup-gradle_cache-read-only: true
 
       - name: Build Hydraulic
@@ -29,4 +29,3 @@ jobs:
         with:
           artifacts: | 
             fabric/build/libs/hydraulic-fabric.jar
-            neoforge/build/libs/hydraulic-neoforge.jar

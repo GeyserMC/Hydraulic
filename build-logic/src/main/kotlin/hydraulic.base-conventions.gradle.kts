@@ -6,7 +6,7 @@ plugins {
 val minecraftVersion = project.property("minecraft_version") as String
 
 dependencies {
-    compileOnly("org.checkerframework", "checker-qual", "3.19.0")
+    compileOnly("org.checkerframework:checker-qual:4.2.2")
 }
 
 indra {
@@ -18,7 +18,7 @@ indra {
     mitLicense()
 
     javaVersions {
-        target(21)
+        target(25)
     }
 }
 
@@ -29,7 +29,7 @@ tasks {
                 "id" to "hydraulic",
                 "name" to "Hydraulic",
                 "version" to project.version,
-                "description" to project.description,
+                "description" to project.description as String,
                 "url" to "https://geysermc.org",
                 "author" to "GeyserMC",
                 "minecraft_version" to minecraftVersion

@@ -2,14 +2,13 @@ package org.geysermc.hydraulic.item;
 
 import com.google.auto.service.AutoService;
 import net.kyori.adventure.key.Key;
-import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
-import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.equipment.Equippable;
@@ -25,8 +24,6 @@ import team.unnamed.creative.equipment.Equipment;
 import team.unnamed.creative.equipment.EquipmentLayer;
 import team.unnamed.creative.equipment.EquipmentLayerType;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,11 +66,11 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
                 if (optionalEntityType.isPresent()) {
                     HolderSet<EntityType<?>> entityTypeHolderSet = optionalEntityType.get();
 
-                    if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityType.HORSE))) {
+                    if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityTypes.HORSE))) {
                         layerType = EquipmentLayerType.HORSE_BODY;
-                    } else if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityType.WOLF))) {
+                    } else if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityTypes.WOLF))) {
                         layerType = EquipmentLayerType.WOLF_BODY;
-                    } else if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityType.LLAMA))) {
+                    } else if (entityTypeHolderSet.contains(BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(EntityTypes.LLAMA))) {
                         layerType = EquipmentLayerType.LLAMA_BODY;
                     }
                 }

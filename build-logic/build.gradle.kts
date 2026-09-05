@@ -3,21 +3,21 @@ plugins {
 }
 
 repositories {
-    //mavenLocal()
+    // mavenLocal()
 
     gradlePluginPortal()
 
+    // Geyser, Floodgate, Cumulus etc.
     maven("https://repo.opencollab.dev/maven-releases/")
     maven("https://repo.opencollab.dev/maven-snapshots/")
 
-    maven("https://jitpack.io") {
-        content {
-            includeGroupByRegex("com\\.github\\..*")
-        }
-    }
-
+    // Fabric
     maven("https://maven.fabricmc.net/")
+
+    // NeoForge
     maven("https://maven.neoforged.net/releases/")
+
+    // Architectury
     maven("https://maven.architectury.dev/")
 }
 

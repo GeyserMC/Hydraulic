@@ -16,31 +16,17 @@ import java.util.Map;
 public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
     public HydraulicPackModule() {
         this.postProcess(context -> {
-            Map<String, List<String>> mappings;
-
             JsonMappings jsonMappings = JsonMappings.getMapping("textures");
-            if (jsonMappings != null) {
-                try {
-                    Field mappingsField = JsonMappings.class.getDeclaredField("mappings");
-                    mappingsField.setAccessible(true);
-
-                    mappings = (Map<String, List<String>>) mappingsField.get(jsonMappings);
-                } catch (NoSuchFieldException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                mappings = Map.of();
-            }
 
             // Map all block and item textures files as valid names
-            for (Map.Entry<String, List<String>> entry : mappings.entrySet()) {
+            for (Map.Entry<String, List<String>> entry : jsonMappings.entrySet()) {
                 if (entry.getKey().startsWith("block")) {
                     for (String str : entry.getValue()) {
-                        context.bedrockResourcePack().addBlockTexture(Constants.MOD_ID + ":" + str, "textures/blocks/" + str);
+                        context.bedrockResourcePack().addBlockTexture(Constants.MOD_ID + ":" + str, "textures/blocks/" + str.replace("block/", ""));
                     }
                 } else if (entry.getKey().startsWith("item")) {
                     for (String str : entry.getValue()) {
-                        context.bedrockResourcePack().addItemTexture(Constants.MOD_ID + ":" + str, "textures/items/" + str);
+                        context.bedrockResourcePack().addItemTexture(Constants.MOD_ID + ":" + str, "textures/items/" + str.replace("item/", ""));
                     }
                 }
             }

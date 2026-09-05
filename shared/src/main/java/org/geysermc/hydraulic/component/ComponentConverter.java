@@ -1,6 +1,5 @@
 package org.geysermc.hydraulic.component;
 
-import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
@@ -10,11 +9,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.component.Tool;
-import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemDefinition;
 import org.geysermc.geyser.api.item.custom.v2.component.*;
-import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserDataComponent;
+import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserItemDataComponents;
 import org.geysermc.geyser.api.item.custom.v2.component.java.*;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.geyser.api.util.Holders;
@@ -22,7 +20,6 @@ import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.hydraulic.util.HydraulicKey;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -35,7 +32,7 @@ public class ComponentConverter {
         COMPONENT_CONVERT_MAP.put(dataComponent, (Converter<Object>) conversion);
     }
 
-    private static <T> void addSimpleConversion(DataComponentType<T> javaDataComponent, DataComponent<T> bedrock) {
+    private static <T> void addSimpleConversion(DataComponentType<T> javaDataComponent, ItemDataComponent<T> bedrock) {
         addComponentConversion(javaDataComponent, (component, map, definition, options) -> {
             definition.component(bedrock, component);
         });
@@ -59,44 +56,44 @@ public class ComponentConverter {
 
     static {
         // Same types, so we can just passthrough these values
-        addSimpleConversion(DataComponents.MAX_STACK_SIZE, ItemDataComponents.MAX_STACK_SIZE);
-        addSimpleConversion(DataComponents.MAX_DAMAGE, ItemDataComponents.MAX_DAMAGE);
-        addSimpleConversion(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, ItemDataComponents.ENCHANTMENT_GLINT_OVERRIDE);
+        addSimpleConversion(DataComponents.MAX_STACK_SIZE, JavaItemDataComponents.MAX_STACK_SIZE);
+        addSimpleConversion(DataComponents.MAX_DAMAGE, JavaItemDataComponents.MAX_DAMAGE);
+        addSimpleConversion(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, JavaItemDataComponents.ENCHANTMENT_GLINT_OVERRIDE);
 
         // These components are a little different or too complex, so we need a more powerful conversion
         addComponentConversion(DataComponents.FOOD, (component, map, definition, options) -> {
             definition.component(
-                    ItemDataComponents.FOOD,
-                    FoodProperties.of(component.nutrition(), component.saturation(), component.canAlwaysEat())
+                    JavaItemDataComponents.FOOD,
+                    JavaFoodProperties.of(component.nutrition(), component.saturation(), component.canAlwaysEat())
             );
         });
         addComponentConversion(DataComponents.CONSUMABLE, (component, map, definition, options) -> {
-            Consumable.Animation animation = switch (component.animation()) {
-                case NONE -> Consumable.Animation.NONE;
-                case DRINK -> Consumable.Animation.DRINK;
-                case BLOCK -> Consumable.Animation.BLOCK;
-                case BOW -> Consumable.Animation.BOW;
-                case SPEAR -> Consumable.Animation.SPEAR;
-                case SPYGLASS -> Consumable.Animation.SPYGLASS;
-                case BRUSH -> Consumable.Animation.BRUSH;
-                default -> Consumable.Animation.EAT;
+            JavaConsumable.Animation animation = switch (component.animation()) {
+                case NONE -> JavaConsumable.Animation.NONE;
+                case DRINK -> JavaConsumable.Animation.DRINK;
+                case BLOCK -> JavaConsumable.Animation.BLOCK;
+                case BOW -> JavaConsumable.Animation.BOW;
+                case SPEAR -> JavaConsumable.Animation.SPEAR;
+                case SPYGLASS -> JavaConsumable.Animation.SPYGLASS;
+                case BRUSH -> JavaConsumable.Animation.BRUSH;
+                default -> JavaConsumable.Animation.EAT;
             };
             definition.component(
-                    ItemDataComponents.CONSUMABLE,
-                    Consumable.of(component.consumeSeconds(), animation)
+                    JavaItemDataComponents.CONSUMABLE,
+                    JavaConsumable.of(component.consumeSeconds(), animation)
             );
         });
         addComponentConversion(DataComponents.USE_COOLDOWN, (component, map, definition, options) -> {
             Identifier location = component.cooldownGroup().map(HydraulicKey::of).orElse(null);
             definition.component(
-                    ItemDataComponents.USE_COOLDOWN,
-                    UseCooldown.builder()
+                    JavaItemDataComponents.USE_COOLDOWN,
+                    JavaUseCooldown.builder()
                             .seconds(component.seconds())
                             .cooldownGroup(location)
             );
         });
         addComponentConversion(DataComponents.TOOL, (component, map, definition, options) -> {
-            ToolProperties.Builder toolProperties = ToolProperties.builder()
+            JavaTool.Builder toolProperties = JavaTool.builder()
                     .canDestroyBlocksInCreative(component.canDestroyBlocksInCreative())
                     .defaultMiningSpeed(component.defaultMiningSpeed());
 
@@ -104,56 +101,56 @@ public class ComponentConverter {
                 if (toolRule.speed().isEmpty()) continue;
 
                 toolProperties.rule(
-                        ToolProperties.Rule.of(toHolders(toolRule.blocks()), toolRule.speed().get())
+                        JavaTool.Rule.of(toHolders(toolRule.blocks()), toolRule.speed().get())
                 );
             }
 
             definition.component(
-                    ItemDataComponents.TOOL,
+                    JavaItemDataComponents.TOOL,
                     toolProperties
             );
         });
         addComponentConversion(DataComponents.ENCHANTABLE, (component, map, definition, options) -> {
-            definition.component(ItemDataComponents.ENCHANTABLE, component.value());
+            definition.component(JavaItemDataComponents.ENCHANTABLE, component.value());
         });
         addComponentConversion(DataComponents.EQUIPPABLE, (component, map, definition, options) -> {
             options.tag(Identifier.of("minecraft", "is_armor"));
             options.creativeCategory(CreativeCategory.EQUIPMENT);
 
-            Equippable.EquipmentSlot slot = switch (component.slot()) {
+            JavaEquippable.EquipmentSlot slot = switch (component.slot()) {
                 case FEET -> {
                     options.creativeGroup("itemGroup.name.boots");
-                    yield Equippable.EquipmentSlot.FEET;
+                    yield JavaEquippable.EquipmentSlot.FEET;
                 }
                 case LEGS -> {
                     options.creativeGroup("itemGroup.name.leggings");
-                    yield Equippable.EquipmentSlot.LEGS;
+                    yield JavaEquippable.EquipmentSlot.LEGS;
                 }
                 case CHEST -> {
                     options.creativeGroup("itemGroup.name.chestplate");
-                    yield Equippable.EquipmentSlot.CHEST;
+                    yield JavaEquippable.EquipmentSlot.CHEST;
                 }
                 case HEAD -> {
                     options.creativeGroup("itemGroup.name.helmet");
-                    yield Equippable.EquipmentSlot.HEAD;
+                    yield JavaEquippable.EquipmentSlot.HEAD;
                 }
-                case BODY -> Equippable.EquipmentSlot.BODY;
-                case SADDLE -> Equippable.EquipmentSlot.SADDLE;
+                case BODY -> JavaEquippable.EquipmentSlot.BODY;
+                case SADDLE -> JavaEquippable.EquipmentSlot.SADDLE;
                 default -> null;
             };
             if (slot != null)
                 definition.component(
-                        ItemDataComponents.EQUIPPABLE,
-                        Equippable.of(slot)
+                        JavaItemDataComponents.EQUIPPABLE,
+                        JavaEquippable.of(slot)
                 );
         });
         addComponentConversion(DataComponents.REPAIRABLE, (component, map, definition, options) -> {
-            Repairable.Builder repairableComponent = Repairable.builder();
+            JavaRepairable.Builder repairableComponent = JavaRepairable.builder();
 
             repairableComponent.items(toHolders(component.items()));
 
             definition.component(
-                    ItemDataComponents.REPAIRABLE,
+                    JavaItemDataComponents.REPAIRABLE,
                     repairableComponent
             );
         });
@@ -162,7 +159,7 @@ public class ComponentConverter {
             if (equippable != null)
                 options.protectionValue((int) component.compute(Attributes.ARMOR, 0, equippable.slot()));
 
-            definition.component(GeyserDataComponent.ATTACK_DAMAGE, Math.max(0, (int) component.compute(Attributes.ATTACK_DAMAGE, 0, EquipmentSlot.MAINHAND)));
+            definition.component(GeyserItemDataComponents.ATTACK_DAMAGE, Math.max(0, (int) component.compute(Attributes.ATTACK_DAMAGE, 0, EquipmentSlot.MAINHAND)));
         });
     }
 

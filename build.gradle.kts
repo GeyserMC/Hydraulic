@@ -4,10 +4,10 @@ plugins {
 
 val platforms = setOf(
     projects.fabric,
-    projects.neoforge,
+    // projects.neoforge,
     projects.shared,
     projects.test
-).map { it.dependencyProject }
+).map { it -> project.project(it.path) }
 
 subprojects {
     when (this) {
@@ -22,17 +22,32 @@ allprojects {
     }
 
     repositories {
-//        mavenLocal()
+        // mavenLocal()
         mavenCentral()
 
+        // Geyser, Floodgate, Cumulus etc.
         maven("https://repo.opencollab.dev/main")
-        maven("https://jitpack.io") {
-            content {
-                includeGroupByRegex("com\\.github\\..*")
+
+        // Fabric
+        maven("https://maven.fabricmc.net/")
+
+        // NeoForge
+        maven("https://maven.neoforged.net/releases")
+
+        // creative
+        maven("https://repo.nexomc.com/releases/")
+
+        // Modrinth
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "Modrinth"
+                    url = uri("https://api.modrinth.com/maven")
+                }
+            }
+            filter {
+                includeGroup("maven.modrinth")
             }
         }
-
-        maven("https://maven.fabricmc.net/")
-        maven("https://maven.neoforged.net/releases")
     }
 }

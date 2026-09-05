@@ -1,6 +1,5 @@
-modLoader="javafml"
-loaderVersion="[4,)"
 license="MIT"
+
 [[mods]]
 modId="hydraulic"
 version="${version}"
@@ -8,14 +7,17 @@ displayName="Hydraulic"
 logoFile="hydraulic.png"
 authors="GeyserMC"
 description='''${description}'''
+
 [[mixins]]
 config = "hydraulic.mixins.json"
+
 [[dependencies.hydraulic]]
     modId="neoforge"
     type="required"
-    versionRange="[21.4.78-beta,)"
+    versionRange="[26.2.0.0-beta,)"
     ordering="NONE"
     side="BOTH"
+
 [[dependencies.hydraulic]]
     modId="minecraft"
     type="required"

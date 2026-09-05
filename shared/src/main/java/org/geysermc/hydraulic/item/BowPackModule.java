@@ -3,7 +3,6 @@ package org.geysermc.hydraulic.item;
 import com.google.auto.service.AutoService;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BowItem;
 import org.geysermc.hydraulic.pack.PackModule;

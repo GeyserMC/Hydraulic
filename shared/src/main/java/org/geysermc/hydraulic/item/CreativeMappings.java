@@ -7,9 +7,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
-import org.geysermc.geyser.api.item.custom.NonVanillaCustomItemData;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
-import org.geysermc.geyser.api.item.custom.v2.NonVanillaCustomItemDefinition;
 import org.geysermc.geyser.api.util.CreativeCategory;
 import org.geysermc.hydraulic.util.ItemGroup;
 
@@ -26,14 +24,14 @@ public class CreativeMappings {
             // region --- Construction ---
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.DOORS),
+                List.of(),
                 List.of(DoorBlock.class),
                 List.of(BlockTags.DOORS)
             ), new CreativeMapping(ItemGroup.DOORS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FENCES),
+                List.of(),
                 List.of(FenceBlock.class),
                 List.of(BlockTags.FENCES)
             ), new CreativeMapping(ItemGroup.FENCES, CreativeCategory.CONSTRUCTION));
@@ -54,21 +52,21 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.SLABS),
+                List.of(),
                 List.of(SlabBlock.class),
                 List.of(BlockTags.SLABS)
             ), new CreativeMapping(ItemGroup.SLABS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.STAIRS),
+                List.of(),
                 List.of(StairBlock.class),
                 List.of(BlockTags.STAIRS)
             ), new CreativeMapping(ItemGroup.STAIRS, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.TRAPDOORS),
+                List.of(),
                 List.of(TrapDoorBlock.class),
                 List.of(BlockTags.TRAPDOORS)
             ), new CreativeMapping(ItemGroup.TRAPDOORS, CreativeCategory.CONSTRUCTION));
@@ -91,7 +89,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FLOWERS),
+                List.of(),
                 List.of(FlowerBlock.class, TallFlowerBlock.class),
                 List.of(BlockTags.FLOWERS, BlockTags.SMALL_FLOWERS)
             ), new CreativeMapping(ItemGroup.FLOWERS, CreativeCategory.NATURE));
@@ -129,7 +127,7 @@ public class CreativeMappings {
                 List.of(),
                 List.of(ItemTags.SAPLINGS),
                 List.of(SaplingBlock.class),
-                List.of(BlockTags.SAPLINGS)
+                List.of()
             ), new CreativeMapping(ItemGroup.SAPLINGS, CreativeCategory.NATURE));
             // endregion
 
@@ -201,7 +199,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.BUTTONS),
+                List.of(),
                 List.of(ButtonBlock.class),
                 List.of(BlockTags.BUTTONS)
             ), new CreativeMapping(ItemGroup.BUTTONS, CreativeCategory.ITEMS));

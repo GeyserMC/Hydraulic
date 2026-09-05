@@ -12,9 +12,9 @@ import net.minecraft.world.level.block.Block;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomItemsEvent;
 import org.geysermc.geyser.api.item.custom.v2.CustomItemBedrockOptions;
 import org.geysermc.geyser.api.item.custom.v2.NonVanillaCustomItemDefinition;
-import org.geysermc.geyser.api.item.custom.v2.component.geyser.BlockPlacer;
-import org.geysermc.geyser.api.item.custom.v2.component.geyser.Chargeable;
-import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserDataComponent;
+import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserBlockPlacer;
+import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserChargeable;
+import org.geysermc.geyser.api.item.custom.v2.component.geyser.GeyserItemDataComponents;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
@@ -217,8 +217,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 // Set the needed component for bows to work correctly
                 if (item instanceof BowItem) {
                     customItemDefinition.component(
-                            GeyserDataComponent.CHARGEABLE,
-                            Chargeable.builder()
+                            GeyserItemDataComponents.CHARGEABLE,
+                            GeyserChargeable.builder()
                                     .maxDrawDuration(1f)
                                     .chargeOnDraw(false)
                     );
@@ -230,8 +230,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 // Set the needed component for crossbows to work correctly
                 if (item instanceof CrossbowItem) {
                     customItemDefinition.component(
-                            GeyserDataComponent.CHARGEABLE,
-                            Chargeable.builder()
+                            GeyserItemDataComponents.CHARGEABLE,
+                            GeyserChargeable.builder()
                                     .maxDrawDuration(0f)
                                     .chargeOnDraw(true)
                     );
@@ -246,8 +246,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                     Block block = blockItem.getBlock();
 
                     customItemDefinition.component(
-                            GeyserDataComponent.BLOCK_PLACER,
-                            BlockPlacer.of(HydraulicKey.of(BuiltInRegistries.BLOCK.getKey(block)), !is2d)
+                            GeyserItemDataComponents.BLOCK_PLACER,
+                            GeyserBlockPlacer.of(HydraulicKey.of(BuiltInRegistries.BLOCK.getKey(block)), !is2d)
                     );
 
                     CreativeMappings.setupBlock(block, customItemOptions);

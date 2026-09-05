@@ -42,7 +42,7 @@ public class PackUtil {
                     return value;
                 }
 
-                return Constants.MOD_ID + ":" + value;
+                return Constants.MOD_ID + ":" + output;
             }
 
             return modelValue.substring(modelValue.indexOf("/") + 1);

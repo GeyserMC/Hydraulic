@@ -1,6 +1,6 @@
 package org.geysermc.hydraulic.fabric.test.datagen;
 
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.minecraft.client.resources.model.EquipmentClientInfo;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 public class EquipmentGeneration implements DataProvider {
     private final PackOutput.PathProvider pathProvider;
 
-    public EquipmentGeneration(FabricDataOutput packOutput) {
+    public EquipmentGeneration(FabricPackOutput packOutput) {
         this.pathProvider = packOutput.createPathProvider(PackOutput.Target.RESOURCE_PACK, "equipment");
     }
 

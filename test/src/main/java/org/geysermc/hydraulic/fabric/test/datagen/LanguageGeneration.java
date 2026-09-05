@@ -1,6 +1,6 @@
 package org.geysermc.hydraulic.fabric.test.datagen;
 
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
 import net.minecraft.core.HolderLookup;
 import org.geysermc.hydraulic.fabric.test.ModBlocks;
@@ -9,7 +9,7 @@ import org.geysermc.hydraulic.fabric.test.ModItems;
 import java.util.concurrent.CompletableFuture;
 
 public class LanguageGeneration extends FabricLanguageProvider {
-    protected LanguageGeneration(FabricDataOutput dataOutput, CompletableFuture<HolderLookup.Provider> registryLookup) {
+    protected LanguageGeneration(FabricPackOutput dataOutput, CompletableFuture<HolderLookup.Provider> registryLookup) {
         super(dataOutput, registryLookup);
     }
 

@@ -1,6 +1,5 @@
 package org.geysermc.hydraulic.mixin.ext;
 
-import com.llamalad7.mixinextras.sugar.Local;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -11,7 +10,7 @@ import java.util.Map;
 @Mixin(targets = "team.unnamed.creative.serialize.minecraft.model.ModelSerializer", remap = false)
 public class ModelSerializerMixin {
     @Redirect(
-        method = "deserializeFromJson(Lcom/google/gson/JsonElement;Lnet/kyori/adventure/key/Key;)Lteam/unnamed/creative/model/Model;",
+        method = "deserializeFromJson(Lcom/google/gson/JsonElement;Lnet/kyori/adventure/key/Key;Lteam/unnamed/creative/metadata/pack/PackFormat;)Lteam/unnamed/creative/model/Model;",
         at = @At(
             value = "INVOKE",
             target = "Lteam/unnamed/creative/model/ItemTransform$Type;valueOf(Ljava/lang/String;)Lteam/unnamed/creative/model/ItemTransform$Type;"
@@ -28,7 +27,7 @@ public class ModelSerializerMixin {
     }
 
     @Redirect(
-        method = "deserializeFromJson(Lcom/google/gson/JsonElement;Lnet/kyori/adventure/key/Key;)Lteam/unnamed/creative/model/Model;",
+        method = "deserializeFromJson(Lcom/google/gson/JsonElement;Lnet/kyori/adventure/key/Key;Lteam/unnamed/creative/metadata/pack/PackFormat;)Lteam/unnamed/creative/model/Model;",
         at = @At(
             value = "INVOKE",
             target = "Ljava/util/Map;put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
