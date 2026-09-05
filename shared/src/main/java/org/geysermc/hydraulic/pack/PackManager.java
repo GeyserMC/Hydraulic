@@ -316,8 +316,8 @@ public class PackManager {
         };
     }
 
-    private static boolean shouldIgnoreMod(ModInfo mod) {
-        return IGNORED_MODS.contains(mod.id());
+    public boolean shouldIgnoreMod(ModInfo mod) {
+        return IGNORED_MODS.contains(mod.id()) || hydraulic.getConfig().ignoredMods().contains(mod.id());
     }
 
     public ListMultimap<String, ModInfo> getNamespacesToMods() {

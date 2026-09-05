@@ -28,10 +28,6 @@ import java.util.stream.Stream;
  * Utilities used to implement {@link HydraulicFabricBootstrap}.
  */
 public class FabricUtil {
-    private static final List<String> USER_BLOCKED_MODS = Arrays.stream(
-            System.getProperty("hydraulic.ignored_mods", "").split(",")
-    ).toList();
-
     public static final int ICON_SIZE = 256;
 
     /**
@@ -135,8 +131,6 @@ public class FabricUtil {
         if (!(id instanceof JsonPrimitive) || !(version instanceof JsonPrimitive)) {
             return null;
         }
-
-        if (USER_BLOCKED_MODS.contains(id.getAsString())) return null;
 
         JsonElement name = metadata.get("name");
         if (name != null && !(name instanceof JsonPrimitive)) {

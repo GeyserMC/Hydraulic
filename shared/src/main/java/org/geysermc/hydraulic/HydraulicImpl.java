@@ -2,6 +2,8 @@ package org.geysermc.hydraulic;
 
 import net.minecraft.server.MinecraftServer;
 import org.geysermc.geyser.api.event.EventRegistrar;
+import org.geysermc.hydraulic.config.ConfigLoader;
+import org.geysermc.hydraulic.config.HydraulicConfig;
 import org.geysermc.hydraulic.pack.PackManager;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.HydraulicPlatform;
@@ -11,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongepowered.configurate.ConfigurateException;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -29,6 +32,7 @@ public class HydraulicImpl implements EventRegistrar {
     private final HydraulicPlatform platform;
     private final HydraulicBootstrap bootstrap;
     private final PackManager packManager;
+    private final HydraulicConfig config;
 
     private final Map<String, ModStorage> modStorage = new HashMap<>();
 
@@ -40,6 +44,11 @@ public class HydraulicImpl implements EventRegistrar {
         this.platform = platform;
         this.bootstrap = bootstrap;
         this.packManager = new PackManager(this);
+        try {
+            this.config = ConfigLoader.loadConfig(this.dataFolder(Constants.MOD_ID).resolve("config.yml").toFile());
+        } catch (ConfigurateException e) {
+            throw new ExceptionInInitializerError("Failed to load config: " + e.getMessage());
+        }
     }
 
     /**
@@ -148,5 +157,9 @@ public class HydraulicImpl implements EventRegistrar {
 
     public boolean isDev() {
         return this.bootstrap.isDev();
+    }
+
+    public HydraulicConfig getConfig() {
+        return config;
     }
 }

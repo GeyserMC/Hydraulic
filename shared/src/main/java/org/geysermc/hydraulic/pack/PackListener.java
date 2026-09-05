@@ -76,7 +76,7 @@ public class PackListener {
         // Go over all mods and load the pack or mark them for conversion
         Map<String, Pair<ModInfo, Path>> packsToLoad = new HashMap<>();
         for (ModInfo mod : this.hydraulic.mods()) {
-            if (PackManager.IGNORED_MODS.contains(mod.id())) {
+            if (this.manager.shouldIgnoreMod(mod)) {
                 continue;
             }
 

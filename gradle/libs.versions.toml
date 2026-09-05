@@ -9,6 +9,8 @@ shadow = "9.6.1"
 architectury-plugin = "3.5-SNAPSHOT"
 architectury-loom = "1.17-SNAPSHOT"
 examination = "1.3.0"
+configurate = "4.2.0-GeyserMC-20251111.004649-11"
+configurate-core = "4.2.0-GeyserMC-20251111.004649-12"
 
 # Fabric
 fabric-loader = "0.19.3"
@@ -30,6 +32,11 @@ shadow = { group = "com.gradleup.shadow", name = "com.gradleup.shadow.gradle.plu
 architectury-plugin = { group = "architectury-plugin", name = "architectury-plugin.gradle.plugin", version.ref = "architectury-plugin" }
 architectury-loom = { group = "dev.architectury.loom-no-remap", name = "dev.architectury.loom-no-remap.gradle.plugin", version.ref = "architectury-loom" }
 
+configurate-core = { module = "org.spongepowered:configurate-core", version.ref = "configurate-core" }
+configurate-interface-ap = { module = "org.spongepowered:configurate-extra-interface-ap", version.ref = "configurate" }
+configurate-interface = { module = "org.spongepowered:configurate-extra-interface", version.ref = "configurate" }
+configurate-yaml = { module = "org.spongepowered:configurate-yaml", version.ref = "configurate" }
+
 # Required until pack-converter is updated to use the new examination API
 examination-api = { group = "net.kyori", name = "examination-api", version.ref = "examination" }
 examination-string = { group = "net.kyori", name = "examination-string", version.ref = "examination" }
@@ -40,3 +47,6 @@ fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.r
 
 # NeoForge
 neoforge = { group = "net.neoforged", name = "neoforge", version.ref = "neoforge-version" }
+
+[bundles]
+configurate = ["configurate-core", "configurate-yaml", "configurate-interface"]

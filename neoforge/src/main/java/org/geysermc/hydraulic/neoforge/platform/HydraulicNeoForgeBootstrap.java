@@ -24,10 +24,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
-    private static final List<String> USER_BLOCKED_MODS = Arrays.stream(
-            System.getProperty("hydraulic.ignored_mods", "").split(",")
-    ).toList();
-
     private final Supplier<Map<String, ModInfo>> modsList = Suppliers.memoize(() ->
         ModList.get()
             .getMods()
@@ -43,7 +39,6 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
                     List.of(modPath)
                 );
             })
-            .filter(modInfo -> !USER_BLOCKED_MODS.contains(modInfo.id()))
             .collect(Collectors.toUnmodifiableMap(ModInfo::id, Function.identity()))
     );
 

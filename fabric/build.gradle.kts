@@ -33,7 +33,7 @@ tasks {
 
     shadowJar {
         archiveClassifier.set("dev-shadow")
-        relocate("org.cloudburstmc", "org.geysermc.geyser.shaded.org.cloudburstmc")
+        relocate("org.spongepowered.configurate", "org.geysermc.hydraulic.shaded.org.spongepowered.configurate")
     }
 
     jar {
@@ -55,6 +55,9 @@ dependencies {
     runtimeOnly(libs.examination.api)
     runtimeOnly(libs.examination.string)
     includeTransitive(libs.pack.converter)
+
+    localRuntime(libs.bundles.configurate)
+    shadow(libs.bundles.configurate) { isTransitive = false }
 
     localRuntime(libs.geyser.fabric) {
         exclude(group = "io.netty")
