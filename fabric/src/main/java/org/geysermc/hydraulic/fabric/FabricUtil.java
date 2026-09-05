@@ -16,7 +16,9 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -26,6 +28,10 @@ import java.util.stream.Stream;
  * Utilities used to implement {@link HydraulicFabricBootstrap}.
  */
 public class FabricUtil {
+    private static final List<String> USER_BLOCKED_MODS = Arrays.stream(
+            System.getProperty("hydraulic.ignored_mods", "").split(",")
+    ).toList();
+
     public static final int ICON_SIZE = 256;
 
     /**
@@ -102,8 +108,25 @@ public class FabricUtil {
 
     @Nullable
     private static ModInfo createModInfo(JsonObject metadata, Collection<Path> roots, int schemaVersion) {
+        // Fabric Loom generation checks, if generated, is not actually a mod, but a library
         final JsonElement custom = metadata.get("custom");
-        if (custom instanceof JsonObject object && new JsonPrimitive(true).equals(object.get("fabric-loom:generated"))) {
+        if (custom instanceof JsonObject object) {
+            if (
+                    new JsonPrimitive(true).equals(object.get("fabric-loom:generated")) ||
+                    new JsonPrimitive(true).equals(object.get("hydraulic:ignore"))
+            ) {
+                return null;
+            } else if (object.get("modmenu") instanceof JsonObject modMenuData) {
+                final JsonElement badges = modMenuData.get("badges");
+                if (badges instanceof JsonArray badgeArray && badgeArray.contains(new JsonPrimitive("library"))) {
+                    return null;
+                }
+            }
+        }
+
+        // Server sided mod check, ignore polymer content and other lib mods
+        final JsonElement environment = metadata.get("environment");
+        if (environment instanceof JsonPrimitive primitive && primitive.getAsString().equals("server")) {
             return null;
         }
 
@@ -112,6 +135,8 @@ public class FabricUtil {
         if (!(id instanceof JsonPrimitive) || !(version instanceof JsonPrimitive)) {
             return null;
         }
+
+        if (USER_BLOCKED_MODS.contains(id.getAsString())) return null;
 
         JsonElement name = metadata.get("name");
         if (name != null && !(name instanceof JsonPrimitive)) {
