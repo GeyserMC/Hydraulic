@@ -1,7 +1,6 @@
 package org.geysermc.hydraulic.item;
 
 import com.google.auto.service.AutoService;
-import com.google.common.collect.Lists;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -36,8 +35,8 @@ import java.util.*;
 
 @AutoService(PackModule.class)
 public class ItemPackModule extends TexturePackModule<ItemPackModule> {
-    private final List<Identifier> itemsWith2dIcon = new ArrayList<>();
-    private final List<Identifier> handheldItems = new ArrayList<>();
+    private final Set<Identifier> itemsWith2dIcon = new LinkedHashSet<>();
+    private final Set<Identifier> handheldItems = new LinkedHashSet<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
 
     public ItemPackModule() {
@@ -50,29 +49,30 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
     private void handleModel(@NotNull PackPreProcessContext<ItemPackModule> context, ItemModel itemModel, Identifier itemLocation) {
         if (itemModel instanceof ReferenceItemModel referenceModel) {
             Key modelKey = referenceModel.model();
+            Model model = context.modelProvider().model(modelKey);
+            if (model == null) {
+                context.logger().debug("Could not resolve model {} for item {}", modelKey, itemLocation);
+                return;
+            }
 
-            List<Model> modelList = Lists.newArrayList(context.assets((pack) -> { // This can probably be done easier, but im not sure how
-                Model model = pack.model(modelKey);
-                if (model == null) return List.of();
+            // Build the list of all parents in the model chain
+            List<Key> parents = PackUtil.modelParents(context.modelProvider(), model);
 
-                return List.of(model);
-            }));
-            if (modelList.isEmpty()) return;
-
-            Model model = modelList.getFirst();
-            Key modelParent = model.parent();
-            if (modelParent == null) return;
-
-            if (modelParent.value().equals("item/generated")) { // If the parent is item/generated, it's a 2D icon
-                itemsWith2dIcon.add(itemLocation);
-            } else if (modelParent.value().equals("item/handheld")) { // If the parent is item/handheld, it's handheld
+            if (parents.contains(Model.ITEM_HANDHELD)) {
                 itemsWith2dIcon.add(itemLocation); // item/handheld has the parent item/generated, so lets assume it's 2D
                 handheldItems.add(itemLocation);
+            } else if (parents.contains(Model.ITEM_GENERATED) || parents.contains(Model.BUILT_IN_GENERATED)) {
+                itemsWith2dIcon.add(itemLocation);
             }
         } else if (itemModel instanceof SelectItemModel selectModel) { // See if we can actually do select models here
             handleModel(context, selectModel.fallback(), itemLocation);
+        } else if (itemModel instanceof ConditionItemModel conditionModel) {
+            handleModel(context, conditionModel.onTrue(), itemLocation);
         } else if (itemModel instanceof CompositeItemModel compositeModel) { // TODO: See if we can stitch together item models, for now this will use just the first model
-            handleModel(context, compositeModel.models().getFirst(), itemLocation);
+            List<ItemModel> models = compositeModel.models();
+            if (!models.isEmpty()) {
+                handleModel(context, models.getFirst(), itemLocation);
+            }
         } else if (itemModel instanceof RangeDispatchItemModel rangeDispatchModel) {
             handleModel(context, rangeDispatchModel.fallback(), itemLocation);
         }
@@ -83,22 +83,6 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             Identifier itemLocation = HydraulicKey.of(item.key()).identifier();
             handleModel(context, item.model(), itemLocation);
         }
-
-//        for (Model model : context.assets(ResourcePack::models)) {
-//            Key modelParent = model.parent();
-//            if (modelParent != null) {
-//                if (modelParent.value().equals("item/generated")) { // If the parent is item/generated, it's a 2D icon
-//                    HydraulicKey key = HydraulicKey.of(model.key());
-//                    key.path(key.path().replace("item/", ""));
-//                    itemsWith2dIcon.add(key.location());
-//                } else if (modelParent.value().equals("item/handheld")) { // If the parent is item/handheld, it's handheld
-//                    HydraulicKey key = HydraulicKey.of(model.key());
-//                    key.path(key.path().replace("item/", ""));
-//                    itemsWith2dIcon.add(key.location()); // item/handheld has the parent item/generated, so lets assume it's 2D
-//                    handheldItems.add(key.location());
-//                }
-//            }
-//        }
 
         List<Item> items = context.registryValues(BuiltInRegistries.ITEM);
         PackLogListener packLogListener = new PackLogListener(context.logger());

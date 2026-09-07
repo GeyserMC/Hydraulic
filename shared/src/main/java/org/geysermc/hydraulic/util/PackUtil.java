@@ -5,16 +5,20 @@ import com.google.common.hash.HashingOutputStream;
 import com.mojang.logging.LogUtils;
 import net.kyori.adventure.key.Key;
 import org.geysermc.hydraulic.Constants;
+import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.geysermc.pack.converter.util.JsonMappings;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import team.unnamed.creative.model.Model;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -49,6 +53,34 @@ public class PackUtil {
         }
 
         return modelName.replace("block/", "").replace("item/", "");
+    }
+
+    /**
+     * Walks the parent chain of the given model upwards using the given provider.
+     *
+     * @param provider the provider to resolve parent models with
+     * @param model the model to walk the parents of
+     * @return the model and its parents
+     */
+    @NotNull
+    public static List<Key> modelParents(@NotNull ModelStitcher.Provider provider, @NotNull Model model) {
+        List<Key> keys = new ArrayList<>();
+        keys.add(model.key());
+
+        Model current = model;
+        Key parentKey;
+        while ((parentKey = current.parent()) != null) {
+            keys.add(parentKey);
+
+            Model parent = provider.model(parentKey);
+            if (parent == null) {
+                break; // e.g. builtin/generated, which has no model file
+            }
+
+            current = parent;
+        }
+
+        return keys;
     }
 
     public static UUID getModUUID(Collection<Path> modRoots) {
