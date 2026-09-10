@@ -368,7 +368,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
                     .displayName("%" + block.getDescriptionId())
                     .friction(Math.min(1 - block.getFriction(), 0.9f))
-                    .destructibleByMining(block.defaultDestroyTime()) // TODO: Check
+                    .destructibleByMining(destructibleByMining(block))
                     // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(createBoxComponent(shape))
                     .collisionBox(createBoxComponent(collisionShape));
@@ -409,7 +409,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 JavaBlockState.Builder javaBlockStateBuilder = JavaBlockState.builder()
                         .identifier(BlockStateParser.serialize(state))
                         .javaId(Block.getId(state))
-                        .blockHardness(block.defaultDestroyTime()) // TODO: Check
+                        .blockHardness(Math.max(0.0f, block.defaultDestroyTime()))
                         .canBreakWithHand(!state.requiresCorrectToolForDrops())
                         .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
                         .stateGroupId(blockId)
@@ -657,6 +657,25 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         return mapping;
+    }
+
+    /**
+     * Translates a Java destroy time into the value Geyser expects for the
+     * {@code minecraft:destructible_by_mining} component.
+     *
+     * <p>Java uses a negative destroy time to mean "cannot be mined at all" -
+     * {@code Blocks.BEDROCK} uses {@code -1.0F}. Bedrock has no negative
+     * representation, and Geyser rejects the value outright, so the component
+     * is left unset for those blocks. The server stays authoritative over
+     * whether the break is actually permitted.</p>
+     *
+     * @param block the block being converted
+     * @return the destroy time, or null if the block is unbreakable
+     */
+    @Nullable
+    private static Float destructibleByMining(@NotNull Block block) {
+        float destroyTime = block.defaultDestroyTime();
+        return destroyTime < 0 ? null : destroyTime;
     }
 
     private static BoxComponent createBoxComponent(VoxelShape shape) {
