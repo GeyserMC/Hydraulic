@@ -188,259 +188,268 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
         DefaultedRegistry<Block> registry = BuiltInRegistries.BLOCK;
         for (Block block : blocks) {
-            Identifier blockLocation = registry.getKey(block);
-            CustomBlockData.Builder builder = NonVanillaCustomBlockData.builder()
-                    .name(blockLocation.getPath())
-                    .namespace(blockLocation.getNamespace())
-                    .includedInCreativeInventory(true);
-
-            CreativeMappings.setupBlock(block, builder);
-
-            for (Property<?> property : block.getStateDefinition().getProperties()) {
-                if (property instanceof IntegerProperty intProperty) {
-                    builder.intProperty(property.getName(), List.copyOf(intProperty.getPossibleValues()));
-                } else if (property instanceof BooleanProperty) {
-                    builder.booleanProperty(property.getName());
-                } else if (property instanceof EnumProperty<?> enumProperty) {
-                    builder.stringProperty(enumProperty.getName(), enumProperty.getPossibleValues().stream().map(StringRepresentable::getSerializedName).toList());
-                } else {
-                    throw new IllegalArgumentException("Unknown property type: " + property.getClass().getName());
-                }
-            }
-
-            List<CustomBlockPermutation> permutations = new ArrayList<>();
-            CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
-            for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                ModelDefinition definition = getModel(context, blockLocation, state);
-                if (definition == null) {
-                    continue;
-                }
-
-                Model model = definition.model();
-                Key key = model.key();
-
-                CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
-                        .transformation(new TransformationComponent(
-                            (360 - definition.variant().x()) % 360, // Rotation X
-                            (360 - definition.variant().y()) % 360, // Rotation Y
-                            0, // Rotation Z
-                            1, // Scale X
-                            1, // Scale Y
-                            1, // Scale Z
-                            0, // Translation X
-                            0, // Translation Y
-                            0 // Translation Z
-                        ));
-
-                if (!isUnitCube(model.parent())) {
-                    String namespace = key.namespace();
-                    String value = key.value();
-
-                    String geoKey = value.substring(value.lastIndexOf('/') + 1);
-                    String geoName = "geometry." + (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + geoKey;
-
-                    if (emptyModels.contains(key.toString())) {
-                        context.logger().warn("Missing block model for block {}", blockLocation);
-                        geoName = "geometry." + Constants.MOD_ID + ".empty";
-                    }
-
-                    componentsBuilder.geometry(GeometryComponent.builder()
-                            .identifier(geoName)
-                            .build());
-
-                    // TODO: This is not fully correct. On Bedrock, the shape rotates with
-                    //       the block, so the collision box will need to be rotated back here
-                    VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
-                    VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
-
-                    componentsBuilder.selectionBox(createBoxComponent(shape));
-                    componentsBuilder.collisionBox(createBoxComponent(collisionShape));
-                } else {
-                    componentsBuilder.geometry(GeometryComponent.builder()
-                            .identifier("minecraft:geometry.full_block")
-                            .build());
-                }
-
-                // TODO: Work this out based on block state/texture? as this isn't perfect
-                // https://wiki.bedrock.dev/blocks/block-components.html#render-methods
-                String renderMethod = state.canOcclude() ? "opaque" : "blend";
-
-                // If the model is a cross block (EG a flower), we need to use alpha_test_single_sided
-                if (model.parent() != null && model.parent().value().equals("block/cross")) {
-                    renderMethod = "alpha_test_single_sided";
-                }
-
-                String tintMethod = null;
-                // TODO Read this from the model data
-                if (block instanceof TintedParticleLeavesBlock) {
-                    tintMethod = "default_foliage";
-                }
-
-                Materials materials = context.storage().materials();
-                Materials.Material material = materials.material(key.toString());
-                if (material != null) {
-                    // Add a default texture, can be replaced by the below (I think)
-                    Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
-
-                    String name = PackUtil.getTextureName(firstEntry.getValue());
-
-                    componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(name)
-                            .renderMethod(renderMethod)
-                            .faceDimming(true)
-                            .ambientOcclusion(model.ambientOcclusion())
-                            .tintMethod(tintMethod)
-                            .build());
-
-                    Map<String, String> faceMapping = getFaceMapping(model.parent());
-                    if (!faceMapping.isEmpty()) {
-                        for (Map.Entry<String, String> face : faceMapping.entrySet()) {
-                            if (!material.textures().containsKey(face.getValue())) continue;
-
-                            String textureName = PackUtil.getTextureName(material.textures().get(face.getValue()));
-
-                            componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
-                                    .texture(textureName)
-                                    .renderMethod(renderMethod)
-                                    .faceDimming(true)
-                                    .ambientOcclusion(model.ambientOcclusion())
-                                    .tintMethod(tintMethod)
-                                    .build());
-                        }
-                    } else {
-                        for (Map.Entry<String, String> entry : material.textures().entrySet()) {
-                            String materialKey = entry.getKey();
-
-                            // Bedrock uses "*" for the particle texture
-                            if ("particle".equals(materialKey)) {
-                                materialKey = "*";
-                            }
-
-                            componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
-                                    .texture(PackUtil.getTextureName(entry.getValue()))
-                                    .renderMethod(renderMethod)
-                                    .faceDimming(true)
-                                    .ambientOcclusion(model.ambientOcclusion())
-                                    .tintMethod(tintMethod)
-                                    .build());
-                        }
-                    }
-                } else {
-                    componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(PackUtil.getTextureName(key.toString()))
-                            .renderMethod(renderMethod)
-                            .faceDimming(true)
-                            .ambientOcclusion(model.ambientOcclusion())
-                            .tintMethod(tintMethod)
-                            .build());
-                    context.logger().warn("Could not find material for block {}", key);
-                }
-
-                // No properties exist on this state, so there's only one
-                // blockstate that can exist. Update the base builder so that
-                // the code that creates the component for the base block
-                // persists everything we did above
-                if (state.getProperties().isEmpty()) {
-                    baseComponentBuilder = componentsBuilder;
-                    continue;
-                }
-
-                List<String> conditions = new ArrayList<>();
-                for (Property<?> property : state.getProperties()) {
-                    String propValue = state.getValue(property).toString();
-                    if (property instanceof EnumProperty<?>) {
-                        propValue = "'" + propValue.toLowerCase() + "'";
-                    }
-
-                    conditions.add(String.format(STATE_CONDITION, property.getName(), propValue));
-                }
-
-                String condition = String.join(" && ", conditions);
-                permutations.add(new CustomBlockPermutation(componentsBuilder.build(), condition));
-            }
-
-            builder.permutations(permutations);
-
-            BlockState defaultState = block.defaultBlockState();
-            VoxelShape shape = defaultState.getShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
-            VoxelShape collisionShape = defaultState.getCollisionShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
-
-            CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
-                    .displayName("%" + block.getDescriptionId())
-                    .friction(Math.min(1 - block.getFriction(), 0.9f))
-                    .destructibleByMining(destructibleByMining(block))
-                    // .unitCube(true) // TODO: Geometry conversion
-                    .selectionBox(createBoxComponent(shape))
-                    .collisionBox(createBoxComponent(collisionShape));
-
-            builder.components(componentsBuilder.build());
-
-            CustomBlockData blockData = builder.build();
+            // Keep one bad block from taking the rest of the mod with it.
+            // Values the Geyser API rejects are thrown from the component
+            // builders, which sit outside the try around event.register below,
+            // so without this guard a single bad value unwinds the whole loop
+            // and every block after it is silently never registered.
             try {
-                event.register(blockData);
-            } catch (IllegalArgumentException e) {
-                context.logger().error("Failed to register block {}: {}", blockLocation, e.getMessage());
-                continue;
-            }
+                Identifier blockLocation = registry.getKey(block);
+                CustomBlockData.Builder builder = NonVanillaCustomBlockData.builder()
+                        .name(blockLocation.getPath())
+                        .namespace(blockLocation.getNamespace())
+                        .includedInCreativeInventory(true);
 
-            int blockId = registry.getId(block);
-            for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                CustomBlockState.Builder stateBuilder = blockData.blockStateBuilder();
-                for (Property<?> property : state.getProperties()) {
+                CreativeMappings.setupBlock(block, builder);
+
+                for (Property<?> property : block.getStateDefinition().getProperties()) {
                     if (property instanceof IntegerProperty intProperty) {
-                        stateBuilder.intProperty(property.getName(), state.getValue(intProperty));
-                    } else if (property instanceof BooleanProperty booleanProperty) {
-                        stateBuilder.booleanProperty(property.getName(), state.getValue(booleanProperty));
+                        builder.intProperty(property.getName(), List.copyOf(intProperty.getPossibleValues()));
+                    } else if (property instanceof BooleanProperty) {
+                        builder.booleanProperty(property.getName());
                     } else if (property instanceof EnumProperty<?> enumProperty) {
-                        stateBuilder.stringProperty(enumProperty.getName(), state.getValue(enumProperty).getSerializedName());
+                        builder.stringProperty(enumProperty.getName(), enumProperty.getPossibleValues().stream().map(StringRepresentable::getSerializedName).toList());
                     } else {
                         throw new IllegalArgumentException("Unknown property type: " + property.getClass().getName());
                     }
                 }
 
-                PistonBehavior pistonBehavior = switch (state.getPistonPushReaction()) {
-                    case BLOCK -> PistonBehavior.BLOCK;
-                    case DESTROY -> PistonBehavior.DESTROY;
-                    case PUSH_ONLY -> PistonBehavior.PUSH_ONLY;
-                    default -> PistonBehavior.NORMAL;
-                };
-
-                CustomBlockState customBlockState = stateBuilder.build();
-                JavaBlockState.Builder javaBlockStateBuilder = JavaBlockState.builder()
-                        .identifier(BlockStateParser.serialize(state))
-                        .javaId(Block.getId(state))
-                        .blockHardness(Math.max(0.0f, block.defaultDestroyTime()))
-                        .canBreakWithHand(!state.requiresCorrectToolForDrops())
-                        .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
-                        .stateGroupId(blockId)
-                        .pistonBehavior(pistonBehavior.name());
-
-                // TODO Work out if we need to prefix with _item so we can remove InventoryUtilsMixin
-                try {
-                    ItemStack pickItem = state.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, false);
-                    String itemId = BuiltInRegistries.ITEM.getKey(pickItem.getItem()).toString();
-
-                    // If the method is annotated with `@Environment(EnvType.CLIENT)` then we get air back, so lets ignore that
-                    if (!itemId.equals("minecraft:air")) {
-                        javaBlockStateBuilder.pickItem(itemId);
+                List<CustomBlockPermutation> permutations = new ArrayList<>();
+                CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
+                for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                    ModelDefinition definition = getModel(context, blockLocation, state);
+                    if (definition == null) {
+                        continue;
                     }
-                } catch (Exception e) {
-                    context.logger().warn("Failed to get pick item for block {}: {}", blockLocation, e.getMessage());
+
+                    Model model = definition.model();
+                    Key key = model.key();
+
+                    CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
+                            .transformation(new TransformationComponent(
+                                (360 - definition.variant().x()) % 360, // Rotation X
+                                (360 - definition.variant().y()) % 360, // Rotation Y
+                                0, // Rotation Z
+                                1, // Scale X
+                                1, // Scale Y
+                                1, // Scale Z
+                                0, // Translation X
+                                0, // Translation Y
+                                0 // Translation Z
+                            ));
+
+                    if (!isUnitCube(model.parent())) {
+                        String namespace = key.namespace();
+                        String value = key.value();
+
+                        String geoKey = value.substring(value.lastIndexOf('/') + 1);
+                        String geoName = "geometry." + (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + geoKey;
+
+                        if (emptyModels.contains(key.toString())) {
+                            context.logger().warn("Missing block model for block {}", blockLocation);
+                            geoName = "geometry." + Constants.MOD_ID + ".empty";
+                        }
+
+                        componentsBuilder.geometry(GeometryComponent.builder()
+                                .identifier(geoName)
+                                .build());
+
+                        // TODO: This is not fully correct. On Bedrock, the shape rotates with
+                        //       the block, so the collision box will need to be rotated back here
+                        VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+                        VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
+
+                        componentsBuilder.selectionBox(createBoxComponent(shape));
+                        componentsBuilder.collisionBox(createBoxComponent(collisionShape));
+                    } else {
+                        componentsBuilder.geometry(GeometryComponent.builder()
+                                .identifier("minecraft:geometry.full_block")
+                                .build());
+                    }
+
+                    // TODO: Work this out based on block state/texture? as this isn't perfect
+                    // https://wiki.bedrock.dev/blocks/block-components.html#render-methods
+                    String renderMethod = state.canOcclude() ? "opaque" : "blend";
+
+                    // If the model is a cross block (EG a flower), we need to use alpha_test_single_sided
+                    if (model.parent() != null && model.parent().value().equals("block/cross")) {
+                        renderMethod = "alpha_test_single_sided";
+                    }
+
+                    String tintMethod = null;
+                    // TODO Read this from the model data
+                    if (block instanceof TintedParticleLeavesBlock) {
+                        tintMethod = "default_foliage";
+                    }
+
+                    Materials materials = context.storage().materials();
+                    Materials.Material material = materials.material(key.toString());
+                    if (material != null) {
+                        // Add a default texture, can be replaced by the below (I think)
+                        Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
+
+                        String name = PackUtil.getTextureName(firstEntry.getValue());
+
+                        componentsBuilder.materialInstance("*", MaterialInstance.builder()
+                                .texture(name)
+                                .renderMethod(renderMethod)
+                                .faceDimming(true)
+                                .ambientOcclusion(model.ambientOcclusion())
+                                .tintMethod(tintMethod)
+                                .build());
+
+                        Map<String, String> faceMapping = getFaceMapping(model.parent());
+                        if (!faceMapping.isEmpty()) {
+                            for (Map.Entry<String, String> face : faceMapping.entrySet()) {
+                                if (!material.textures().containsKey(face.getValue())) continue;
+
+                                String textureName = PackUtil.getTextureName(material.textures().get(face.getValue()));
+
+                                componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
+                                        .texture(textureName)
+                                        .renderMethod(renderMethod)
+                                        .faceDimming(true)
+                                        .ambientOcclusion(model.ambientOcclusion())
+                                        .tintMethod(tintMethod)
+                                        .build());
+                            }
+                        } else {
+                            for (Map.Entry<String, String> entry : material.textures().entrySet()) {
+                                String materialKey = entry.getKey();
+
+                                // Bedrock uses "*" for the particle texture
+                                if ("particle".equals(materialKey)) {
+                                    materialKey = "*";
+                                }
+
+                                componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
+                                        .texture(PackUtil.getTextureName(entry.getValue()))
+                                        .renderMethod(renderMethod)
+                                        .faceDimming(true)
+                                        .ambientOcclusion(model.ambientOcclusion())
+                                        .tintMethod(tintMethod)
+                                        .build());
+                            }
+                        }
+                    } else {
+                        componentsBuilder.materialInstance("*", MaterialInstance.builder()
+                                .texture(PackUtil.getTextureName(key.toString()))
+                                .renderMethod(renderMethod)
+                                .faceDimming(true)
+                                .ambientOcclusion(model.ambientOcclusion())
+                                .tintMethod(tintMethod)
+                                .build());
+                        context.logger().warn("Could not find material for block {}", key);
+                    }
+
+                    // No properties exist on this state, so there's only one
+                    // blockstate that can exist. Update the base builder so that
+                    // the code that creates the component for the base block
+                    // persists everything we did above
+                    if (state.getProperties().isEmpty()) {
+                        baseComponentBuilder = componentsBuilder;
+                        continue;
+                    }
+
+                    List<String> conditions = new ArrayList<>();
+                    for (Property<?> property : state.getProperties()) {
+                        String propValue = state.getValue(property).toString();
+                        if (property instanceof EnumProperty<?>) {
+                            propValue = "'" + propValue.toLowerCase() + "'";
+                        }
+
+                        conditions.add(String.format(STATE_CONDITION, property.getName(), propValue));
+                    }
+
+                    String condition = String.join(" && ", conditions);
+                    permutations.add(new CustomBlockPermutation(componentsBuilder.build(), condition));
                 }
 
-                /*
-                List<AABB> aabbs = collisionShape.toAabbs();
-                JavaBoundingBox[] bbs = new JavaBoundingBox[aabbs.size()];
-                for (int i = 0; i < aabbs.size(); i++) {
-                    AABB aabb = aabbs.get(i);
-                    bbs[i] = new JavaBoundingBox(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ);
+                builder.permutations(permutations);
+
+                BlockState defaultState = block.defaultBlockState();
+                VoxelShape shape = defaultState.getShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
+                VoxelShape collisionShape = defaultState.getCollisionShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
+
+                CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
+                        .displayName("%" + block.getDescriptionId())
+                        .friction(Math.min(1 - block.getFriction(), 0.9f))
+                        .destructibleByMining(destructibleByMining(block))
+                        // .unitCube(true) // TODO: Geometry conversion
+                        .selectionBox(createBoxComponent(shape))
+                        .collisionBox(createBoxComponent(collisionShape));
+
+                builder.components(componentsBuilder.build());
+
+                CustomBlockData blockData = builder.build();
+                try {
+                    event.register(blockData);
+                } catch (IllegalArgumentException e) {
+                    context.logger().error("Failed to register block {}: {}", blockLocation, e.getMessage());
+                    continue;
                 }
 
-                javaBlockStateBuilder.collision(bbs);
-                 */
-                javaBlockStateBuilder.collision(new JavaBoundingBox[0]); // TODO
+                int blockId = registry.getId(block);
+                for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                    CustomBlockState.Builder stateBuilder = blockData.blockStateBuilder();
+                    for (Property<?> property : state.getProperties()) {
+                        if (property instanceof IntegerProperty intProperty) {
+                            stateBuilder.intProperty(property.getName(), state.getValue(intProperty));
+                        } else if (property instanceof BooleanProperty booleanProperty) {
+                            stateBuilder.booleanProperty(property.getName(), state.getValue(booleanProperty));
+                        } else if (property instanceof EnumProperty<?> enumProperty) {
+                            stateBuilder.stringProperty(enumProperty.getName(), state.getValue(enumProperty).getSerializedName());
+                        } else {
+                            throw new IllegalArgumentException("Unknown property type: " + property.getClass().getName());
+                        }
+                    }
 
-                event.registerOverride(javaBlockStateBuilder.build(), customBlockState);
+                    PistonBehavior pistonBehavior = switch (state.getPistonPushReaction()) {
+                        case BLOCK -> PistonBehavior.BLOCK;
+                        case DESTROY -> PistonBehavior.DESTROY;
+                        case PUSH_ONLY -> PistonBehavior.PUSH_ONLY;
+                        default -> PistonBehavior.NORMAL;
+                    };
+
+                    CustomBlockState customBlockState = stateBuilder.build();
+                    JavaBlockState.Builder javaBlockStateBuilder = JavaBlockState.builder()
+                            .identifier(BlockStateParser.serialize(state))
+                            .javaId(Block.getId(state))
+                            .blockHardness(Math.max(0.0f, block.defaultDestroyTime()))
+                            .canBreakWithHand(!state.requiresCorrectToolForDrops())
+                            .waterlogged(state.hasProperty(BlockStateProperties.WATERLOGGED) && state.getValue(BlockStateProperties.WATERLOGGED))
+                            .stateGroupId(blockId)
+                            .pistonBehavior(pistonBehavior.name());
+
+                    // TODO Work out if we need to prefix with _item so we can remove InventoryUtilsMixin
+                    try {
+                        ItemStack pickItem = state.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, false);
+                        String itemId = BuiltInRegistries.ITEM.getKey(pickItem.getItem()).toString();
+
+                        // If the method is annotated with `@Environment(EnvType.CLIENT)` then we get air back, so lets ignore that
+                        if (!itemId.equals("minecraft:air")) {
+                            javaBlockStateBuilder.pickItem(itemId);
+                        }
+                    } catch (Exception e) {
+                        context.logger().warn("Failed to get pick item for block {}: {}", blockLocation, e.getMessage());
+                    }
+
+                    /*
+                    List<AABB> aabbs = collisionShape.toAabbs();
+                    JavaBoundingBox[] bbs = new JavaBoundingBox[aabbs.size()];
+                    for (int i = 0; i < aabbs.size(); i++) {
+                        AABB aabb = aabbs.get(i);
+                        bbs[i] = new JavaBoundingBox(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ);
+                    }
+
+                    javaBlockStateBuilder.collision(bbs);
+                     */
+                    javaBlockStateBuilder.collision(new JavaBoundingBox[0]); // TODO
+
+                    event.registerOverride(javaBlockStateBuilder.build(), customBlockState);
+                }
+            } catch (Throwable t) {
+                context.logger().error("Failed to convert block {}: {}", registry.getKey(block), t.toString());
             }
         }
     }
