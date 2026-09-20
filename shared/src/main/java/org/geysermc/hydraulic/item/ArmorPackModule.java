@@ -56,8 +56,10 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
 
         context.logger().info("Armor to convert: {} in mod {}", armorItems.size(), context.mod().id());
 
+        int converted = 0;
         for (Item armorItem : armorItems) {
             Equippable equippable = armorItem.components().get(DataComponents.EQUIPPABLE);
+            Identifier armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
 
             EquipmentLayerType layerType = getEquipmentLayer(equippable.slot());
             if (layerType == null) {
@@ -76,21 +78,27 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
                 }
 
                 if (layerType == null) { // We recheck as above can change how things go
-                    continue; // There is no layer we can give the bedrock currently, so we can skip this
+                    // There is no layer we can give the bedrock currently, so we can skip this
+                    context.logger().debug("Skipping armor {}: equipment slot {} has no Bedrock equipment layer, and it is not horse, wolf or llama body armor", armorItemLocation, equippable.slot());
+                    continue;
                 }
             }
-
-            Identifier armorItemLocation = BuiltInRegistries.ITEM.getKey(armorItem);
 
             Identifier armorTextureLocation = equippable.assetId().map(ResourceKey::identifier).orElseThrow(); // Checked above to ensure all armor processed has an asset id, so this shouldn't throw (This instead of get to prevent yellow lines)
 
             Equipment equipment = context.javaResourcePack().equipment(Key.key(armorTextureLocation.toString()));
             if (equipment == null) {
+                // The mod never shipped assets/<namespace>/equipment/<name>.json, or it failed to
+                // read. Worth naming: without it there is nothing to convert, and the count logged
+                // above otherwise reads as a success.
+                context.logger().debug("Skipping armor {}: no equipment definition found for asset id {}", armorItemLocation, armorTextureLocation);
                 continue;
             }
             List<EquipmentLayer> layers = equipment.layers().get(layerType);
             if (layers == null || layers.isEmpty()) {
-                continue; // We have no layers that we can convert, so we can just skip this one
+                // We have no layers that we can convert, so we can just skip this one
+                context.logger().debug("Skipping armor {}: equipment definition {} has no {} layer", armorItemLocation, armorTextureLocation, layerType);
+                continue;
             }
             Key layerTexture = layers.getFirst().texture();
 
@@ -133,6 +141,12 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
                 case EquipmentLayerType.HORSE_BODY -> {} // TODO: Handle adding horse armor, might need to PR geyser for the slot
             }
 
+            if (geometryType.isEmpty()) {
+                // The attachable is still written, but with no geometry it cannot render. Say so
+                // rather than leave an operator to find it by unzipping the pack.
+                context.logger().debug("Armor {} has no Bedrock geometry for layer {} in slot {}; the attachable will have no geometry", armorItemLocation, layerType, equippable.slot());
+            }
+
             description.geometry(Map.of("default", geometryType));
 
             Attachable attachable = new Attachable();
@@ -140,6 +154,11 @@ public class ArmorPackModule extends PackModule<ArmorPackModule> {
             armorAttachable.attachable(attachable);
 
             context.bedrockResourcePack().addAttachable(armorAttachable, "attachables/" + armorItemLocation.getPath() + ".json");
+            converted++;
+        }
+
+        if (converted != armorItems.size()) {
+            context.logger().info("Armor converted: {} of {} in mod {} - run with debug logging for the reason each one was skipped", converted, armorItems.size(), context.mod().id());
         }
     }
 

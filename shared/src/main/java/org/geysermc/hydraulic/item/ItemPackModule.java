@@ -39,6 +39,13 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
     private final Set<Identifier> handheldItems = new LinkedHashSet<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
 
+    /**
+     * Items we managed to read an item definition for (assets/&lt;namespace&gt;/items/&lt;name&gt;.json).
+     * An item missing from this set had no readable definition, so {@link #handleModel} never ran
+     * for it and it would otherwise be registered with no Bedrock icon at all.
+     */
+    private final Set<Identifier> itemsWithDefinition = new LinkedHashSet<>();
+
     public ItemPackModule() {
         this.listenOn(GeyserDefineCustomItemsEvent.class, this::onDefineCustomItems);
 
@@ -55,15 +62,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 return;
             }
 
-            // Build the list of all parents in the model chain
-            List<Key> parents = PackUtil.modelParents(context.modelProvider(), model);
-
-            if (parents.contains(Model.ITEM_HANDHELD)) {
-                itemsWith2dIcon.add(itemLocation); // item/handheld has the parent item/generated, so lets assume it's 2D
-                handheldItems.add(itemLocation);
-            } else if (parents.contains(Model.ITEM_GENERATED) || parents.contains(Model.BUILT_IN_GENERATED)) {
-                itemsWith2dIcon.add(itemLocation);
-            }
+            markIf2d(context, model, itemLocation);
         } else if (itemModel instanceof SelectItemModel selectModel) { // See if we can actually do select models here
             handleModel(context, selectModel.fallback(), itemLocation);
         } else if (itemModel instanceof ConditionItemModel conditionModel) {
@@ -78,9 +77,33 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         }
     }
 
+    /**
+     * Marks an item as having a flat Bedrock icon if its model is one of the 2D vanilla
+     * archetypes, and returns whether it did. Shared by the item-definition path and the
+     * model-file fallback below so both decide the same way.
+     */
+    private boolean markIf2d(@NotNull PackPreProcessContext<ItemPackModule> context, Model model, Identifier itemLocation) {
+        List<Key> parents = PackUtil.modelParents(context.modelProvider(), model);
+
+        if (parents.contains(Model.ITEM_HANDHELD)) {
+            itemsWith2dIcon.add(itemLocation); // item/handheld has the parent item/generated, so lets assume it's 2D
+            handheldItems.add(itemLocation);
+            return true;
+        } else if (parents.contains(Model.ITEM_GENERATED) || parents.contains(Model.BUILT_IN_GENERATED)) {
+            itemsWith2dIcon.add(itemLocation);
+            return true;
+        }
+
+        return false;
+    }
+
     private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
+        int iconsBefore = itemsWith2dIcon.size();
+        int recovered = 0;
+
         for (team.unnamed.creative.item.Item item : context.assets(ResourcePack::items)) {
             Identifier itemLocation = HydraulicKey.of(item.key()).identifier();
+            itemsWithDefinition.add(itemLocation);
             handleModel(context, item.model(), itemLocation);
         }
 
@@ -109,7 +132,25 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             if (layer0 != null && layer0.namespace().equals(Key.MINECRAFT_NAMESPACE)) {
                 itemBuiltinTexture.put(itemLocation.toString(), PackUtil.getTextureName(layer0.toString()));
             }
+
+            // No item definition could be read for this item, so nothing has decided whether it
+            // gets a Bedrock icon, and it would be registered without one - Bedrock then draws
+            // nothing at all. It does have a flat model file with a layer0 texture, which is
+            // what the item definition's own fallback almost always points at, so use that.
+            //
+            // The common cause is a modded `special` render type or tint source: the pack
+            // library rejects any such type outside the minecraft namespace before it looks it
+            // up, and the whole item definition is lost with it. A flat icon is much closer to
+            // correct than no item at all.
+            if (!itemsWithDefinition.contains(itemLocation) && !itemsWith2dIcon.contains(itemLocation)
+                    && markIf2d(context, baseModel, itemLocation)) {
+                context.logger().debug("No item definition for {}, falling back to a flat icon from its model file", itemLocation);
+                recovered++;
+            }
         }
+
+        context.logger().info("2D item icons: {} in mod {}, {} recovered from an item's model file where its item definition could not be read",
+            itemsWith2dIcon.size() - iconsBefore, context.mod().id(), recovered);
     }
 
     private void postProcess(@NotNull PackPostProcessContext<ItemPackModule> context) {
