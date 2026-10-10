@@ -1,3 +1,7 @@
+plugins {
+    id("dev.opencollab.conduit")
+}
+
 val modId = project.property("mod_id") as String
 
 architectury {
@@ -57,6 +61,7 @@ dependencies {
     runtimeOnly(libs.examination.api)
     runtimeOnly(libs.examination.string)
     includeTransitive(libs.pack.converter)
+    include(libs.adventure.examination)
 
     localRuntime(libs.bundles.configurate)
     shadow(libs.bundles.configurate) { isTransitive = false }
@@ -70,6 +75,8 @@ dependencies {
         exclude(group = "io.netty")
         exclude(group = "io.netty.incubator")
     }
+    localRuntime(libs.adventure.examination)
+    localRuntime("net.kyori:examination-string:1.3.0")
 
     localRuntime(project(":test"))
 }

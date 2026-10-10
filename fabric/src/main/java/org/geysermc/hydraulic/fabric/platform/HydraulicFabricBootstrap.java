@@ -9,7 +9,11 @@ import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
 import net.fabricmc.loader.api.metadata.ModOrigin;
 import net.minecraft.server.MinecraftServer;
+import org.geysermc.hydraulic.entity.EntityRendererRegistryInfo;
+import org.geysermc.hydraulic.entity.ModelLayerRegistryInfo;
 import org.geysermc.hydraulic.fabric.FabricUtil;
+import org.geysermc.hydraulic.fabric.entity.EntityRendererRegistry;
+import org.geysermc.hydraulic.fabric.entity.ModelLayerRegistry;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -32,9 +37,22 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
             .filter(Predicate.not(this::ignoreMod))
             .filter(mod -> mod.getMetadata().getEnvironment().matches(EnvType.CLIENT))
             .filter(mod -> mod.getOrigin().getKind() != ModOrigin.Kind.NESTED) // Nested jars are handled in resolveJiJ below
-            .<ModInfo>mapMulti((mod, output) -> FabricUtil.resolveJiJ(mod.getRootPaths(), output))
+            .<ModInfo>mapMulti((mod, output) -> FabricUtil.resolveJiJ(mod.getRootPaths(), originOf(mod), output))
             .collect(Collectors.toUnmodifiableMap(ModInfo::id, Function.identity(), this::maxByVersion))
     );
+
+    /**
+     * The jar(s) on disk a mod was loaded from. {@link ModOrigin#getPaths()} throws for anything
+     * that isn't {@link ModOrigin.Kind#PATH}, so mods without a file of their own report nothing.
+     *
+     * @param container the mod container
+     * @return the mod's on-disk paths, or empty if it has none
+     */
+    private Collection<Path> originOf(ModContainer container) {
+        return container.getOrigin().getKind() == ModOrigin.Kind.PATH
+            ? container.getOrigin().getPaths()
+            : List.of();
+    }
 
     /**
      * Ignore mods that are not built in or sub-mods.
@@ -79,5 +97,15 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
     @Override
     public void registerServerStop(Consumer<MinecraftServer> listenerAction) {
         ServerLifecycleEvents.SERVER_STOPPING.register(listenerAction::accept);
+    }
+
+    @Override
+    public ModelLayerRegistryInfo modelLayerInfo() {
+        return new ModelLayerRegistryInfo(ModelLayerRegistry.class, () -> ModelLayerRegistry.CAPTURE);
+    }
+
+    @Override
+    public EntityRendererRegistryInfo entityRendererInfo() {
+        return new EntityRendererRegistryInfo(EntityRendererRegistry.class, () -> EntityRendererRegistry.CAPTURE);
     }
 }
