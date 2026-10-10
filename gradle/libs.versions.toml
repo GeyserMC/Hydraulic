@@ -11,6 +11,10 @@ architectury-loom = "1.17-SNAPSHOT"
 examination = "1.3.0"
 configurate = "4.2.0-GeyserMC-20251111.004649-11"
 configurate-core = "4.2.0-GeyserMC-20251111.004649-12"
+adventure = "4.14.0"
+adventure-examination = "1.3.0"
+joml = "1.10.8"
+architectury-api = "21.0.4"
 
 # Fabric
 fabric-loader = "0.19.5"
@@ -41,6 +45,10 @@ configurate-yaml = { module = "org.spongepowered:configurate-yaml", version.ref 
 # Required until pack-converter is updated to use the new examination API
 examination-api = { group = "net.kyori", name = "examination-api", version.ref = "examination" }
 examination-string = { group = "net.kyori", name = "examination-string", version.ref = "examination" }
+adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
+adventure-examination = { group = "net.kyori", name = "examination-api", version.ref = "adventure-examination" }
+joml = { group = "org.joml", name = "joml", version.ref = "joml" }
+architectury-api = { group = "dev.architectury", name = "architectury-fabric", version.ref = "architectury-api" }
 
 # Fabric
 fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }

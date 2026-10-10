@@ -37,6 +37,9 @@ allprojects {
         // creative
         maven("https://repo.nexomc.com/releases/")
 
+        // Jitpack
+        maven("https://jitpack.io/")
+
         // Modrinth
         exclusiveContent {
             forRepository {
