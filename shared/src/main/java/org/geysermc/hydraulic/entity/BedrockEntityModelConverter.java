@@ -16,8 +16,10 @@ import org.geysermc.pack.bedrock.resource.models.entity.modelentity.geometry.bon
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -25,6 +27,13 @@ import java.util.function.Consumer;
 public final class BedrockEntityModelConverter {
     private static final String FORMAT_VERSION = "1.12.0";
     private static final float PIVOT_HEIGHT = 24.0f;
+
+    /**
+     * How each rotation axis of a Java model part maps onto Bedrock's. Bedrock's own vanilla models keep
+     * Java's signs, such as the cow's body at a pitch of +90 in both and a look animation of
+     * {@code query.target_x_rotation} where Java uses the head pitch unchanged.
+     */
+    public static final float[] ROTATION_SIGNS = {1f, 1f, 1f};
     private static final String DEFAULT_LAYER = "main";
 
     private BedrockEntityModelConverter() {
@@ -56,7 +65,8 @@ public final class BedrockEntityModelConverter {
         return identifier.toString().replace('/', '.');
     }
 
-    private static Geometry geometry(EntityModel model) {
+    private static Geometry geometry(EntityModel unscaled) {
+        EntityModel model = scaled(unscaled);
         Description description = new Description();
         description.identifier(identifier(model));
         if (model.textureWidth() > 0) {
@@ -75,7 +85,7 @@ public final class BedrockEntityModelConverter {
         }
 
         List<Bones> bones = new ArrayList<>();
-        bones(bones, model.parts(), null, 0f, 0f, 0f, new HashSet<>());
+        bones(bones, new HashMap<>(), model.parts(), null, List.of(), 0f, 0f, 0f, new HashSet<>());
 
         Geometry geometry = new Geometry();
         geometry.description(description);
@@ -107,8 +117,55 @@ public final class BedrockEntityModelConverter {
         }
     }
 
-    private static void bones(List<Bones> out, List<EntityModel.Part> parts, String parent,
-                              float parentX, float parentY, float parentZ, Set<String> used) {
+    // Applies the model's scale to every part, as baking the layer would.
+    private static EntityModel scaled(EntityModel model) {
+        if (model.scale() == 1f) {
+            return model;
+        }
+
+        List<EntityModel.Part> parts = new ArrayList<>(model.parts().size());
+        for (EntityModel.Part part : model.parts()) {
+            EntityModel.Pose pose = part.pose() == null ? EntityModel.Pose.ZERO : part.pose();
+            EntityModel.Pose root = new EntityModel.Pose(pose.x() * model.scale(), PIVOT_HEIGHT - (PIVOT_HEIGHT - pose.y()) * model.scale(),
+                pose.z() * model.scale(), pose.xRot(), pose.yRot(), pose.zRot());
+            parts.add(scale(part, root, model.scale()));
+        }
+
+        return new EntityModel(model.namespace(), model.path(), model.layer(), model.textureWidth(), model.textureHeight(), parts, 1f);
+    }
+
+    private static EntityModel.Part scale(EntityModel.Part part, EntityModel.Pose pose, float scale) {
+        List<EntityModel.Cube> cubes = new ArrayList<>(part.cubes().size());
+        for (EntityModel.Cube cube : part.cubes()) {
+            cubes.add(new EntityModel.Cube(cube.texOffsU(), cube.texOffsV(), cube.x() * scale, cube.y() * scale, cube.z() * scale,
+                cube.width() * scale, cube.height() * scale, cube.depth() * scale, cube.inflate() * scale, cube.mirror()));
+        }
+
+        List<EntityModel.Part> children = new ArrayList<>(part.children().size());
+        for (EntityModel.Part child : part.children()) {
+            EntityModel.Pose offset = child.pose() == null ? EntityModel.Pose.ZERO : child.pose();
+            children.add(scale(child, new EntityModel.Pose(offset.x() * scale, offset.y() * scale, offset.z() * scale,
+                offset.xRot(), offset.yRot(), offset.zRot()), scale));
+        }
+
+        return new EntityModel.Part(part.name(), pose, cubes, children);
+    }
+
+    /**
+     * Gets the name each part of a model is given as a bone, since parts sharing a name are renamed.
+     *
+     * @param model the model
+     * @return the bone name of each part, keyed by the names of the parts leading to it from the root
+     */
+    @NotNull
+    public static Map<List<String>, String> boneNames(@NotNull EntityModel model) {
+        Map<List<String>, String> names = new HashMap<>();
+        bones(new ArrayList<>(), names, model.parts(), null, List.of(), 0f, 0f, 0f, new HashSet<>());
+        return names;
+    }
+
+    private static void bones(List<Bones> out, Map<List<String>, String> names, List<EntityModel.Part> parts, String parent,
+                              List<String> parentPath, float parentX, float parentY, float parentZ, Set<String> used) {
         for (EntityModel.Part part : parts) {
             EntityModel.Pose pose = part.pose() == null ? EntityModel.Pose.ZERO : part.pose();
 
@@ -117,6 +174,9 @@ public final class BedrockEntityModelConverter {
             float z = parentZ + pose.z();
 
             String name = uniqueName(part.name(), parent, used);
+            List<String> path = new ArrayList<>(parentPath);
+            path.add(part.name());
+            names.put(List.copyOf(path), name);
 
             Bones bone = new Bones();
             bone.name(name);
@@ -127,9 +187,9 @@ public final class BedrockEntityModelConverter {
 
             if (pose.xRot() != 0f || pose.yRot() != 0f || pose.zRot() != 0f) {
                 bone.rotation(floats(
-                    (float) -Math.toDegrees(pose.xRot()),
-                    (float) Math.toDegrees(pose.yRot()),
-                    (float) -Math.toDegrees(pose.zRot())
+                    ROTATION_SIGNS[0] * (float) Math.toDegrees(pose.xRot()),
+                    ROTATION_SIGNS[1] * (float) Math.toDegrees(pose.yRot()),
+                    ROTATION_SIGNS[2] * (float) Math.toDegrees(pose.zRot())
                 ));
             }
 
@@ -141,7 +201,7 @@ public final class BedrockEntityModelConverter {
 
             out.add(bone);
 
-            bones(out, part.children(), name, x, y, z, used);
+            bones(out, names, part.children(), name, path, x, y, z, used);
         }
     }
 

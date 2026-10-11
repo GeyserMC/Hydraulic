@@ -21,16 +21,22 @@ import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.component.ComponentConverter;
+import org.geysermc.hydraulic.entity.vanilla.VanillaModels;
 import org.geysermc.hydraulic.util.HydraulicKey;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.item.*;
+import team.unnamed.creative.item.tint.ConstantTintSource;
+import team.unnamed.creative.item.tint.TintSource;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
+import team.unnamed.creative.texture.Texture;
 
+import java.io.IOException;
 import java.util.*;
 
 @AutoService(PackModule.class)
@@ -38,6 +44,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
     private final Set<Identifier> itemsWith2dIcon = new LinkedHashSet<>();
     private final Set<Identifier> handheldItems = new LinkedHashSet<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
+    private final Map<String, List<Integer>> itemTints = new HashMap<>();
+    private final Set<String> bakedIcons = new HashSet<>();
 
     public ItemPackModule() {
         this.listenOn(GeyserDefineCustomItemsEvent.class, this::onDefineCustomItems);
@@ -53,6 +61,15 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
             if (model == null) {
                 context.logger().debug("Could not resolve model {} for item {}", modelKey, itemLocation);
                 return;
+            }
+
+            // Bedrock icons can't be tinted, so constant tints are baked into the icon instead.
+            if (referenceModel.tints().stream().anyMatch(ConstantTintSource.class::isInstance)) {
+                List<Integer> tints = new ArrayList<>();
+                for (TintSource tint : referenceModel.tints()) {
+                    tints.add(tint instanceof ConstantTintSource constant ? constant.tint() & 0xFFFFFF : null);
+                }
+                this.itemTints.put(itemLocation.toString(), tints);
             }
 
             // Build the list of all parents in the model chain
@@ -106,7 +123,10 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
             Key layer0 = layers.getFirst().key();
 
-            if (layer0 != null && layer0.namespace().equals(Key.MINECRAFT_NAMESPACE)) {
+            boolean vanilla = layer0 != null && layer0.namespace().equals(Key.MINECRAFT_NAMESPACE);
+            if ((vanilla || this.itemTints.containsKey(itemLocation.toString())) && canBake(layers)) {
+                this.bakedIcons.add(itemLocation.toString());
+            } else if (vanilla) {
                 itemBuiltinTexture.put(itemLocation.toString(), PackUtil.getTextureName(layer0.toString()));
             }
         }
@@ -142,10 +162,55 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 continue;
             }
 
+            if (this.bakedIcons.contains(itemLocation.toString())) {
+                byte[] icon = bake(assets, layers, this.itemTints.getOrDefault(itemLocation.toString(), List.of()));
+                if (icon != null) {
+                    String path = "textures/items/" + context.mod().id() + "/baked/" + itemLocation.getPath();
+                    bedrockPack.addExtraFile(icon, path + ".png");
+                    bedrockPack.addItemTexture(itemLocation.toString(), path);
+                    continue;
+                }
+                context.logger().warn("Could not bake the icon of {}", itemLocation);
+            }
+
             ModelTexture layer0 = layers.getFirst();
             String outputLoc = getOutputFromModel(context, layer0.key()); // TODO: sort this out, layer0.key() can be null, but the method we use doesn't want that
             bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
         }
+    }
+
+    // Every vanilla layer must be one Hydraulic ships, as vanilla textures aren't in the mod's pack.
+    private static boolean canBake(@NotNull List<ModelTexture> layers) {
+        for (ModelTexture layer : layers) {
+            Key key = layer.key();
+            if (key == null || key.namespace().equals(Key.MINECRAFT_NAMESPACE) && VanillaModels.texture(key.value()) == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Nullable
+    private static byte[] bake(@NotNull ResourcePack assets, @NotNull List<ModelTexture> layers, @NotNull List<Integer> tints) {
+        List<byte[]> images = new ArrayList<>(layers.size());
+        for (ModelTexture layer : layers) {
+            Key key = layer.key();
+            byte[] image = null;
+            if (key != null && key.namespace().equals(Key.MINECRAFT_NAMESPACE)) {
+                image = VanillaModels.texture(key.value());
+            } else if (key != null) {
+                Texture texture = assets.texture(Key.key(key.namespace(), key.value().endsWith(".png") ? key.value() : key.value() + ".png"));
+                try {
+                    image = texture == null ? null : texture.data().toByteArray();
+                } catch (IOException ignored) {
+                }
+            }
+            if (image == null) {
+                return null;
+            }
+            images.add(image);
+        }
+        return ItemIcons.bake(images, tints);
     }
 
     @Override
@@ -179,7 +244,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
                 // Add the icon if it should have an icon
                 boolean is2d = itemsWith2dIcon.contains(itemLocation);
-                if (is2d) {
+                if (is2d || this.bakedIcons.contains(itemLocation.toString())) {
                     customItemOptions.icon(itemLocation.toString());
                 }
 

@@ -1,34 +1,30 @@
 package org.geysermc.hydraulic.entity;
 
 import com.google.auto.service.AutoService;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.kyori.adventure.key.Key;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.EntityType;
 import org.geysermc.conduit.ConduitContext;
-import org.geysermc.conduit.Conduits;
-import org.geysermc.conduit.VirtualMachine;
-import org.geysermc.conduit.VirtualMachineFactory;
 import org.geysermc.geyser.api.entity.custom.CustomEntityDefinition;
+import org.geysermc.geyser.api.entity.property.type.GeyserFloatEntityProperty;
+import org.geysermc.geyser.api.entity.property.type.GeyserIntEntityProperty;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineEntitiesEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineEntityPropertiesEvent;
 import org.geysermc.hydraulic.Constants;
-import org.geysermc.hydraulic.entity.conduit.EntityModel;
-import org.geysermc.hydraulic.entity.conduit.EntityRendererRegistration;
-import org.geysermc.hydraulic.entity.conduit.EntityTypeBuilder;
-import org.geysermc.hydraulic.entity.conduit.LivingEntityRenderer;
-import org.geysermc.hydraulic.entity.conduit.ModelLayerLocation;
+import org.geysermc.hydraulic.entity.animation.AnimationCompiler.CompiledAnimation;
+import org.geysermc.hydraulic.entity.animation.AnimationCompiler.KeyframeAnimation;
+import org.geysermc.hydraulic.entity.animation.StateProperty;
+import org.geysermc.hydraulic.entity.runtime.PropertySync;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
-import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.bedrock.resource.entity.ClientEntity;
 import org.geysermc.pack.bedrock.resource.entity.Entity;
 import org.geysermc.pack.bedrock.resource.entity.cliententity.Description;
-import org.geysermc.pack.bedrock.resource.models.entity.ModelEntity;
 import org.geysermc.pack.bedrock.resource.render_controllers.RenderControllers;
 import org.geysermc.pack.bedrock.resource.render_controllers.rendercontrollers.Arrays;
 import org.jetbrains.annotations.NotNull;
@@ -40,18 +36,23 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @AutoService(PackModule.class)
 public class EntityPackModule extends TexturePackModule<EntityPackModule> {
-    private static final String ARCHITECTURY_ID = "architectury";
     private static final String DEFAULT_TEXTURE = "default";
     private static final String VARIANT_ARRAY = "Array.variants";
+    private static final String SETUP_ANIMATION = "setup";
+    private static final String TEXTURES_DIRECTORY = "textures/";
+    private static final String PNG = ".png";
 
-    private final Map<String, List<EntityModel>> models = new HashMap<>();
-
-    private final Map<String, Map<String, List<String>>> textures = new HashMap<>();
+    private final Map<String, List<CustomEntity>> entities = new HashMap<>();
+    private final PropertySync sync = new PropertySync();
+    private final AtomicBoolean ticking = new AtomicBoolean();
 
     public EntityPackModule() {
         this.listenOn(GeyserDefineEntitiesEvent.class, this::onDefineEntities);
@@ -67,114 +68,50 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
             return;
         }
 
-        ModelLayerRegistryInfo layerInfo = context.hydraulic().modelLayerInfo();
+        Set<Path> textureSources = new LinkedHashSet<>(context.mod().origin());
+        textureSources.addAll(context.hydraulic().modJars());
+        List<CustomEntity> entities = new EntityScanner(conduit, context.logger(), textureSources)
+            .scan(context.hydraulic().modelLayerInfo(), context.hydraulic().entityRendererInfo());
+        this.entities.put(context.mod().id(), entities);
 
-        VirtualMachine vm = VirtualMachineFactory.create(conduit).await();
-        vm.intercept(layerInfo.registryClass());
-
-        vm.capture(layerInfo.captureChannel().get(), registration -> {
-            ModelLayerLocation location = registration.location();
-            EntityModel model = EntityModelExtractor.extract(location.model(), location.layer(), registration.definition().get());
-            this.models.computeIfAbsent(context.mod().id(), k -> new ArrayList<>()).add(model);
-
-            context.logger().debug("Extracted {}:{} layer={} texture={}x{} parts={}",
-                model.namespace(), model.path(), model.layer(),
-                model.textureWidth(), model.textureHeight(), model.parts().size());
-        });
-
-        Map<String, String> names = new HashMap<>();
-        vm.intercept(EntityTypeBuilder.class);
-        vm.capture(EntityTypeBuilder.CAPTURE, build -> {
-            String entityClass = build.builder() == null ? null : implementation(build.builder().factory());
-            org.geysermc.hydraulic.entity.conduit.Identifier id = build.key() == null ? null : build.key().identifier();
-            if (entityClass != null && id != null && id.path() != null) {
-                names.putIfAbsent(entityClass, id.path());
-            }
-        });
-
-        Map<String, List<String>> textures = new HashMap<>();
-        EntityRendererRegistryInfo rendererInfo = context.hydraulic().entityRendererInfo();
-        vm.intercept(rendererInfo.registryClass());
-        vm.capture(rendererInfo.captureChannel().get(), registration -> this.captureTexture(context, registration, textures));
-
-        vm.execute();
-
-        textures.forEach((entityClass, variants) -> {
-            String name = names.get(entityClass);
-            if (name == null) {
-                context.logger().debug("Captured textures for {} but could not find its entity type", entityClass);
-                return;
-            }
-
-            this.textures.computeIfAbsent(context.mod().id(), _ -> new HashMap<>()).put(name, variants);
-            context.logger().info("Captured {} texture(s) for {}: {}", variants.size(), name, variants);
-        });
-    }
-
-    private void captureTexture(@NotNull PackPreProcessContext<EntityPackModule> context,
-                                @NotNull EntityRendererRegistration registration,
-                                @NotNull Map<String, List<String>> textures) {
-        String entityClass = entityClass(registration.type());
-        LivingEntityRenderer renderer = registration.renderer().get();
-        if (entityClass == null || renderer == null) {
-            context.logger().debug("Renderer registration for {} could not be resolved", registration.type());
-            return;
+        for (CustomEntity entity : entities) {
+            context.logger().info("Found entity {} with {} texture(s): {}", entity.id(), entity.textures().size(), entity.textures());
         }
-
-        // A renderer shared between entities only knows its entity as a type variable.
-        List<String> variants = parseValidTextures(Conduits.withTypeArgument(renderer, entityClass).getTextureLocation());
-        if (variants.isEmpty()) {
-            context.logger().debug("Renderer texture for {} is not statically known, skipping", entityClass);
-            return;
-        }
-
-        textures.put(entityClass, variants);
-    }
-
-    @Nullable
-    private static String entityClass(@Nullable org.geysermc.hydraulic.entity.conduit.EntityType type) {
-        return type == null ? null : implementation(type.factory());
-    }
-
-    @Nullable
-    private static String implementation(@Nullable org.geysermc.hydraulic.entity.conduit.EntityFactory factory) {
-        return factory == null ? null : factory.implementation();
     }
 
     private void postProcess(@NotNull PackPostProcessContext<EntityPackModule> context) {
-        List<EntityModel> models = this.models.get(context.mod().id());
-        if (models == null) {
+        List<CustomEntity> entities = this.entities.get(context.mod().id());
+        if (entities == null) {
             return;
         }
 
-        context.logger().debug("Models to convert: {} in mod {}", models.size(), context.mod().id());
-        for (EntityModel model : models) {
-            ModelEntity entity = BedrockEntityModelConverter.convert(List.of(model));
-            Identifier identifier = Identifier.fromNamespaceAndPath(model.namespace(), model.path());
-            this.convertModel(context, entity, identifier, BedrockEntityModelConverter.identifier(model), this.texturesFor(context.mod().id(), identifier));
+        context.logger().info("Entities to convert: {} in mod {}", entities.size(), context.mod().id());
+        for (CustomEntity entity : entities) {
+            this.convertModel(context, entity);
         }
     }
 
-    private void convertModel(PackPostProcessContext<EntityPackModule> context, ModelEntity model, Identifier identifier, String geometry, List<String> variants) {
+    private void convertModel(PackPostProcessContext<EntityPackModule> context, CustomEntity custom) {
+        Identifier identifier = custom.id();
+        String geometry = BedrockEntityModelConverter.identifier(custom.model());
+        List<String> variants = custom.textures();
+        CompiledAnimation animation = custom.animation();
         context.bedrockResourcePack().addEntityModel(
-                model,
+                BedrockEntityModelConverter.convert(List.of(custom.model())),
                 identifier.getPath() + ".geo.json"
         );
 
         Map<String, String> textures = new LinkedHashMap<>();
         for (int i = 0; i < variants.size(); i++) {
-            String baseTexturePath = texturePath(variants.get(i));
-            String outputLoc = baseTexturePath.substring(0, baseTexturePath.lastIndexOf('/') + 1) + context.mod().id() + "/" + baseTexturePath.substring(baseTexturePath.lastIndexOf('/') + 1);
-            textures.put(textureKey(i), outputLoc);
+            textures.put(textureKey(i), bedrockTexture(context, variants.get(i)));
         }
 
         if (textures.isEmpty()) {
-            String outputLoc = String.format(Constants.BEDROCK_TEXTURE_LOCATION, "entity/" + context.mod().id() + "/" + identifier.getPath());
-            textures.put(DEFAULT_TEXTURE, outputLoc);
+            textures.put(DEFAULT_TEXTURE, bedrockTexture(context, identifier.getNamespace() + ":textures/entity/" + identifier.getPath() + ".png"));
         }
 
         String controller = "controller.render." + identifier.getNamespace() + "." + identifier.getPath();
-        this.addRenderController(context, controller, identifier, geometry, textures.keySet());
+        this.addRenderController(context, controller, identifier, textures.keySet(), animation == null ? Map.of() : animation.partVisibility());
 
         Entity entity = new Entity();
         entity.formatVersion("1.10.0");
@@ -188,15 +125,52 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
         description.geometry(Map.of(DEFAULT_TEXTURE, geometry));
         description.renderControllers(new String [] { controller });
 
+        // Weighted animations are objects in the animate list, which the schema can't hold, so scripts are written by hand.
+        JsonObject scripts = null;
+        if (animation != null && (!animation.channels().isEmpty() || !animation.keyframes().isEmpty())) {
+            context.bedrockResourcePack().addExtraFile(animation.toJson(), "animations/" + identifier.getPath() + ".animation.json");
+
+            Map<String, String> animations = new LinkedHashMap<>();
+            JsonArray animate = new JsonArray();
+            if (!animation.channels().isEmpty()) {
+                animations.put(SETUP_ANIMATION, animation.name());
+                animate.add(SETUP_ANIMATION);
+            }
+            for (KeyframeAnimation keyframe : animation.keyframes()) {
+                animations.put(keyframe.key(), keyframe.name());
+                JsonObject weighted = new JsonObject();
+                weighted.addProperty(keyframe.key(), keyframe.weight());
+                animate.add(weighted);
+            }
+            description.animations(animations);
+
+            scripts = new JsonObject();
+            scripts.add("animate", animate);
+            if (!animation.preAnimation().isEmpty()) {
+                scripts.add("pre_animation", strings(animation.preAnimation()));
+            }
+            if (!animation.initialize().isEmpty()) {
+                scripts.add("initialize", strings(animation.initialize()));
+            }
+        }
+
         clientEntity.description(description);
 
         entity.clientEntity(clientEntity);
 
+        JsonElement json = prune(Constants.GSON.toJsonTree(entity));
+        if (scripts != null) {
+            json.getAsJsonObject().getAsJsonObject("minecraft:client_entity").getAsJsonObject("description").add("scripts", scripts);
+        }
+
         // TODO: Client entity support in pack converter
-        context.bedrockResourcePack().addExtraFile(
-                prune(Constants.GSON.toJsonTree(entity)),
-                "entity/" + identifier.getPath() + ".entity.json"
-        );
+        context.bedrockResourcePack().addExtraFile(json, "entity/" + identifier.getPath() + ".entity.json");
+    }
+
+    private static JsonArray strings(List<String> values) {
+        JsonArray array = new JsonArray();
+        values.forEach(array::add);
+        return array;
     }
 
     private static JsonElement prune(JsonElement element) {
@@ -213,9 +187,17 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
         return element;
     }
 
-    private void addRenderController(PackPostProcessContext<EntityPackModule> context, String controller, Identifier identifier, String geometry, Collection<String> keys) {
+    private void addRenderController(PackPostProcessContext<EntityPackModule> context, String controller, Identifier identifier,
+                                     Collection<String> keys, Map<String, String> visibility) {
         var selector = new org.geysermc.pack.bedrock.resource.render_controllers.rendercontrollers.RenderControllers();
         selector.geometry("Geometry." + DEFAULT_TEXTURE);
+
+        if (!visibility.isEmpty()) {
+            List<Map<String, String>> parts = new ArrayList<>();
+            parts.add(Map.of("*", "1"));
+            visibility.forEach((bone, condition) -> parts.add(Map.of(bone, condition)));
+            selector.partVisibility(parts);
+        }
 
         if (keys.size() > 1) {
             Arrays arrays = new Arrays();
@@ -234,18 +216,19 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
     }
 
     @NotNull
-    private List<String> texturesFor(@NotNull String mod, @NotNull Identifier identifier) {
-        return this.textures.getOrDefault(mod, Map.of()).getOrDefault(identifier.getPath(), List.of());
-    }
-
-    @NotNull
     private static org.geysermc.geyser.api.util.Identifier variantProperty(@NotNull String namespace) {
         return org.geysermc.geyser.api.util.Identifier.of(namespace, "variant");
     }
 
-    private static String texturePath(String texture) {
-        String path = texture.substring(texture.indexOf(':') + 1);
-        return path.endsWith(".png") ? path.substring(0, path.length() - 4) : path;
+    // Matches where the texture converter writes the texture, without the extension Bedrock leaves off
+    private static String bedrockTexture(PackPostProcessContext<EntityPackModule> context, String texture) {
+        Key key = Key.key(texture);
+        String path = key.value();
+        path = path.startsWith(TEXTURES_DIRECTORY) ? path.substring(TEXTURES_DIRECTORY.length()) : path;
+        path = path.endsWith(PNG) ? path.substring(0, path.length() - PNG.length()) : path;
+
+        String output = getOutputFromModel(context, Key.key(key.namespace(), path));
+        return output.endsWith(PNG) ? output.substring(0, output.length() - PNG.length()) : output;
     }
 
     private static String textureKey(int variant) {
@@ -260,6 +243,7 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
             return null;
         }
 
+        context.logger().debug("Scanning {} for entities", origin);
         ConduitContext conduit = ConduitContext.load(origin.toArray(Path[]::new));
 
         // A JiJ'd mod reports the jar it is nested inside, so its own classes are in a nested jar.
@@ -269,10 +253,9 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
             }
         }
 
-        // Architectury is resolved against but never scanned. Some mods route their registrations through it.
-        ModInfo architectury = context.hydraulic().mod(ARCHITECTURY_ID);
-        if (architectury != null) {
-            for (Path jar : architectury.origin()) {
+        // Other mods' jars are resolved against but never scanned, as registrations are often routed through a library.
+        for (Path jar : context.hydraulic().modJars()) {
+            if (!origin.contains(jar)) {
                 conduit.addContextJar(jar);
             }
         }
@@ -286,54 +269,39 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
     }
 
     private void onDefineEntityProperties(PackEventContext<GeyserDefineEntityPropertiesEvent, EntityPackModule> context) {
-        Map<String, List<String>> captured = this.textures.getOrDefault(context.mod().id(), Map.of());
-        for (Map.Entry<String, List<String>> entry : captured.entrySet()) {
-            if (entry.getValue().size() < 2) {
-                continue;
+        if (this.ticking.compareAndSet(false, true)) {
+            context.hydraulic().registerServerTick(this.sync::tick);
+        }
+
+        for (CustomEntity entity : this.entities.getOrDefault(context.mod().id(), List.of())) {
+            org.geysermc.geyser.api.util.Identifier id = org.geysermc.geyser.api.util.Identifier.of(entity.id().toString());
+            this.sync.clear(entity.id());
+
+            if (entity.textures().size() > 1) {
+                GeyserIntEntityProperty variant = context.event().registerIntegerProperty(id, variantProperty(entity.id().getNamespace()), 0, entity.textures().size() - 1, 0);
+                if (entity.texture() != null) {
+                    this.sync.setVariant(entity.id(), variant, entity.texture(), entity.textures());
+                }
             }
 
-            org.geysermc.geyser.api.util.Identifier entity = org.geysermc.geyser.api.util.Identifier.of(context.mod().namespace(), entry.getKey());
-            context.event().registerIntegerProperty(entity, variantProperty(context.mod().namespace()), 0, entry.getValue().size() - 1, 0);
+            if (!entity.clientCalls().isEmpty()) {
+                this.sync.addClientCalls(entity.id(), entity.clientCalls());
+            }
+
+            if (entity.animation() != null) {
+                for (StateProperty property : entity.animation().properties()) {
+                    GeyserFloatEntityProperty registered = context.event().registerFloatProperty(id,
+                        org.geysermc.geyser.api.util.Identifier.of(property.id()), PropertySync.MIN, PropertySync.MAX, 0f);
+                    this.sync.addProperty(entity.id(), registered, property.value());
+                }
+            }
         }
     }
 
     private void onDefineEntities(PackEventContext<GeyserDefineEntitiesEvent, EntityPackModule> context) {
-        GeyserDefineEntitiesEvent event = context.event();
-        List<EntityType<?>> entities = context.registryValues(BuiltInRegistries.ENTITY_TYPE);
-        context.logger().debug("Defining custom entities for mod {}", context.mod().id());
-
-        // TODO: Scope to EntityType
-        /*
-        DefaultedRegistry<EntityType<?>> registry = BuiltInRegistries.ENTITY_TYPE;
-        for (EntityType<?> entity : entities) {
-            Identifier entityLocation = registry.getKey(entity);
-            event.register(CustomEntityDefinition.of(entityLocation.toString()));
+        for (CustomEntity entity : this.entities.getOrDefault(context.mod().id(), List.of())) {
+            context.event().register(CustomEntityDefinition.of(entity.id().toString()));
+            context.logger().debug("Registered custom entity {}", entity.id());
         }
-
-         */
-        List<EntityModel> models = this.models.get(context.mod().id());
-        if (models != null) {
-            for (EntityModel model : models) {
-                event.register(CustomEntityDefinition.of(model.namespace() + ":" + model.path()));
-                context.logger().debug("Registered custom entity {}:{}", model.namespace(), model.path());
-            }
-        }
-    }
-
-    @NotNull
-    private static List<String> parseValidTextures(@NotNull List<org.geysermc.hydraulic.entity.conduit.Identifier> resolved) {
-        List<String> out = new ArrayList<>(resolved.size());
-        for (org.geysermc.hydraulic.entity.conduit.Identifier texture : resolved) {
-            if (texture == null || texture.namespace() == null || texture.path() == null) {
-                continue;
-            }
-
-            String value = texture.namespace() + ":" + texture.path();
-            if (!out.contains(value)) {
-                out.add(value);
-            }
-        }
-
-        return out;
     }
 }

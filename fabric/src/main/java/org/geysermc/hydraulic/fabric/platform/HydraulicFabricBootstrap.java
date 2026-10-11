@@ -3,6 +3,7 @@ package org.geysermc.hydraulic.fabric.platform;
 import com.google.common.base.Suppliers;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.Version;
@@ -19,10 +20,12 @@ import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -30,6 +33,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class HydraulicFabricBootstrap implements HydraulicBootstrap {
+    // Minecraft's common classes would otherwise be followed into, such as Mth.cos into its lookup table.
+    private static final Set<String> NOT_MOD_JARS = Set.of("minecraft", "java", "fabricloader");
+
     private final Supplier<Map<String, ModInfo>> modsList = Suppliers.memoize(() ->
         FabricLoader.getInstance()
             .getAllMods()
@@ -85,6 +91,18 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
     }
 
     @Override
+    public @NotNull Collection<Path> modJars() {
+        return FabricLoader.getInstance()
+            .getAllMods()
+            .stream()
+            .filter(mod -> !NOT_MOD_JARS.contains(mod.getMetadata().getId()))
+            .flatMap(mod -> this.originOf(mod).stream())
+            .filter(Files::isRegularFile)
+            .distinct()
+            .toList();
+    }
+
+    @Override
     public @NotNull Path dataFolder(@NotNull String modId) {
         return FabricLoader.getInstance().getConfigDir().resolve(modId);
     }
@@ -97,6 +115,11 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
     @Override
     public void registerServerStop(Consumer<MinecraftServer> listenerAction) {
         ServerLifecycleEvents.SERVER_STOPPING.register(listenerAction::accept);
+    }
+
+    @Override
+    public void registerServerTick(Consumer<MinecraftServer> listenerAction) {
+        ServerTickEvents.END_SERVER_TICK.register(listenerAction::accept);
     }
 
     @Override
