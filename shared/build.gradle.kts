@@ -56,4 +56,41 @@ dependencies {
 
     // Only here to suppress "unknown enum constant EnvType.CLIENT" warnings.
     compileOnly(libs.fabric.loader)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mojava)
+    testRuntimeOnly(libs.junit.launcher)
+}
+
+tasks.test {
+    useJUnitPlatform()
+    // The test mod is scanned the way a mod's jar would be, from its compiled classes.
+    val testMod = project(":test").layout.buildDirectory.dir("classes/java/main")
+    dependsOn(":test:compileJava")
+    inputs.dir(testMod)
+    jvmArgumentProviders.add(CommandLineArgumentProvider { listOf("-Dhydraulic.test.mod=" + testMod.get().asFile.absolutePath) })
+}
+
+// Vanilla's entity models are only in the client jar, so they are read at build time and shipped for mods that reuse them.
+val generator: SourceSet by sourceSets.creating {
+    compileClasspath += sourceSets.main.get().output.classesDirs + sourceSets.main.get().compileClasspath
+    runtimeClasspath += output + compileClasspath
+}
+
+val generateVanillaModels by tasks.registering(JavaExec::class) {
+    description = "Reads vanilla's entity models from the client jar into the bundle Hydraulic ships."
+    val bundle = layout.buildDirectory.dir("generated/vanilla-models")
+    classpath = generator.runtimeClasspath
+    mainClass = "org.geysermc.hydraulic.generator.VanillaModelsGenerator"
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    inputs.files(loom.namedMinecraftJars)
+    outputs.dir(bundle)
+    argumentProviders.add(CommandLineArgumentProvider {
+        listOf(bundle.get().file("hydraulic/vanilla-models.json").asFile.absolutePath) + loom.namedMinecraftJars.files.map { it.absolutePath }
+    })
+}
+
+sourceSets.main {
+    resources.srcDir(generateVanillaModels)
 }

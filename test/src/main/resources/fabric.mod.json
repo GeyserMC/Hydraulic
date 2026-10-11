@@ -18,6 +18,9 @@
     "main": [
       "org.geysermc.hydraulic.fabric.test.HydraulicTestMod"
     ],
+    "client": [
+      "org.geysermc.hydraulic.fabric.test.client.HydraulicTestModClient"
+    ],
     "fabric-datagen": [
         "org.geysermc.hydraulic.fabric.test.datagen.DataGeneration"
     ]

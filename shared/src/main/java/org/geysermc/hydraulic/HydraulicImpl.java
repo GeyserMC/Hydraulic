@@ -72,6 +72,15 @@ public class HydraulicImpl implements EventRegistrar {
     }
 
     /**
+     * Registers a listener called at the end of every server tick.
+     *
+     * @param listenerAction the listener
+     */
+    public void registerServerTick(Consumer<MinecraftServer> listenerAction) {
+        bootstrap.registerServerTick(listenerAction);
+    }
+
+    /**
      * Gets all the mods loaded on this platform.
      *
      * @return the mods loaded on this platform
@@ -121,6 +130,16 @@ public class HydraulicImpl implements EventRegistrar {
     @NotNull
     public ModStorage modStorage(@NotNull ModInfo mod) {
         return this.modStorage.computeIfAbsent(mod.id(), e -> ModStorage.load(mod));
+    }
+
+    /**
+     * Gets the jar every loaded mod was read from, including libraries left out of {@link #mods()}.
+     *
+     * @return the jars on disk of every loaded mod
+     */
+    @NotNull
+    public Collection<Path> modJars() {
+        return this.bootstrap.modJars();
     }
 
     /**

@@ -2,11 +2,15 @@ package org.geysermc.hydraulic.entity.conduit;
 
 import java.util.List;
 
+/**
+ * A model layer as a mod's code builds it.
+ *
+ * @param scale how much the layer's mesh is scaled when baked, about the point the model stands on
+ */
 public record EntityModel(String namespace, String path, String layer,
                           int textureWidth, int textureHeight,
-                          List<Part> parts
+                          List<Part> parts, float scale
 ) {
-
     public record Part(String name, Pose pose, List<Cube> cubes, List<Part> children) {
     }
 
