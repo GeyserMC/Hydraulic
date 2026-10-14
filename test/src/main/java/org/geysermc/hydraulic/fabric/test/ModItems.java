@@ -56,20 +56,23 @@ public class ModItems {
     );
     public static final Item BARREL_AXE = register(
             "barrel_axe",
-            properties -> new AxeItem(BARREL_TOOL_MATERIAL, 16.0F, -3.2F, properties),
+            Item::new,
             new Item.Properties()
+                    .axe(BARREL_TOOL_MATERIAL, 16.0F, -3.2F)
                     .rarity(Rarity.EPIC)
     );
     public static final Item BARREL_SHOVEL = register(
             "barrel_shovel",
-            properties -> new ShovelItem(BARREL_TOOL_MATERIAL, 1.0F, -3.0F, properties),
+            Item::new,
             new Item.Properties()
+                    .shovel(BARREL_TOOL_MATERIAL, 1.0F, -3.0F)
                     .rarity(Rarity.EPIC)
     );
     public static final Item BARREL_HOE = register(
             "barrel_hoe",
-            properties -> new AxeItem(BARREL_TOOL_MATERIAL, -5.0F, -3.0F, properties),
+            Item::new,
             new Item.Properties()
+                    .hoe(BARREL_TOOL_MATERIAL, -5.0F, -3.0F)
                     .rarity(Rarity.EPIC)
     );
 

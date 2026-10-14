@@ -1,7 +1,7 @@
 [versions]
 mixin = "0.8.7"
 mixinextras = "0.5.5"
-geyser = "2.11.2-SNAPSHOT"
+geyser = "preview-feature-26.3-SNAPSHOT"
 auto-service = "1.1.1"
 pack-converter = "3.5.1-SNAPSHOT"
 indra = "4.1.0"
@@ -13,11 +13,11 @@ configurate = "4.2.0-GeyserMC-20251111.004649-11"
 configurate-core = "4.2.0-GeyserMC-20251111.004649-12"
 
 # Fabric
-fabric-loader = "0.19.3"
-fabric-api = "0.158.0+26.2"
+fabric-loader = "0.19.5"
+fabric-api = "0.162.0+26.3"
 
 # NeoForge
-neoforge-version = "26.2.0.75"
+neoforge-version = "26.3.0.77"
 
 [libraries]
 mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }

@@ -140,14 +140,14 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.ARROWS, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(AxeItem.class),
+                List.of(),
                 List.of(ItemTags.AXES),
                 List.of(),
                 List.of()
             ), new CreativeMapping(ItemGroup.AXES, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(HoeItem.class),
+                List.of(),
                 List.of(ItemTags.HOES),
                 List.of(),
                 List.of()
@@ -161,7 +161,7 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.PICKAXES, CreativeCategory.EQUIPMENT));
 
             put(new CreativeMappingTarget(
-                List.of(ShovelItem.class),
+                List.of(),
                 List.of(ItemTags.SHOVELS),
                 List.of(),
                 List.of()
@@ -226,7 +226,7 @@ public class CreativeMappings {
             ), new CreativeMapping(ItemGroup.PRESSURE_PLATES, CreativeCategory.ITEMS));
 
             put(new CreativeMappingTarget(
-                List.of(SignItem.class),
+                List.of(),
                 List.of(ItemTags.SIGNS),
                 List.of(SignBlock.class),
                 List.of(BlockTags.WALL_SIGNS, BlockTags.STANDING_SIGNS)
