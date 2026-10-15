@@ -17,6 +17,7 @@ joml = "1.10.8"
 architectury-api = "21.0.4"
 junit = "5.13.4"
 mojava = "0.0.1-SNAPSHOT"
+geckolib = "5.5.7"
 
 # Fabric
 fabric-loader = "0.19.5"
@@ -54,6 +55,7 @@ examination-string = { group = "net.kyori", name = "examination-string", version
 adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
 adventure-examination = { group = "net.kyori", name = "examination-api", version.ref = "adventure-examination" }
 joml = { group = "org.joml", name = "joml", version.ref = "joml" }
+geckolib = { group = "com.geckolib", name = "geckolib-common-26.3", version.ref = "geckolib" }
 architectury-api = { group = "dev.architectury", name = "architectury-fabric", version.ref = "architectury-api" }
 
 # Fabric

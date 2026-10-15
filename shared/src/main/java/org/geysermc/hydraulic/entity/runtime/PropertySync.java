@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.ToIntFunction;
 
 /**
  * Sends Bedrock players the entity properties custom entities' animations and textures read, worked
@@ -69,6 +70,17 @@ public final class PropertySync {
      */
     public void addProperty(@NotNull Identifier type, @NotNull GeyserFloatEntityProperty property, @NotNull Value value) {
         this.bindings.computeIfAbsent(type, _ -> new Binding()).floats.add(new FloatProperty(property, value));
+    }
+
+    /**
+     * Sends an int property, computed from the entity by a function rather than a summarized value.
+     *
+     * @param type the entity type
+     * @param property the property, as registered with Geyser
+     * @param value computes the property from the entity, on the server thread
+     */
+    public void addProperty(@NotNull Identifier type, @NotNull GeyserIntEntityProperty property, @NotNull ToIntFunction<Entity> value) {
+        this.bindings.computeIfAbsent(type, _ -> new Binding()).ints.add(new IntProperty(property, value));
     }
 
     /**
@@ -133,13 +145,18 @@ public final class PropertySync {
             floats[i] = result == null ? Float.NaN : Math.clamp((float) ValueEvaluator.number(result), MIN, MAX);
         }
 
+        int[] ints = new int[binding.ints.size()];
+        for (int i = 0; i < ints.length; i++) {
+            ints[i] = this.attempt(type, binding.ints.get(i), entity);
+        }
+
         int variant = -1;
         if (binding.variant != null) {
             Object texture = this.attempt(type, "texture", binding.variant.texture(), entity, false);
             variant = texture == null ? -1 : binding.variant.textures().indexOf(texture.toString());
         }
 
-        return new Values(binding, floats, variant);
+        return new Values(binding, floats, ints, variant);
     }
 
     @Nullable
@@ -165,6 +182,23 @@ public final class PropertySync {
         }
     }
 
+    private int attempt(@NotNull Identifier type, @NotNull IntProperty property, @NotNull Entity entity) {
+        String key = type + "/" + property.property().identifier();
+        if (this.failures.contains(key)) {
+            return -1;
+        }
+
+        try {
+            return property.value().applyAsInt(entity);
+        } catch (RuntimeException | LinkageError e) {
+            if (this.failures.add(key)) {
+                LOGGER.debug("Can't compute {} for {}, so it won't be sent: {}", property.property().identifier(), type, e.getMessage());
+            }
+
+            return -1;
+        }
+    }
+
     private void send(@NotNull GeyserSession session, @NotNull Map<Integer, Values> nearby) {
         Map<org.geysermc.geyser.entity.type.Entity, Values> sent = this.sent.computeIfAbsent(session, _ -> new WeakHashMap<>());
         nearby.forEach((id, values) -> {
@@ -185,9 +219,20 @@ public final class PropertySync {
                 }
             }
 
+            List<IntProperty> ints = values.binding().ints;
+            int[] mergedInts = values.ints().clone();
+            List<Integer> changedInts = new ArrayList<>();
+            for (int i = 0; i < mergedInts.length; i++) {
+                if (mergedInts[i] < 0) {
+                    mergedInts[i] = last == null ? -1 : last.ints()[i];
+                } else if (last == null || last.ints()[i] != mergedInts[i]) {
+                    changedInts.add(i);
+                }
+            }
+
             Variant variant = values.binding().variant;
             boolean variantChanged = variant != null && values.variant() >= 0 && (last == null || last.variant() != values.variant());
-            if (changed.isEmpty() && !variantChanged) {
+            if (changed.isEmpty() && changedInts.isEmpty() && !variantChanged) {
                 return;
             }
 
@@ -195,17 +240,21 @@ public final class PropertySync {
                 for (int i : changed) {
                     updater.update(floats.get(i).property(), merged[i]);
                 }
+                for (int i : changedInts) {
+                    updater.update(ints.get(i).property(), mergedInts[i]);
+                }
                 if (variantChanged) {
                     updater.update(variant.property(), values.variant());
                 }
             }, false);
 
-            sent.put(entity, new Values(values.binding(), merged, variantChanged || last == null ? values.variant() : last.variant()));
+            sent.put(entity, new Values(values.binding(), merged, mergedInts, variantChanged || last == null ? values.variant() : last.variant()));
         });
     }
 
     private static final class Binding {
         private final List<FloatProperty> floats = new CopyOnWriteArrayList<>();
+        private final List<IntProperty> ints = new CopyOnWriteArrayList<>();
         private final List<ClientCall> calls = new CopyOnWriteArrayList<>();
         private volatile Variant variant;
     }
@@ -213,9 +262,12 @@ public final class PropertySync {
     private record FloatProperty(GeyserFloatEntityProperty property, Value value) {
     }
 
+    private record IntProperty(GeyserIntEntityProperty property, ToIntFunction<Entity> value) {
+    }
+
     private record Variant(GeyserIntEntityProperty property, Value texture, List<String> textures) {
     }
 
-    private record Values(Binding binding, float[] floats, int variant) {
+    private record Values(Binding binding, float[] floats, int[] ints, int variant) {
     }
 }

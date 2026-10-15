@@ -1,6 +1,8 @@
 package org.geysermc.hydraulic.entity;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import org.geysermc.conduit.ConduitContext;
 import org.geysermc.conduit.Conduits;
 import org.geysermc.conduit.Summary;
@@ -21,7 +23,10 @@ import org.geysermc.hydraulic.entity.conduit.EntityType;
 import org.geysermc.hydraulic.entity.conduit.EntityTypeBuilder;
 import org.geysermc.hydraulic.entity.conduit.LivingEntityRenderer;
 import org.geysermc.hydraulic.entity.conduit.ModelLayerLocation;
+import org.geysermc.hydraulic.entity.geckolib.GeckoLibEntity;
+import org.geysermc.hydraulic.entity.geckolib.GeckoLibScanner;
 import org.geysermc.hydraulic.entity.runtime.ClientCall;
+import org.geysermc.hydraulic.entity.runtime.ValueEvaluator;
 import org.geysermc.hydraulic.entity.vanilla.VanillaModels;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +57,7 @@ public final class EntityScanner {
     private final ConduitContext context;
     private final Logger logger;
     private final Collection<Path> textureSources;
+    private final List<GeckoLibEntity> geckoLibEntities = new ArrayList<>();
     private List<String> assets;
 
     public EntityScanner(@NotNull ConduitContext context, @NotNull Logger logger) {
@@ -73,6 +79,7 @@ public final class EntityScanner {
      */
     @NotNull
     public List<CustomEntity> scan(@NotNull ModelLayerRegistryInfo layerInfo, @NotNull EntityRendererRegistryInfo rendererInfo) {
+        this.geckoLibEntities.clear();
         VirtualMachine vm = VirtualMachineFactory.create(this.context).await();
 
         Map<String, EntityModel> layers = new HashMap<>();
@@ -145,6 +152,14 @@ public final class EntityScanner {
             }
 
             ModelBinding binding = renderer.binding();
+            if (binding == null && renderer.constructed() != null) {
+                GeckoLibEntity geckoLib = GeckoLibScanner.scan(vm, this.context, id, renderer.constructed(), this.logger);
+                if (geckoLib != null) {
+                    this.geckoLibEntities.add(geckoLib);
+                    continue;
+                }
+            }
+
             EntityModel model = binding != null
                     ? layers.get(layerKey(binding.namespace(), binding.path(), binding.layer()))
                     : layers.get(layerKey(id.getNamespace(), id.getPath(), DEFAULT_LAYER));
@@ -162,11 +177,21 @@ public final class EntityScanner {
             int reserved = renderer.textures().size() > 1 ? 1 : 0;
             CompiledAnimation animation = binding == null ? null : this.animation(vm, id, binding, model, extract, reserved);
             entities.add(new CustomEntity(id, model, renderer.textures(), binding, animation, this.texture(id, renderer, extract),
-                    animation == null || animation.keyframes().isEmpty() ? List.of() : clientCalls(vm, renderer.entityClass()))
+                    animation == null || animation.keyframes().isEmpty() || renderer.entityClass() == null ? List.of() : clientCalls(vm, renderer.entityClass()))
             );
         }
 
         return entities;
+    }
+
+    /**
+     * Gets the entities the last scan found drawn by GeckoLib renderers, which {@link #scan} leaves out.
+     *
+     * @return the entities
+     */
+    @NotNull
+    public List<GeckoLibEntity> geckoLibEntities() {
+        return this.geckoLibEntities;
     }
 
     @Nullable
@@ -174,7 +199,8 @@ public final class EntityScanner {
         EntityType type = registration.type() == null ? null : Conduits.as(registered(registration.type()), EntityType.class, this.context);
         String entityClass = type == null ? null : implementation(type.factory());
         Trace trace = registration.renderer().get();
-        if (entityClass == null || trace == null) {
+        Identifier registered = entityClass == null ? this.registeredId(registration.type()) : null;
+        if (entityClass == null && registered == null || trace == null) {
             this.logger.debug("Renderer registration for {} could not be resolved", registration.type());
             return null;
         }
@@ -183,11 +209,12 @@ public final class EntityScanner {
         LivingEntityRenderer renderer = trace.as(LivingEntityRenderer.class);
         if (renderer != null) {
             // A renderer shared between entities only knows its entity as a type variable.
-            textures = parseValidTextures(Conduits.withTypeArgument(renderer, entityClass).getTextureLocation());
+            textures = parseValidTextures((entityClass == null ? renderer : Conduits.withTypeArgument(renderer, entityClass)).getTextureLocation());
         }
 
         ModelBinding binding = ModelBinding.of(vm, this.context, trace.returned());
-        String rendererClass = trace.returned() instanceof Value.Constructed constructed ? constructed.className() : null;
+        Value.Constructed constructed = trace.returned() instanceof Value.Constructed value ? value : null;
+        String rendererClass = constructed == null ? null : constructed.className();
         Summary texture = rendererClass == null ? null : vm.summarize(rendererClass, "getTextureLocation", null);
         Value textureLocation = texture == null ? null : texture.returned();
         if (textureLocation instanceof Value.InstanceField(Value.This _, String _, String field)) {
@@ -207,7 +234,7 @@ public final class EntityScanner {
         }
 
         this.logger.debug("Renderer for {}: textures={} model={}", entityClass, textures, binding);
-        return new Renderer(entityClass, deferredId(registration.type()), rendererClass, textures, binding, textureLocation);
+        return new Renderer(entityClass, registered != null ? registered : deferredId(registration.type()), constructed, rendererClass, textures, binding, textureLocation);
     }
 
     @Nullable
@@ -273,16 +300,33 @@ public final class EntityScanner {
             || value instanceof Value.InstanceField(Value _, String _, String fieldName) && fieldName.equals(IS_CLIENT_SIDE);
     }
 
-    // Registry.register returns what it registers, so a type registered in a static field is the type it built.
+    // Registry.register returns what it registers, so a type registered in a static field is the type it built
     @NotNull
     private static Value registered(@NotNull Value value) {
         if (value instanceof Value.StaticCall(String owner, String name, List<Value> args)
-            && owner.equals(REGISTRY) && name.equals(REGISTER) && args.size() == 3) {
+                && owner.equals(REGISTRY) && name.equals(REGISTER) && args.size() == 3) {
+
             return args.get(2);
         }
         return value;
     }
 
+
+    // A type assigned outside a static initializer can't be read, but is registered by the time mods are scanned
+    @Nullable
+    private Identifier registeredId(@Nullable Value type) {
+        if (!(type instanceof Value.Field)) {
+            return null;
+        }
+
+        try {
+            return new ValueEvaluator().evaluate(type, this) instanceof net.minecraft.world.entity.EntityType<?> live
+                    ? BuiltInRegistries.ENTITY_TYPE.getResourceKey(live).map(ResourceKey::identifier).orElse(null)
+                    : null;
+        } catch (RuntimeException | LinkageError e) {
+            return null;
+        }
+    }
 
     @Nullable
     private static Identifier deferredId(@Nullable Value value) {
@@ -326,7 +370,8 @@ public final class EntityScanner {
         return out;
     }
 
-    private record Renderer(@NotNull String entityClass, @Nullable Identifier id, @Nullable String rendererClass, @NotNull List<String> textures,
+    private record Renderer(@Nullable String entityClass, @Nullable Identifier id, @Nullable Value.Constructed constructed,
+                            @Nullable String rendererClass, @NotNull List<String> textures,
                             @Nullable ModelBinding binding, @Nullable Value textureLocation
     ) {
     }

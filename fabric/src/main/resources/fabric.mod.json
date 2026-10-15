@@ -21,7 +21,8 @@
   },
   "mixins": [
     "hydraulic.mixins.json",
-    "hydraulic-fabric.mixins.json"
+    "hydraulic-fabric.mixins.json",
+    "hydraulic-geckolib.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.19.3",

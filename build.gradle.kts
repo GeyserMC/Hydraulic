@@ -40,6 +40,13 @@ allprojects {
         // Jitpack
         maven("https://jitpack.io/")
 
+        // GeckoLib
+        maven("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/") {
+            content {
+                includeGroup("com.geckolib")
+            }
+        }
+
         // Modrinth
         exclusiveContent {
             forRepository {
