@@ -86,8 +86,7 @@ public abstract class MinecraftResourcePackReaderImplMixin {
             method = "read(Lteam/unnamed/creative/serialize/minecraft/fs/FileTreeReader;)Lteam/unnamed/creative/ResourcePack;",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/kyori/adventure/key/Key;key(Ljava/lang/String;Ljava/lang/String;)Lnet/kyori/adventure/key/Key;",
-                    ordinal = 2
+                    target = "Lnet/kyori/adventure/key/Key;key(Ljava/lang/String;Ljava/lang/String;)Lnet/kyori/adventure/key/Key;"
             )
     )
     private void injectKeyCreation(Args args) {

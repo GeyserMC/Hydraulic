@@ -11,7 +11,7 @@ fabricApi {
     }
 }
 
-val common: Configuration by configurations.creating
+val common: Configuration = configurations.create("common")
 val developmentFabric: Configuration = configurations.getByName("developmentFabric")
 val includeTransitive: Configuration = configurations.getByName("includeTransitive")
 
