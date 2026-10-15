@@ -1,18 +1,21 @@
 package org.geysermc.hydraulic.entity.animation;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import org.geysermc.conduit.Summary;
 import org.geysermc.conduit.Value;
 import org.geysermc.hydraulic.entity.BedrockEntityModelConverter;
 import org.geysermc.hydraulic.entity.conduit.EntityModel;
+import org.geysermc.pack.bedrock.resource.animations.ActorAnimation;
+import org.geysermc.pack.bedrock.resource.animations.actoranimation.Animations;
+import org.geysermc.pack.bedrock.resource.animations.actoranimation.animations.Bones;
+import org.geysermc.pack.bedrock.resource.animations.actoranimation.animations.bones.Position;
+import org.geysermc.pack.bedrock.resource.animations.actoranimation.animations.bones.Rotation;
+import org.geysermc.pack.bedrock.resource.animations.actoranimation.animations.bones.Scale;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -115,7 +118,7 @@ public final class AnimationCompiler {
             for (int axis = 0; axis < 3; axis++) {
                 molang[axis] = axes[axis] == null ? kind.identity() : compiler.compile(axes[axis]);
                 if (molang[axis] == null) {
-                    logger.debug("Could not compile {} {} axis {} of {}: {}", bone, kind, axis, name, axes[axis]);
+                    logger.debug("Could not compile {} {} axis {} of {}", bone, kind, axis, name);
                     molang[axis] = kind.identity();
                 }
                 moves |= !molang[axis].equals(kind.identity());
@@ -200,7 +203,7 @@ public final class AnimationCompiler {
             weight = weight.equals("1") ? "(" + started + " >= 0)" : "((" + started + " >= 0) * " + weight + ")";
         }
 
-        JsonObject animatedBones = new JsonObject();
+        Map<String, Bones> animatedBones = new LinkedHashMap<>();
         use.definition().bones().forEach((part, partChannels) -> {
             BoneMap.Bone bone = bones.named(part);
             if (bone == null) {
@@ -208,59 +211,80 @@ public final class AnimationCompiler {
                 return;
             }
 
-            JsonObject channels = animatedBones.has(bone.name()) ? animatedBones.getAsJsonObject(bone.name()) : new JsonObject();
+            Bones channels = animatedBones.computeIfAbsent(bone.name(), name -> new Bones());
             for (KeyframeDefinition.Channel channel : partChannels) {
-                JsonObject frames = new JsonObject();
+                Map<String, Frame> frames = new LinkedHashMap<>();
                 for (KeyframeDefinition.Frame frame : channel.frames()) {
-                    frames.add(MolangCompiler.number(exact(frame.time())).text(), frame(channel.target(), frame, scale));
+                    frames.put(MolangCompiler.number(exact(frame.time())).text(), frame(channel.target(), frame, scale));
                 }
-                channels.add(channel.target().name().toLowerCase(Locale.ROOT), frames);
+                channel(channels, channel.target(), frames);
             }
-            animatedBones.add(bone.name(), channels);
         });
 
-        JsonObject animation = new JsonObject();
-        if (use.definition().looping()) {
-            animation.addProperty("loop", true);
-        } else {
-            animation.addProperty("loop", "hold_on_last_frame");
-        }
-        animation.addProperty("animation_length", use.definition().length());
-        animation.addProperty("anim_time_update", time);
-        animation.add("bones", animatedBones);
+        Animations animation = new Animations();
+        animation.loop(use.definition().looping() ? Boolean.TRUE : "hold_on_last_frame");
+        animation.animationLength(use.definition().length());
+        animation.animTimeUpdate(time);
+        animation.bones(animatedBones);
 
         String key = "kf_" + index;
         return new KeyframeAnimation(key, prefix + "." + snake(use.field()), animation, weight, time);
     }
 
-    private static JsonElement frame(@NotNull KeyframeDefinition.Target target, @NotNull KeyframeDefinition.Frame frame, float scale) {
-        JsonArray pre = vector(target, frame.pre(), scale);
-        JsonArray post = vector(target, frame.post(), scale);
-        if (!frame.catmullrom() && pre.equals(post)) {
-            return post;
-        }
+    private static Frame frame(@NotNull KeyframeDefinition.Target target, @NotNull KeyframeDefinition.Frame frame, float scale) {
+        String[] pre = vector(target, frame.pre(), scale);
+        String[] post = vector(target, frame.post(), scale);
+        return new Frame(Arrays.equals(pre, post) ? null : pre, post, frame.catmullrom() ? "catmullrom" : null);
+    }
 
-        JsonObject object = new JsonObject();
-        if (!pre.equals(post)) {
-            object.add("pre", pre);
+    private static void channel(@NotNull Bones bone, @NotNull KeyframeDefinition.Target target, @NotNull Map<String, Frame> frames) {
+        switch (target) {
+            case POSITION -> {
+                Map<String, Position> position = new LinkedHashMap<>();
+                frames.forEach((time, frame) -> {
+                    Position keyframe = new Position();
+                    keyframe.pre(frame.pre());
+                    keyframe.post(frame.post());
+                    keyframe.lerpMode(frame.lerpMode());
+                    position.put(time, keyframe);
+                });
+                bone.position(position);
+            }
+            case ROTATION -> {
+                Map<String, Rotation> rotation = new LinkedHashMap<>();
+                frames.forEach((time, frame) -> {
+                    Rotation keyframe = new Rotation();
+                    keyframe.pre(frame.pre());
+                    keyframe.post(frame.post());
+                    keyframe.lerpMode(frame.lerpMode());
+                    rotation.put(time, keyframe);
+                });
+                bone.rotation(rotation);
+            }
+            case SCALE -> {
+                Map<String, Scale> scale = new LinkedHashMap<>();
+                frames.forEach((time, frame) -> {
+                    Scale keyframe = new Scale();
+                    keyframe.pre(frame.pre());
+                    keyframe.post(frame.post());
+                    keyframe.lerpMode(frame.lerpMode());
+                    scale.put(time, keyframe);
+                });
+                bone.scale(scale);
+            }
         }
-        object.add("post", post);
-        if (frame.catmullrom()) {
-            object.addProperty("lerp_mode", "catmullrom");
-        }
-        return object;
     }
 
     // Java's position helper already negates Y, so its arguments are Bedrock's offsets as they are.
-    private static JsonArray vector(@NotNull KeyframeDefinition.Target target, float @NotNull [] values, float scale) {
-        JsonArray array = new JsonArray();
+    private static String[] vector(@NotNull KeyframeDefinition.Target target, float @NotNull [] values, float scale) {
+        String[] array = new String[3];
         for (int axis = 0; axis < 3; axis++) {
             float value = switch (target) {
                 case ROTATION -> BedrockEntityModelConverter.ROTATION_SIGNS[axis] * values[axis];
                 case POSITION -> values[axis] * scale;
                 case SCALE -> values[axis];
             };
-            array.add(MolangCompiler.number(exact(value)).constant());
+            array[axis] = MolangCompiler.number(exact(value)).text();
         }
         return array;
     }
@@ -430,6 +454,9 @@ public final class AnimationCompiler {
         }
     }
 
+    private record Frame(@NotNull String @Nullable [] pre, @NotNull String @NotNull [] post, @Nullable String lerpMode) {
+    }
+
     private record Inputs(BoneMap bones, StateResolver state) implements MolangCompiler.Inputs {
 
         @Override
@@ -474,15 +501,13 @@ public final class AnimationCompiler {
     public record Channel(@NotNull String bone, @NotNull Kind kind, @Nullable Value @NotNull [] values, @NotNull String @NotNull [] molang) {
 
         public enum Kind {
-            ROTATION("rotation", "0"),
-            POSITION("position", "0"),
-            SCALE("scale", "1");
+            ROTATION("0"),
+            POSITION("0"),
+            SCALE("1");
 
-            private final String key;
             private final String identity;
 
-            Kind(String key, String identity) {
-                this.key = key;
+            Kind(String identity) {
                 this.identity = identity;
             }
 
@@ -510,37 +535,32 @@ public final class AnimationCompiler {
     ) {
 
         /**
-         * Writes the animation file.
+         * Builds the animation file.
          *
          * @return the animation file's contents
          */
         @NotNull
-        public JsonObject toJson() {
-            JsonObject bones = new JsonObject();
+        public ActorAnimation toAnimation() {
+            Map<String, Bones> bones = new LinkedHashMap<>();
             for (Channel channel : this.channels) {
-                JsonObject bone = bones.has(channel.bone()) ? bones.getAsJsonObject(channel.bone()) : new JsonObject();
-                JsonArray axes = new JsonArray();
-                for (String axis : channel.molang()) {
-                    axes.add(axis.matches("-?[0-9.]+") ? new JsonPrimitive(Double.parseDouble(axis)) : new JsonPrimitive(axis));
-                }
-                bone.add(channel.kind().key, axes);
-                bones.add(channel.bone(), bone);
+                Bones bone = bones.computeIfAbsent(channel.bone(), name -> new Bones());
+                AnimationCompiler.channel(bone, KeyframeDefinition.Target.valueOf(channel.kind().name()), Map.of("0.0", new Frame(null, channel.molang(), null)));
             }
 
-            JsonObject animations = new JsonObject();
+            Map<String, Animations> animations = new LinkedHashMap<>();
             if (!this.channels.isEmpty()) {
-                JsonObject animation = new JsonObject();
-                animation.addProperty("loop", true);
-                animation.add("bones", bones);
-                animations.add(this.name, animation);
+                Animations animation = new Animations();
+                animation.loop(Boolean.TRUE);
+                animation.bones(bones);
+                animations.put(this.name, animation);
             }
             for (KeyframeAnimation keyframe : this.keyframes) {
-                animations.add(keyframe.name(), keyframe.animation());
+                animations.put(keyframe.name(), keyframe.animation());
             }
 
-            JsonObject file = new JsonObject();
-            file.addProperty("format_version", "1.8.0");
-            file.add("animations", animations);
+            ActorAnimation file = new ActorAnimation();
+            file.formatVersion("1.8.0");
+            file.animations(animations);
             return file;
         }
     }
@@ -554,7 +574,7 @@ public final class AnimationCompiler {
      * @param weight how strongly it is applied, as Molang
      * @param time the time it is at, as Molang
      */
-    public record KeyframeAnimation(@NotNull String key, @NotNull String name, @NotNull JsonObject animation,
+    public record KeyframeAnimation(@NotNull String key, @NotNull String name, @NotNull Animations animation,
                                     @NotNull String weight, @NotNull String time
     ) {
     }

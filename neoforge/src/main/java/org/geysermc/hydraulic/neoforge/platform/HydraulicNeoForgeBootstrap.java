@@ -154,6 +154,7 @@ public class HydraulicNeoForgeBootstrap implements HydraulicBootstrap {
     private static boolean ignoreMod(IModInfo mod) {
         return mod.getModId().equals("minecraft")
                 || mod.getModId().equals("neoforge")
+                || mod.getModId().equals("geyser_neoforge")
                 || Boolean.TRUE.equals(mod.getModProperties().get("hydraulic:ignore"));
     }
 }

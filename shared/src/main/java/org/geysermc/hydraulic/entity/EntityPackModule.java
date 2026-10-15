@@ -1,9 +1,6 @@
 package org.geysermc.hydraulic.entity;
 
 import com.google.auto.service.AutoService;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import net.kyori.adventure.key.Key;
 import net.minecraft.resources.Identifier;
 import org.geysermc.conduit.ConduitContext;
@@ -12,7 +9,6 @@ import org.geysermc.geyser.api.entity.property.type.GeyserFloatEntityProperty;
 import org.geysermc.geyser.api.entity.property.type.GeyserIntEntityProperty;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineEntitiesEvent;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineEntityPropertiesEvent;
-import org.geysermc.hydraulic.Constants;
 import org.geysermc.hydraulic.entity.animation.AnimationCompiler.CompiledAnimation;
 import org.geysermc.hydraulic.entity.animation.AnimationCompiler.KeyframeAnimation;
 import org.geysermc.hydraulic.entity.animation.StateProperty;
@@ -25,6 +21,7 @@ import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.pack.bedrock.resource.entity.ClientEntity;
 import org.geysermc.pack.bedrock.resource.entity.Entity;
 import org.geysermc.pack.bedrock.resource.entity.cliententity.Description;
+import org.geysermc.pack.bedrock.resource.entity.cliententity.description.Scripts;
 import org.geysermc.pack.bedrock.resource.render_controllers.RenderControllers;
 import org.geysermc.pack.bedrock.resource.render_controllers.rendercontrollers.Arrays;
 import org.jetbrains.annotations.NotNull;
@@ -125,66 +122,41 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
         description.geometry(Map.of(DEFAULT_TEXTURE, geometry));
         description.renderControllers(new String [] { controller });
 
-        // Weighted animations are objects in the animate list, which the schema can't hold, so scripts are written by hand.
-        JsonObject scripts = null;
         if (animation != null && (!animation.channels().isEmpty() || !animation.keyframes().isEmpty())) {
-            context.bedrockResourcePack().addExtraFile(animation.toJson(), "animations/" + identifier.getPath() + ".animation.json");
+            context.bedrockResourcePack().addAnimation(animation.toAnimation(), "animations/" + identifier.getPath() + ".animation.json");
 
             Map<String, String> animations = new LinkedHashMap<>();
-            JsonArray animate = new JsonArray();
+            List<Map<String, String>> animate = new ArrayList<>();
             if (!animation.channels().isEmpty()) {
                 animations.put(SETUP_ANIMATION, animation.name());
-                animate.add(SETUP_ANIMATION);
+                animate.add(Map.of(SETUP_ANIMATION, "1"));
             }
+
             for (KeyframeAnimation keyframe : animation.keyframes()) {
                 animations.put(keyframe.key(), keyframe.name());
-                JsonObject weighted = new JsonObject();
-                weighted.addProperty(keyframe.key(), keyframe.weight());
-                animate.add(weighted);
+                animate.add(Map.of(keyframe.key(), keyframe.weight()));
             }
+
             description.animations(animations);
 
-            scripts = new JsonObject();
-            scripts.add("animate", animate);
+            Scripts scripts = new Scripts();
+            scripts.animate(animate);
             if (!animation.preAnimation().isEmpty()) {
-                scripts.add("pre_animation", strings(animation.preAnimation()));
+                scripts.preAnimation(animation.preAnimation().toArray(String[]::new));
             }
+
             if (!animation.initialize().isEmpty()) {
-                scripts.add("initialize", strings(animation.initialize()));
+                scripts.initialize(animation.initialize().toArray(String[]::new));
             }
+
+            description.scripts(scripts);
         }
 
         clientEntity.description(description);
 
         entity.clientEntity(clientEntity);
 
-        JsonElement json = prune(Constants.GSON.toJsonTree(entity));
-        if (scripts != null) {
-            json.getAsJsonObject().getAsJsonObject("minecraft:client_entity").getAsJsonObject("description").add("scripts", scripts);
-        }
-
-        // TODO: Client entity support in pack converter
-        context.bedrockResourcePack().addExtraFile(json, "entity/" + identifier.getPath() + ".entity.json");
-    }
-
-    private static JsonArray strings(List<String> values) {
-        JsonArray array = new JsonArray();
-        values.forEach(array::add);
-        return array;
-    }
-
-    private static JsonElement prune(JsonElement element) {
-        if (element instanceof JsonObject object) {
-            for (String key : new ArrayList<>(object.keySet())) {
-                JsonElement value = prune(object.get(key));
-                if (value.isJsonObject() && value.getAsJsonObject().isEmpty()
-                        || value.isJsonArray() && value.getAsJsonArray().isEmpty()) {
-                    object.remove(key);
-                }
-            }
-        }
-
-        return element;
+        context.bedrockResourcePack().addClientEntity(entity, "entity/" + identifier.getPath() + ".entity.json");
     }
 
     private void addRenderController(PackPostProcessContext<EntityPackModule> context, String controller, Identifier identifier,

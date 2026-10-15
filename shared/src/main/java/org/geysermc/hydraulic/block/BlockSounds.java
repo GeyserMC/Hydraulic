@@ -1,18 +1,21 @@
 package org.geysermc.hydraulic.block;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
+import org.geysermc.pack.bedrock.resource.Blocks;
+import org.geysermc.pack.bedrock.resource.Sounds;
+import org.geysermc.pack.bedrock.resource.sounds.InteractiveSounds;
+import org.geysermc.pack.bedrock.resource.sounds.blocksounds.Events;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -53,16 +56,11 @@ public final class BlockSounds {
 
     private static final Map<SoundType, String> VANILLA = vanillaGroups();
 
-    private final JsonObject blocks = new JsonObject();
-    private final JsonObject blockSounds = new JsonObject();
-    private final JsonObject interactiveSounds = new JsonObject();
+    private final Map<String, Blocks> blocks = new LinkedHashMap<>();
+    private final Map<String, org.geysermc.pack.bedrock.resource.sounds.BlockSounds> blockSounds = new LinkedHashMap<>();
+    private final Map<String, org.geysermc.pack.bedrock.resource.sounds.interactivesounds.BlockSounds> interactiveSounds = new LinkedHashMap<>();
 
     private BlockSounds() {
-        JsonArray formatVersion = new JsonArray();
-        formatVersion.add(1);
-        formatVersion.add(1);
-        formatVersion.add(0);
-        this.blocks.add("format_version", formatVersion);
     }
 
     /**
@@ -76,9 +74,9 @@ public final class BlockSounds {
         BlockSounds sounds = new BlockSounds();
         for (Block block : blocks) {
             Identifier id = BuiltInRegistries.BLOCK.getKey(block);
-            JsonObject entry = new JsonObject();
-            entry.addProperty("sound", sounds.group(block.defaultBlockState().getSoundType()));
-            sounds.blocks.add(id.toString(), entry);
+            Blocks entry = new Blocks();
+            entry.sound(sounds.group(block.defaultBlockState().getSoundType()));
+            sounds.blocks.put(id.toString(), entry);
         }
         return sounds;
     }
@@ -86,10 +84,10 @@ public final class BlockSounds {
     /**
      * Gets the contents of {@code blocks.json}.
      *
-     * @return the block definitions, each giving its sound group
+     * @return the block definitions by block id, each giving its sound group
      */
     @NotNull
-    public JsonObject blocks() {
+    public Map<String, Blocks> blocks() {
         return this.blocks;
     }
 
@@ -100,17 +98,17 @@ public final class BlockSounds {
      * @return the sound groups, or null if every block uses one of Bedrock's
      */
     @Nullable
-    public JsonObject sounds() {
+    public Sounds sounds() {
         if (this.blockSounds.isEmpty()) {
             return null;
         }
 
-        JsonObject interactive = new JsonObject();
-        interactive.add("block_sounds", this.interactiveSounds);
+        InteractiveSounds interactive = new InteractiveSounds();
+        interactive.blockSounds(this.interactiveSounds);
 
-        JsonObject sounds = new JsonObject();
-        sounds.add("block_sounds", this.blockSounds);
-        sounds.add("interactive_sounds", interactive);
+        Sounds sounds = new Sounds();
+        sounds.blockSounds(this.blockSounds);
+        sounds.interactiveSounds(interactive);
         return sounds;
     }
 
@@ -133,7 +131,7 @@ public final class BlockSounds {
         }
 
         String group = breakSound.getNamespace() + "." + breakSound.getPath().replace('/', '.');
-        if (!this.blockSounds.has(group)) {
+        if (!this.blockSounds.containsKey(group)) {
             this.define(group, type);
         }
         return group;
@@ -144,35 +142,39 @@ public final class BlockSounds {
         float volume = type.getVolume();
         float pitch = type.getPitch();
 
-        JsonObject events = new JsonObject();
-        events.add("break", event(type.getBreakSound(), (volume + 1f) / 2f, pitch * 0.8f));
-        events.add("place", event(type.getPlaceSound(), (volume + 1f) / 2f, pitch * 0.8f));
-        events.add("hit", event(type.getHitSound(), (volume + 1f) / 8f, pitch * 0.5f));
-        this.blockSounds.add(group, groupOf(events));
+        Map<String, Events> events = new LinkedHashMap<>();
+        events.put("break", event(type.getBreakSound(), (volume + 1f) / 2f, pitch * 0.8f));
+        events.put("place", event(type.getPlaceSound(), (volume + 1f) / 2f, pitch * 0.8f));
+        events.put("hit", event(type.getHitSound(), (volume + 1f) / 8f, pitch * 0.5f));
+        org.geysermc.pack.bedrock.resource.sounds.BlockSounds blockSounds = new org.geysermc.pack.bedrock.resource.sounds.BlockSounds();
+        blockSounds.events(events);
+        this.blockSounds.put(group, blockSounds);
 
-        JsonObject interactive = new JsonObject();
-        interactive.add("step", event(type.getStepSound(), volume * 0.15f, pitch));
-        interactive.add("fall", event(type.getFallSound(), volume * 0.5f, pitch * 0.75f));
-        interactive.add("jump", event(type.getStepSound(), volume * 0.12f, pitch));
-        interactive.add("land", event(type.getFallSound(), volume * 0.18f, pitch));
-        this.interactiveSounds.add(group, groupOf(interactive));
+        Map<String, org.geysermc.pack.bedrock.resource.sounds.interactivesounds.blocksounds.Events> interactive = new LinkedHashMap<>();
+        interactive.put("step", interactiveEvent(type.getStepSound(), volume * 0.15f, pitch));
+        interactive.put("fall", interactiveEvent(type.getFallSound(), volume * 0.5f, pitch * 0.75f));
+        interactive.put("jump", interactiveEvent(type.getStepSound(), volume * 0.12f, pitch));
+        interactive.put("land", interactiveEvent(type.getFallSound(), volume * 0.18f, pitch));
+        org.geysermc.pack.bedrock.resource.sounds.interactivesounds.BlockSounds interactiveSounds = new org.geysermc.pack.bedrock.resource.sounds.interactivesounds.BlockSounds();
+        interactiveSounds.events(interactive);
+        this.interactiveSounds.put(group, interactiveSounds);
     }
 
     @NotNull
-    private static JsonObject groupOf(@NotNull JsonObject events) {
-        JsonObject group = new JsonObject();
-        group.addProperty("volume", 1f);
-        group.addProperty("pitch", 1f);
-        group.add("events", events);
-        return group;
+    private static Events event(@NotNull SoundEvent sound, float volume, float pitch) {
+        Events event = new Events();
+        event.sound(sound.location().toString());
+        event.volume(new float[] { volume, volume });
+        event.pitch(new float[] { pitch, pitch });
+        return event;
     }
 
     @NotNull
-    private static JsonObject event(@NotNull SoundEvent sound, float volume, float pitch) {
-        JsonObject event = new JsonObject();
-        event.addProperty("sound", sound.location().toString());
-        event.addProperty("volume", volume);
-        event.addProperty("pitch", pitch);
+    private static org.geysermc.pack.bedrock.resource.sounds.interactivesounds.blocksounds.Events interactiveEvent(@NotNull SoundEvent sound, float volume, float pitch) {
+        org.geysermc.pack.bedrock.resource.sounds.interactivesounds.blocksounds.Events event = new org.geysermc.pack.bedrock.resource.sounds.interactivesounds.blocksounds.Events();
+        event.sound(sound.location().toString());
+        event.volume(new float[] { volume, volume });
+        event.pitch(new float[] { pitch, pitch });
         return event;
     }
 

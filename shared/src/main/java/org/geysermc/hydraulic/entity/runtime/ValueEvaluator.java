@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * names through reflection.
  */
 public final class ValueEvaluator {
+    private static final String CLIENT_PACKAGE = "net/minecraft/client/";
+
     private final Map<String, Optional<Executable>> executables = new ConcurrentHashMap<>();
     private final Map<String, Optional<Field>> fields = new ConcurrentHashMap<>();
 
@@ -168,6 +170,11 @@ public final class ValueEvaluator {
     }
 
     private static Class<?> type(@NotNull String internalName, @NotNull Object subject) {
+        // Loading a client class on a server fails anyway, and NeoForge logs an error for every attempt
+        if (internalName.startsWith(CLIENT_PACKAGE)) {
+            throw new UnsupportedOperationException("Client only class " + internalName);
+        }
+
         try {
             return Class.forName(internalName.replace('/', '.'), false, subject.getClass().getClassLoader());
         } catch (ClassNotFoundException | LinkageError e) {

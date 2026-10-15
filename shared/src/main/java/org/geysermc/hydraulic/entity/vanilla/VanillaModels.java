@@ -28,17 +28,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class VanillaModels {
     public static final String RESOURCE = "hydraulic/vanilla-models.json";
     public static final String VANILLA_TEXTURES = "vanilla/textures/";
+    public static final String MODEL_LAYERS = "net/minecraft/client/model/geom/ModelLayers";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VanillaModels.class);
     private static final Gson GSON = new Gson();
     private static volatile VanillaModels instance;
 
     private final JsonObject layers;
+    private final JsonObject locations;
     private final JsonObject models;
     private final Map<String, Summary> summaries = new ConcurrentHashMap<>();
 
     private VanillaModels(@NotNull JsonObject json) {
         this.layers = json.getAsJsonObject("layers");
+        this.locations = json.has("locations") ? json.getAsJsonObject("locations") : new JsonObject();
         this.models = json.getAsJsonObject("models");
     }
 
@@ -138,6 +141,38 @@ public final class VanillaModels {
 
         EntityModel model = GSON.fromJson(found, EntityModel.class);
         return new EntityModel(namespace, path, layer, model.textureWidth(), model.textureHeight(), model.parts(), model.scale());
+    }
+
+    /**
+     * Finds the geometry vanilla registers for one of its layer locations.
+     *
+     * @param field the name of the {@code ModelLayers} field holding the location, such as {@code CREEPER}
+     * @return the geometry, or null if it isn't bundled
+     */
+    @Nullable
+    public EntityModel location(@NotNull String field) {
+        JsonElement found = this.locations.get(field);
+        return found == null ? null : GSON.fromJson(found, EntityModel.class);
+    }
+
+    /**
+     * Finds the geometry vanilla registers for a layer location.
+     *
+     * @param namespace the namespace of the location's model
+     * @param path the path of the location's model
+     * @param layer the layer name
+     * @return the geometry, or null if it isn't bundled
+     */
+    @Nullable
+    public EntityModel location(@NotNull String namespace, @NotNull String path, @NotNull String layer) {
+        for (Map.Entry<String, JsonElement> entry : this.locations.entrySet()) {
+            EntityModel model = GSON.fromJson(entry.getValue(), EntityModel.class);
+            if (namespace.equals(model.namespace()) && path.equals(model.path()) && layer.equals(model.layer())) {
+                return model;
+            }
+        }
+
+        return null;
     }
 
     /**

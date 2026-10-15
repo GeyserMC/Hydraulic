@@ -5,8 +5,10 @@ import org.geysermc.conduit.Conduits;
 import org.geysermc.conduit.Summary;
 import org.geysermc.conduit.Value;
 import org.geysermc.conduit.VirtualMachine;
+import org.geysermc.hydraulic.entity.conduit.EntityModel;
 import org.geysermc.hydraulic.entity.conduit.Identifier;
 import org.geysermc.hydraulic.entity.conduit.ModelLayerLocation;
+import org.geysermc.hydraulic.entity.vanilla.VanillaModels;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -107,6 +109,12 @@ public record ModelBinding(@NotNull String modelClass, @NotNull String namespace
         if (modelClass == null || !(part instanceof Value.InstanceCall(String owner, String name, Value receiver, List<Value> args))
                 || !BAKE_LAYER.equals(name) || args.size() != 1) {
             return null;
+        }
+
+        // Vanilla's layer locations are client only, so they are looked up in the bundle instead
+        if (args.getFirst() instanceof Value.Field(String fieldOwner, String field) && fieldOwner.equals(VanillaModels.MODEL_LAYERS)) {
+            EntityModel vanilla = VanillaModels.get().location(field);
+            return vanilla == null ? null : new ModelBinding(modelClass, vanilla.namespace(), vanilla.path(), vanilla.layer());
         }
 
         ModelLayerLocation location = Conduits.as(args.getFirst(), ModelLayerLocation.class, context);
