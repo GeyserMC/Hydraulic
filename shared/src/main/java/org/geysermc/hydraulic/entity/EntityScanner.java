@@ -45,6 +45,8 @@ public final class EntityScanner {
     private static final String IS_CLIENT_SIDE = "isClientSide";
     private static final String REGISTRY = "net/minecraft/core/Registry";
     private static final String REGISTER = "register";
+    private static final String DEFERRED_REGISTER = "net/neoforged/neoforge/registries/DeferredRegister";
+    private static final String CREATE = "create";
     private static final Set<String> STATE_CALLS = Set.of("start", "startIfStopped", "animateWhen", "stop", "fastForward");
 
     private final ConduitContext context;
@@ -134,6 +136,10 @@ public final class EntityScanner {
         for (Renderer renderer : renderers) {
             Identifier id = types.get(renderer.entityClass());
             if (id == null) {
+                id = renderer.id();
+            }
+
+            if (id == null) {
                 this.logger.debug("Found a renderer for {} but could not find its entity type", renderer.entityClass());
                 continue;
             }
@@ -188,7 +194,7 @@ public final class EntityScanner {
             textures = TextureTemplates.expand(textureLocation, this.assets);
         }
         this.logger.debug("Renderer for {}: textures={} model={}", entityClass, textures, binding);
-        return new Renderer(entityClass, rendererClass, textures, binding, textureLocation);
+        return new Renderer(entityClass, deferredId(registration.type()), rendererClass, textures, binding, textureLocation);
     }
 
     @Nullable
@@ -264,6 +270,22 @@ public final class EntityScanner {
         return value;
     }
 
+
+    @Nullable
+    private static Identifier deferredId(@Nullable Value value) {
+        if (value instanceof Value.InstanceCall(String _, String _, Value holder, List<Value> _)
+                && holder instanceof Value.InstanceCall(String owner, String name, Value register, List<Value> args)
+                && owner.equals(DEFERRED_REGISTER) && name.equals(REGISTER)
+                && !args.isEmpty() && args.getFirst() instanceof Value.Literal(String path)
+                && register instanceof Value.StaticCall(String createOwner, String create, List<Value> createArgs)
+                && createOwner.equals(DEFERRED_REGISTER) && create.equals(CREATE)
+                && createArgs.size() == 2 && createArgs.get(1) instanceof Value.Literal(String namespace)) {
+            return Identifier.fromNamespaceAndPath(namespace, path);
+        }
+
+        return null;
+    }
+
     @Nullable
     private static String implementation(@Nullable EntityFactory factory) {
         return factory == null ? null : factory.implementation();
@@ -291,7 +313,7 @@ public final class EntityScanner {
         return out;
     }
 
-    private record Renderer(@NotNull String entityClass, @Nullable String rendererClass, @NotNull List<String> textures,
+    private record Renderer(@NotNull String entityClass, @Nullable Identifier id, @Nullable String rendererClass, @NotNull List<String> textures,
                             @Nullable ModelBinding binding, @Nullable Value textureLocation
     ) {
     }

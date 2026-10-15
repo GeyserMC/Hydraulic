@@ -22,6 +22,7 @@ allprojects {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
 
         // Geyser, Floodgate, Cumulus etc.
