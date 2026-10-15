@@ -23,7 +23,7 @@ public class JavaAddEntityTranslatorMixin {
         )
     )
     private GeyserEntityType hydraulic$resolveCustomType(EntityType vanilla, GeyserSession session, ClientboundAddEntityPacket packet) {
-        int javaTypeId = CustomEntityTypes.javaTypeId(packet);
+        int javaTypeId = CustomEntityTypes.javaTypeId(session.javaUuid(), packet.getEntityId(), packet);
         if (!CustomEntityTypes.isCustom(javaTypeId)) {
             return GeyserEntityType.of(vanilla);
         }

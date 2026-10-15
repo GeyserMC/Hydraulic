@@ -149,6 +149,10 @@ public final class EntityScanner {
                     ? layers.get(layerKey(binding.namespace(), binding.path(), binding.layer()))
                     : layers.get(layerKey(id.getNamespace(), id.getPath(), DEFAULT_LAYER));
 
+            if (model == null && binding != null) {
+                model = VanillaModels.get().location(binding.namespace(), binding.path(), binding.layer());
+            }
+
             if (model == null) {
                 this.logger.debug("Could not find the model layer {} draws {} with", renderer.entityClass(), id);
                 continue;
@@ -186,6 +190,14 @@ public final class EntityScanner {
         String rendererClass = trace.returned() instanceof Value.Constructed constructed ? constructed.className() : null;
         Summary texture = rendererClass == null ? null : vm.summarize(rendererClass, "getTextureLocation", null);
         Value textureLocation = texture == null ? null : texture.returned();
+        if (textureLocation instanceof Value.InstanceField(Value.This _, String _, String field)) {
+            Summary constructor = vm.summarize(rendererClass, "<init>", null);
+            Value assigned = constructor == null ? null : constructor.assigned(new Value.This(), field);
+            if (assigned != null) {
+                textureLocation = assigned;
+            }
+        }
+
         if (textures.isEmpty() && textureLocation != null) {
             if (this.assets == null) {
                 this.assets = TextureTemplates.assets(this.textureSources);
@@ -193,6 +205,7 @@ public final class EntityScanner {
 
             textures = TextureTemplates.expand(textureLocation, this.assets);
         }
+
         this.logger.debug("Renderer for {}: textures={} model={}", entityClass, textures, binding);
         return new Renderer(entityClass, deferredId(registration.type()), rendererClass, textures, binding, textureLocation);
     }

@@ -42,9 +42,7 @@ final class TextureTemplates {
     static List<String> expand(@NotNull Value texture, @NotNull List<String> assets) {
         List<Pattern> patterns = new ArrayList<>();
         for (String template : identifiers(texture)) {
-            if (template.contains(UNKNOWN)) {
-                patterns.add(Pattern.compile(template));
-            }
+            patterns.add(Pattern.compile(template));
         }
 
         if (patterns.isEmpty()) {
