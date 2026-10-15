@@ -4,7 +4,7 @@ plugins {
 
 val platforms = setOf(
     projects.fabric,
-    // projects.neoforge,
+    projects.neoforge,
     projects.shared,
     projects.test
 ).map { it -> project.project(it.path) }

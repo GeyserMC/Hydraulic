@@ -1,7 +1,7 @@
 [versions]
 mixin = "0.8.7"
 mixinextras = "0.5.5"
-geyser = "preview-feature-26.3-SNAPSHOT"
+geyser = "2.12.0-SNAPSHOT"
 auto-service = "1.1.1"
 pack-converter = "3.5.1-SNAPSHOT"
 indra = "4.1.0"
@@ -25,6 +25,7 @@ mixinextras = { module = "io.github.llamalad7:mixinextras-common", version.ref =
 geyser-api = { group = "org.geysermc.geyser", name = "api", version.ref = "geyser" }
 geyser-core = { group = "org.geysermc.geyser", name = "core", version.ref = "geyser" }
 geyser-fabric = { group = "org.geysermc.geyser", name = "fabric", version.ref = "geyser" }
+geyser-neoforge = { group = "org.geysermc.geyser", name = "neoforge", version.ref = "geyser" }
 auto-service = { group = "com.google.auto.service", name = "auto-service", version.ref = "auto-service" }
 pack-converter = { group = "org.geysermc.pack", name = "converter", version.ref = "pack-converter" }
 indra = { group = "net.kyori", name  = "indra-common", version.ref = "indra" }

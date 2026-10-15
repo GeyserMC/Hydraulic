@@ -4,17 +4,26 @@ license="MIT"
 modId="hydraulic"
 version="${version}"
 displayName="Hydraulic"
-logoFile="hydraulic.png"
+iconFile="hydraulic.png"
 authors="GeyserMC"
 description='''${description}'''
 
 [[mixins]]
 config = "hydraulic.mixins.json"
 
+[[mixins]]
+config = "hydraulic-neoforge.mixins.json"
+
 [[dependencies.hydraulic]]
     modId="neoforge"
     type="required"
     versionRange="[26.3.0.0-beta,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.hydraulic]]
+    modId="geyser_neoforge"
+    type="required"
     ordering="NONE"
     side="BOTH"
 
