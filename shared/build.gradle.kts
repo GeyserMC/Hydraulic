@@ -54,6 +54,10 @@ dependencies {
 
     compileOnly(libs.bundles.configurate)
 
+    compileOnly(libs.geckolib) {
+        isTransitive = false
+    }
+
     // Only here to suppress "unknown enum constant EnvType.CLIENT" warnings.
     compileOnly(libs.fabric.loader)
 

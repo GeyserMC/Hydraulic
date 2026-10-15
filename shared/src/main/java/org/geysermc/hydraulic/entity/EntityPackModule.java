@@ -12,6 +12,7 @@ import org.geysermc.geyser.api.event.lifecycle.GeyserDefineEntityPropertiesEvent
 import org.geysermc.hydraulic.entity.animation.AnimationCompiler.CompiledAnimation;
 import org.geysermc.hydraulic.entity.animation.AnimationCompiler.KeyframeAnimation;
 import org.geysermc.hydraulic.entity.animation.StateProperty;
+import org.geysermc.hydraulic.entity.geckolib.GeckoLibEntities;
 import org.geysermc.hydraulic.entity.runtime.PropertySync;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
@@ -48,6 +49,7 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
     private static final String PNG = ".png";
 
     private final Map<String, List<CustomEntity>> entities = new HashMap<>();
+    private final GeckoLibEntities geckoLib = new GeckoLibEntities();
     private final PropertySync sync = new PropertySync();
     private final AtomicBoolean ticking = new AtomicBoolean();
 
@@ -67,16 +69,20 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
 
         Set<Path> textureSources = new LinkedHashSet<>(context.mod().origin());
         textureSources.addAll(context.hydraulic().modJars());
-        List<CustomEntity> entities = new EntityScanner(conduit, context.logger(), textureSources)
-            .scan(context.hydraulic().modelLayerInfo(), context.hydraulic().entityRendererInfo());
+        EntityScanner scanner = new EntityScanner(conduit, context.logger(), textureSources);
+        List<CustomEntity> entities = scanner.scan(context.hydraulic().modelLayerInfo(), context.hydraulic().entityRendererInfo());
         this.entities.put(context.mod().id(), entities);
 
         for (CustomEntity entity : entities) {
             context.logger().info("Found entity {} with {} texture(s): {}", entity.id(), entity.textures().size(), entity.textures());
         }
+
+        this.geckoLib.preProcess(context.mod().id(), scanner.geckoLibEntities(), context.logger());
     }
 
     private void postProcess(@NotNull PackPostProcessContext<EntityPackModule> context) {
+        this.geckoLib.postProcess(context.mod().id(), context.bedrockResourcePack(), texture -> bedrockTexture(context, texture), context.logger());
+
         List<CustomEntity> entities = this.entities.get(context.mod().id());
         if (entities == null) {
             return;
@@ -268,6 +274,8 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
                 }
             }
         }
+
+        this.geckoLib.defineProperties(context.mod().id(), context.event(), this.sync);
     }
 
     private void onDefineEntities(PackEventContext<GeyserDefineEntitiesEvent, EntityPackModule> context) {
@@ -275,5 +283,7 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
             context.event().register(CustomEntityDefinition.of(entity.id().toString()));
             context.logger().debug("Registered custom entity {}", entity.id());
         }
+
+        this.geckoLib.defineEntities(context.mod().id(), context.event(), context.logger());
     }
 }
