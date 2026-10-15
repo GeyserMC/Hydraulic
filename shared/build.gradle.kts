@@ -73,12 +73,12 @@ tasks.test {
 }
 
 // Vanilla's entity models are only in the client jar, so they are read at build time and shipped for mods that reuse them.
-val generator: SourceSet by sourceSets.creating {
+val generator: SourceSet = sourceSets.create("generator") {
     compileClasspath += sourceSets.main.get().output.classesDirs + sourceSets.main.get().compileClasspath
     runtimeClasspath += output + compileClasspath
 }
 
-val generateVanillaModels by tasks.registering(JavaExec::class) {
+val generateVanillaModels = tasks.register<JavaExec>("generateVanillaModels") {
     description = "Reads vanilla's entity models from the client jar into the bundle Hydraulic ships."
     val bundle = layout.buildDirectory.dir("generated/vanilla-models")
     classpath = generator.runtimeClasspath
