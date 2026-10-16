@@ -19,7 +19,7 @@ public class ModBlocks {
             Block::new,
             BlockBehaviour.Properties.of()
                     .requiresCorrectToolForDrops()
-                    .pushReaction(PushReaction.BLOCK)
+                    .pushReaction(PushReaction.IMMOVEABLE)
                     .explosionResistance(9999f),
             true
     );
