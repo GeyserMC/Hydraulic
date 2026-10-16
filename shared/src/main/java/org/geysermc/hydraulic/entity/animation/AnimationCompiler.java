@@ -2,8 +2,7 @@ package org.geysermc.hydraulic.entity.animation;
 
 import org.geysermc.conduit.Summary;
 import org.geysermc.conduit.Value;
-import org.geysermc.hydraulic.entity.BedrockEntityModelConverter;
-import org.geysermc.hydraulic.entity.conduit.EntityModel;
+import org.geysermc.hydraulic.entity.JavaEntityModel;
 import org.geysermc.pack.bedrock.resource.animations.ActorAnimation;
 import org.geysermc.pack.bedrock.resource.animations.actoranimation.Animations;
 import org.geysermc.pack.bedrock.resource.animations.actoranimation.animations.Bones;
@@ -280,7 +279,7 @@ public final class AnimationCompiler {
         String[] array = new String[3];
         for (int axis = 0; axis < 3; axis++) {
             float value = switch (target) {
-                case ROTATION -> BedrockEntityModelConverter.ROTATION_SIGNS[axis] * values[axis];
+                case ROTATION -> values[axis];
                 case POSITION -> values[axis] * scale;
                 case SCALE -> values[axis];
             };
@@ -297,15 +296,13 @@ public final class AnimationCompiler {
         return name.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
     }
 
-    private static Value transform(@NotNull Target target, @NotNull Value value, @NotNull EntityModel.Part part, float scale) {
-        EntityModel.Pose pose = part.pose() == null ? EntityModel.Pose.ZERO : part.pose();
+    private static Value transform(@NotNull Target target, @NotNull Value value, @NotNull JavaEntityModel.Part part, float scale) {
+        JavaEntityModel.Pose pose = part.pose() == null ? JavaEntityModel.Pose.ZERO : part.pose();
         return switch (target.kind()) {
             case ROTATION -> {
                 double rest = target.axis() == 0 ? pose.xRot() : target.axis() == 1 ? pose.yRot() : pose.zRot();
                 Value degrees = new Value.Operation(Value.Operator.MULTIPLY, List.of(value, Value.literal(MolangCompiler.DEGREES)));
-                Value delta = new Value.Operation(Value.Operator.SUBTRACT, List.of(degrees, Value.literal(rest * MolangCompiler.DEGREES)));
-                float sign = BedrockEntityModelConverter.ROTATION_SIGNS[target.axis()];
-                yield sign == 1f ? delta : new Value.Operation(Value.Operator.MULTIPLY, List.of(delta, Value.literal(sign)));
+                yield new Value.Operation(Value.Operator.SUBTRACT, List.of(degrees, Value.literal(rest * MolangCompiler.DEGREES)));
             }
             case POSITION -> {
                 double rest = target.axis() == 0 ? pose.x() : target.axis() == 1 ? pose.y() : pose.z();
@@ -476,7 +473,7 @@ public final class AnimationCompiler {
                 return null;
             }
 
-            EntityModel.Pose pose = bone.part().pose() == null ? EntityModel.Pose.ZERO : bone.part().pose();
+            JavaEntityModel.Pose pose = bone.part().pose() == null ? JavaEntityModel.Pose.ZERO : bone.part().pose();
             return switch (field) {
                 case "x" -> (double) pose.x();
                 case "y" -> (double) pose.y();

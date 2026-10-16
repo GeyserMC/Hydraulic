@@ -2,8 +2,8 @@ package org.geysermc.hydraulic.entity.animation;
 
 import org.geysermc.conduit.Summary;
 import org.geysermc.conduit.Value;
-import org.geysermc.hydraulic.entity.BedrockEntityModelConverter;
-import org.geysermc.hydraulic.entity.conduit.EntityModel;
+import org.geysermc.hydraulic.entity.EntityModelConverter;
+import org.geysermc.hydraulic.entity.JavaEntityModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,14 +23,14 @@ public final class BoneMap {
     private final Map<String, Value> fields = new HashMap<>();
     private final Map<List<String>, Bone> bones = new LinkedHashMap<>();
 
-    private BoneMap(@NotNull Summary constructor, @NotNull EntityModel model) {
+    private BoneMap(@NotNull Summary constructor, @NotNull JavaEntityModel model) {
         for (Summary.Assignment assignment : constructor.assignments()) {
             if (assignment.target() instanceof Value.This) {
                 this.fields.putIfAbsent(assignment.field(), assignment.value());
             }
         }
 
-        Map<List<String>, String> names = BedrockEntityModelConverter.boneNames(model);
+        Map<List<String>, String> names = EntityModelConverter.boneNames(model);
         index(model.parts(), List.of(), names, this.bones);
     }
 
@@ -42,7 +42,7 @@ public final class BoneMap {
      * @return the bone map
      */
     @NotNull
-    public static BoneMap of(@NotNull Summary constructor, @NotNull EntityModel model) {
+    public static BoneMap of(@NotNull Summary constructor, @NotNull JavaEntityModel model) {
         return new BoneMap(constructor, model);
     }
 
@@ -120,9 +120,9 @@ public final class BoneMap {
         };
     }
 
-    private static void index(@NotNull List<EntityModel.Part> parts, @NotNull List<String> parent,
+    private static void index(@NotNull List<JavaEntityModel.Part> parts, @NotNull List<String> parent,
                               @NotNull Map<List<String>, String> names, @NotNull Map<List<String>, Bone> out) {
-        for (EntityModel.Part part : parts) {
+        for (JavaEntityModel.Part part : parts) {
             List<String> path = new ArrayList<>(parent);
             path.add(part.name());
             String name = names.get(path);
@@ -139,6 +139,6 @@ public final class BoneMap {
      * @param name the bone's name in the geometry
      * @param part the part, holding its rest pose
      */
-    public record Bone(@NotNull String name, @NotNull EntityModel.Part part) {
+    public record Bone(@NotNull String name, @NotNull JavaEntityModel.Part part) {
     }
 }

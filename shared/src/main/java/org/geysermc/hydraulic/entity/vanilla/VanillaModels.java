@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.geysermc.conduit.Summary;
 import org.geysermc.conduit.Value;
-import org.geysermc.hydraulic.entity.conduit.EntityModel;
+import org.geysermc.hydraulic.entity.JavaEntityModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -123,7 +123,7 @@ public final class VanillaModels {
      * @return the geometry, or null if it isn't vanilla's
      */
     @Nullable
-    public EntityModel layer(@NotNull Value.StaticCall call, @NotNull String namespace, @NotNull String path, @Nullable String layer) {
+    public JavaEntityModel layer(@NotNull Value.StaticCall call, @NotNull String namespace, @NotNull String path, @Nullable String layer) {
         JsonElement found = this.layers.get(layerKey(call.className(), call.methodName(), call.args()));
         if (found == null) {
             String prefix = call.className() + "." + call.methodName() + "(";
@@ -139,8 +139,8 @@ public final class VanillaModels {
             return null;
         }
 
-        EntityModel model = GSON.fromJson(found, EntityModel.class);
-        return new EntityModel(namespace, path, layer, model.textureWidth(), model.textureHeight(), model.parts(), model.scale());
+        JavaEntityModel model = GSON.fromJson(found, JavaEntityModel.class);
+        return new JavaEntityModel(namespace, path, layer, model.textureWidth(), model.textureHeight(), model.parts(), model.scale());
     }
 
     /**
@@ -150,9 +150,9 @@ public final class VanillaModels {
      * @return the geometry, or null if it isn't bundled
      */
     @Nullable
-    public EntityModel location(@NotNull String field) {
+    public JavaEntityModel location(@NotNull String field) {
         JsonElement found = this.locations.get(field);
-        return found == null ? null : GSON.fromJson(found, EntityModel.class);
+        return found == null ? null : GSON.fromJson(found, JavaEntityModel.class);
     }
 
     /**
@@ -164,9 +164,9 @@ public final class VanillaModels {
      * @return the geometry, or null if it isn't bundled
      */
     @Nullable
-    public EntityModel location(@NotNull String namespace, @NotNull String path, @NotNull String layer) {
+    public JavaEntityModel location(@NotNull String namespace, @NotNull String path, @NotNull String layer) {
         for (Map.Entry<String, JsonElement> entry : this.locations.entrySet()) {
-            EntityModel model = GSON.fromJson(entry.getValue(), EntityModel.class);
+            JavaEntityModel model = GSON.fromJson(entry.getValue(), JavaEntityModel.class);
             if (namespace.equals(model.namespace()) && path.equals(model.path()) && layer.equals(model.layer())) {
                 return model;
             }

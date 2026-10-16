@@ -17,7 +17,6 @@ import org.geysermc.hydraulic.entity.animation.ModelBinding;
 import org.geysermc.hydraulic.entity.animation.StateProperties;
 import org.geysermc.hydraulic.entity.animation.Values;
 import org.geysermc.hydraulic.entity.conduit.EntityFactory;
-import org.geysermc.hydraulic.entity.conduit.EntityModel;
 import org.geysermc.hydraulic.entity.conduit.EntityRendererRegistration;
 import org.geysermc.hydraulic.entity.conduit.EntityType;
 import org.geysermc.hydraulic.entity.conduit.EntityTypeBuilder;
@@ -82,7 +81,7 @@ public final class EntityScanner {
         this.geckoLibEntities.clear();
         VirtualMachine vm = VirtualMachineFactory.create(this.context).await();
 
-        Map<String, EntityModel> layers = new HashMap<>();
+        Map<String, JavaEntityModel> layers = new HashMap<>();
         vm.intercept(layerInfo.registryClass());
         vm.capture(layerInfo.captureChannel().get(), registration -> {
             ModelLayerLocation location = registration.location();
@@ -99,11 +98,11 @@ public final class EntityScanner {
 
             EntityModelExtractor.Layer unwrapped = EntityModelExtractor.unwrap(trace.returned(), transformer ->
                 this.logger.debug("Ignoring a mesh transformer on {} that is not a plain scale: {}", location.model().path(), transformer));
-            EntityModel model = unwrapped.definition() instanceof Value.StaticCall call
+            JavaEntityModel model = unwrapped.definition() instanceof Value.StaticCall call
                 ? VanillaModels.get().layer(call, location.model().namespace(), location.model().path(), location.layer())
                 : null;
             if (model != null) {
-                model = new EntityModel(model.namespace(), model.path(), model.layer(), model.textureWidth(), model.textureHeight(),
+                model = new JavaEntityModel(model.namespace(), model.path(), model.layer(), model.textureWidth(), model.textureHeight(),
                     model.parts(), model.scale() * unwrapped.scale());
                 this.logger.debug("Using vanilla's geometry for {}: {}", location.model().path(), unwrapped.definition());
             } else {
@@ -160,7 +159,7 @@ public final class EntityScanner {
                 }
             }
 
-            EntityModel model = binding != null
+            JavaEntityModel model = binding != null
                     ? layers.get(layerKey(binding.namespace(), binding.path(), binding.layer()))
                     : layers.get(layerKey(id.getNamespace(), id.getPath(), DEFAULT_LAYER));
 
@@ -253,7 +252,7 @@ public final class EntityScanner {
 
     @Nullable
     private CompiledAnimation animation(@NotNull VirtualMachine vm, @NotNull Identifier id, @NotNull ModelBinding binding,
-                                        @NotNull EntityModel model, @Nullable Summary extract, int reserved) {
+                                        @NotNull JavaEntityModel model, @Nullable Summary extract, int reserved) {
         Summary constructor = vm.summarize(binding.modelClass(), "<init>", null);
         Summary setupAnim = vm.summarize(binding.modelClass(), "setupAnim", null);
         if (constructor == null || setupAnim == null) {
