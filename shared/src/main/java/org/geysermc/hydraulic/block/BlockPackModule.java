@@ -157,6 +157,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         ResourcePack assets = context.javaResourcePack();
         BedrockResourcePack bedrockPack = context.bedrockResourcePack();
 
+        BlockSounds sounds = BlockSounds.of(context.registryValues(BuiltInRegistries.BLOCK));
+        sounds.blocks().forEach(bedrockPack::addBlock);
+        if (sounds.sounds() != null) {
+            bedrockPack.sounds(sounds.sounds());
+        }
+
         for (Texture texture : assets.textures()) {
             Key key = texture.key();
             String value = key.value();

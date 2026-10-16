@@ -162,6 +162,9 @@ public class PackManager {
     boolean createPack(@NotNull ModInfo mod, @NotNull Path packPath) {
         List<ConverterPipeline<?, ?>> pipelines = new ArrayList<>(packConverters);
         pipelines.add(AssetConverters.create(new MetadataPackModule(mod)));
+        for (PackModule<?> module : this.modules) {
+            pipelines.addAll(module.converters(mod));
+        }
 
         PackConverter converter = new PackConverter()
                 .packName(mod.name())

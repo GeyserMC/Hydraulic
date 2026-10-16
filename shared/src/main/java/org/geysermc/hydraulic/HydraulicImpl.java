@@ -4,6 +4,8 @@ import net.minecraft.server.MinecraftServer;
 import org.geysermc.geyser.api.event.EventRegistrar;
 import org.geysermc.hydraulic.config.ConfigLoader;
 import org.geysermc.hydraulic.config.HydraulicConfig;
+import org.geysermc.hydraulic.entity.EntityRendererRegistryInfo;
+import org.geysermc.hydraulic.entity.ModelLayerRegistryInfo;
 import org.geysermc.hydraulic.pack.PackManager;
 import org.geysermc.hydraulic.platform.HydraulicBootstrap;
 import org.geysermc.hydraulic.platform.HydraulicPlatform;
@@ -70,6 +72,15 @@ public class HydraulicImpl implements EventRegistrar {
     }
 
     /**
+     * Registers a listener called at the end of every server tick.
+     *
+     * @param listenerAction the listener
+     */
+    public void registerServerTick(Consumer<MinecraftServer> listenerAction) {
+        bootstrap.registerServerTick(listenerAction);
+    }
+
+    /**
      * Gets all the mods loaded on this platform.
      *
      * @return the mods loaded on this platform
@@ -119,6 +130,34 @@ public class HydraulicImpl implements EventRegistrar {
     @NotNull
     public ModStorage modStorage(@NotNull ModInfo mod) {
         return this.modStorage.computeIfAbsent(mod.id(), e -> ModStorage.load(mod));
+    }
+
+    /**
+     * Gets the jar every loaded mod was read from, including libraries left out of {@link #mods()}.
+     *
+     * @return the jars on disk of every loaded mod
+     */
+    @NotNull
+    public Collection<Path> modJars() {
+        return this.bootstrap.modJars();
+    }
+
+    /**
+     * Gets the {@link ModelLayerRegistryInfo} for capturing model layer registrations.
+     *
+     * @return the model layer registry info for capturing model layer registrations
+     */
+    public ModelLayerRegistryInfo modelLayerInfo() {
+        return this.bootstrap.modelLayerInfo();
+    }
+
+    /**
+     * Gets the {@link EntityRendererRegistryInfo} for capturing renderer registrations.
+     *
+     * @return the renderer registry info for capturing renderer registrations
+     */
+    public EntityRendererRegistryInfo entityRendererInfo() {
+        return this.bootstrap.entityRendererInfo();
     }
 
     /**
