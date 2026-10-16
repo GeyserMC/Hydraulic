@@ -4,7 +4,6 @@ import org.geysermc.conduit.Trace;
 import org.geysermc.conduit.Value;
 import org.geysermc.hydraulic.entity.conduit.CubeDefinition;
 import org.geysermc.hydraulic.entity.conduit.CubeDeformation;
-import org.geysermc.hydraulic.entity.conduit.EntityModel;
 import org.geysermc.hydraulic.entity.conduit.LayerDefinition;
 import org.geysermc.hydraulic.entity.conduit.MaterialDefinition;
 import org.geysermc.hydraulic.entity.conduit.MeshDefinition;
@@ -62,7 +61,7 @@ public final class EntityModelExtractor {
      * @return the model
      */
     @NotNull
-    public static EntityModel extract(@NotNull String namespace, @NotNull String path, @Nullable String layer,
+    public static JavaEntityModel extract(@NotNull String namespace, @NotNull String path, @Nullable String layer,
                                       @NotNull Layer unwrapped, @NotNull Trace trace) {
         LayerDefinition definition = unwrapped.definition() == null
             ? null
@@ -72,7 +71,7 @@ public final class EntityModelExtractor {
         PartDefinition root = mesh == null ? null : mesh.root();
         float scale = unwrapped.scale();
 
-        return new EntityModel(
+        return new JavaEntityModel(
                 namespace,
                 path,
                 layer,
@@ -83,20 +82,20 @@ public final class EntityModelExtractor {
         );
     }
 
-    private static List<EntityModel.Part> parts(Map<String, PartDefinition> children) {
-        List<EntityModel.Part> parts = new ArrayList<>(children.size());
-        children.forEach((name, child) -> parts.add(new EntityModel.Part(name, pose(child.partPose()), boxes(child.cubes()), parts(child.children()))));
+    private static List<JavaEntityModel.Part> parts(Map<String, PartDefinition> children) {
+        List<JavaEntityModel.Part> parts = new ArrayList<>(children.size());
+        children.forEach((name, child) -> parts.add(new JavaEntityModel.Part(name, pose(child.partPose()), boxes(child.cubes()), parts(child.children()))));
         return parts;
     }
 
-    private static List<EntityModel.Cube> boxes(List<CubeDefinition> cubes) {
-        List<EntityModel.Cube> out = new ArrayList<>();
+    private static List<JavaEntityModel.Cube> boxes(List<CubeDefinition> cubes) {
+        List<JavaEntityModel.Cube> out = new ArrayList<>();
         for (CubeDefinition cube : cubes) {
             UVPair texCoord = cube.texCoord();
             Vector3fc origin = cube.origin();
             Vector3fc dimensions = cube.dimensions();
             CubeDeformation grow = cube.grow();
-            out.add(new EntityModel.Cube(
+            out.add(new JavaEntityModel.Cube(
                     texCoord == null ? 0 : Math.round(number(texCoord.u())),
                     texCoord == null ? 0 : Math.round(number(texCoord.v())),
                     origin == null ? 0f : number(origin.x()),
@@ -113,12 +112,12 @@ public final class EntityModelExtractor {
         return out;
     }
 
-    private static EntityModel.Pose pose(PartPose pose) {
+    private static JavaEntityModel.Pose pose(PartPose pose) {
         if (pose == null) {
-            return EntityModel.Pose.ZERO;
+            return JavaEntityModel.Pose.ZERO;
         }
 
-        return new EntityModel.Pose(
+        return new JavaEntityModel.Pose(
                 number(pose.x()), number(pose.y()), number(pose.z()),
                 number(pose.xRot()), number(pose.yRot()), number(pose.zRot())
         );

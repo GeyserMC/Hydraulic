@@ -10,7 +10,6 @@ import org.geysermc.conduit.VirtualMachineFactory;
 import org.geysermc.hydraulic.entity.animation.AnimationCompiler;
 import org.geysermc.hydraulic.entity.animation.BoneMap;
 import org.geysermc.hydraulic.entity.animation.RenderStateQueries;
-import org.geysermc.hydraulic.entity.conduit.EntityModel;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -203,8 +202,8 @@ class AnimationCompilerTest {
         };
     }
 
-    private static double rest(EntityModel.Part part, String field) {
-        EntityModel.Pose pose = part.pose() == null ? EntityModel.Pose.ZERO : part.pose();
+    private static double rest(JavaEntityModel.Part part, String field) {
+        JavaEntityModel.Pose pose = part.pose() == null ? JavaEntityModel.Pose.ZERO : part.pose();
         return switch (field) {
             case "x" -> pose.x();
             case "y" -> pose.y();

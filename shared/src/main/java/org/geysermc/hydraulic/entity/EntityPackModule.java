@@ -15,6 +15,7 @@ import org.geysermc.hydraulic.entity.animation.StateProperty;
 import org.geysermc.hydraulic.entity.geckolib.GeckoLibEntities;
 import org.geysermc.hydraulic.entity.runtime.PropertySync;
 import org.geysermc.hydraulic.pack.PackModule;
+import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
@@ -25,6 +26,8 @@ import org.geysermc.pack.bedrock.resource.entity.cliententity.Description;
 import org.geysermc.pack.bedrock.resource.entity.cliententity.description.Scripts;
 import org.geysermc.pack.bedrock.resource.render_controllers.RenderControllers;
 import org.geysermc.pack.bedrock.resource.render_controllers.rendercontrollers.Arrays;
+import org.geysermc.pack.converter.pipeline.AssetConverters;
+import org.geysermc.pack.converter.pipeline.ConverterPipeline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -94,15 +97,18 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
         }
     }
 
+    @NotNull
+    @Override
+    public List<ConverterPipeline<?, ?>> converters(@NotNull ModInfo mod) {
+        List<JavaEntityModel> models = this.entities.getOrDefault(mod.id(), List.of()).stream().map(CustomEntity::model).distinct().toList();
+        return models.isEmpty() ? List.of() : List.of(AssetConverters.create(new EntityModelConverter(models)));
+    }
+
     private void convertModel(PackPostProcessContext<EntityPackModule> context, CustomEntity custom) {
         Identifier identifier = custom.id();
-        String geometry = BedrockEntityModelConverter.identifier(custom.model());
+        String geometry = EntityModelConverter.identifier(custom.model());
         List<String> variants = custom.textures();
         CompiledAnimation animation = custom.animation();
-        context.bedrockResourcePack().addEntityModel(
-                BedrockEntityModelConverter.convert(List.of(custom.model())),
-                identifier.getPath() + ".geo.json"
-        );
 
         Map<String, String> textures = new LinkedHashMap<>();
         for (int i = 0; i < variants.size(); i++) {

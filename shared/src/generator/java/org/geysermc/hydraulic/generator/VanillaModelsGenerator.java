@@ -10,7 +10,7 @@ import org.geysermc.conduit.Value;
 import org.geysermc.conduit.VirtualMachine;
 import org.geysermc.conduit.VirtualMachineFactory;
 import org.geysermc.hydraulic.entity.EntityModelExtractor;
-import org.geysermc.hydraulic.entity.conduit.EntityModel;
+import org.geysermc.hydraulic.entity.JavaEntityModel;
 import org.geysermc.hydraulic.entity.conduit.Identifier;
 import org.geysermc.hydraulic.entity.conduit.ModelLayerLocation;
 import org.geysermc.hydraulic.entity.vanilla.SummaryCodec;
@@ -148,7 +148,7 @@ public final class VanillaModelsGenerator {
                 EntityModelExtractor.Layer built = EntityModelExtractor.unwrap(trace.returned(), _ -> {
                 });
 
-                EntityModel model = EntityModelExtractor.extract(id.namespace(), id.path(), location.layer(),
+                JavaEntityModel model = EntityModelExtractor.extract(id.namespace(), id.path(), location.layer(),
                         new EntityModelExtractor.Layer(built.definition(), built.scale() * unwrapped.scale()), trace);
 
                 if (!model.parts().isEmpty()) {
@@ -183,7 +183,7 @@ public final class VanillaModelsGenerator {
             EntityModelExtractor.Layer unwrapped = EntityModelExtractor.unwrap(trace.returned(), _ -> {
             });
             String key = VanillaModels.layerKey(owner, method, List.of());
-            EntityModel model = EntityModelExtractor.extract("minecraft", key, null, unwrapped, trace);
+            JavaEntityModel model = EntityModelExtractor.extract("minecraft", key, null, unwrapped, trace);
             if (!model.parts().isEmpty()) {
                 layers.add(key, new Gson().toJsonTree(model));
             }
