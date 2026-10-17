@@ -11,6 +11,7 @@ import org.geysermc.conduit.VirtualMachine;
 import org.geysermc.conduit.VirtualMachineFactory;
 import org.geysermc.hydraulic.entity.EntityModelExtractor;
 import org.geysermc.hydraulic.entity.JavaEntityModel;
+import org.geysermc.hydraulic.entity.animation.RenderStateDefaults;
 import org.geysermc.hydraulic.entity.conduit.Identifier;
 import org.geysermc.hydraulic.entity.conduit.ModelLayerLocation;
 import org.geysermc.hydraulic.entity.vanilla.SummaryCodec;
@@ -36,6 +37,7 @@ import java.util.jar.JarFile;
  */
 public final class VanillaModelsGenerator {
     private static final String MODELS = "net/minecraft/client/model/";
+    private static final String RENDER_STATES = "net/minecraft/client/renderer/entity/state/";
     private static final String GEOMETRY = "net/minecraft/client/model/geom/";
     private static final String LAYER_DEFINITION = "Lnet/minecraft/client/model/geom/builders/LayerDefinition;";
     private static final String FROM_ROOT = "(Lnet/minecraft/client/model/geom/ModelPart;)V";
@@ -71,6 +73,7 @@ public final class VanillaModelsGenerator {
 
         JsonObject layers = new JsonObject();
         JsonObject models = new JsonObject();
+        JsonObject states = new JsonObject();
         int textures = 0;
         for (Path jar : jars) {
             try (JarFile file = new JarFile(jar.toFile())) {
@@ -85,6 +88,17 @@ public final class VanillaModelsGenerator {
                             Files.write(texture, in.readAllBytes());
                         }
                         textures++;
+                        continue;
+                    }
+
+                    if (name.startsWith(RENDER_STATES) && name.endsWith(".class")) {
+                        String owner = name.substring(0, name.length() - ".class".length());
+                        try (InputStream in = file.getInputStream(file.getEntry(name))) {
+                            ClassModel model = ClassFile.of().parse(in.readAllBytes());
+                            states.add(owner, RenderStateDefaults.StateClass.of(model, RenderStateDefaults.summarize(vm, owner)).write());
+                        } catch (RuntimeException e) {
+                            System.err.println("Skipping render state " + owner + ": " + e);
+                        }
                         continue;
                     }
 
@@ -115,10 +129,11 @@ public final class VanillaModelsGenerator {
         bundle.add("layers", layers);
         bundle.add("locations", locations);
         bundle.add("models", models);
+        bundle.add("states", states);
         Files.createDirectories(output.getParent());
         Files.writeString(output, new Gson().toJson(bundle));
         System.out.println("Wrote " + layers.size() + " vanilla layers, " + locations.size() + " vanilla layer locations, " + models.size()
-            + " vanilla models and " + textures + " vanilla item textures to " + output.getParent());
+            + " vanilla models, " + states.size() + " vanilla render states and " + textures + " vanilla item textures to " + output.getParent());
     }
 
     private static JsonObject locations(ConduitContext context, VirtualMachine vm) {

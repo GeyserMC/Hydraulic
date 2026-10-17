@@ -43,6 +43,7 @@ public final class StateProperties implements AnimationCompiler.StateResolver {
     private final String namespace;
     private final Summary extract;
     private final int reserved;
+    private final RenderStateDefaults defaults;
     private final Map<String, Value> copies = new LinkedHashMap<>();
     private final Map<Value, StateProperty> properties = new LinkedHashMap<>();
     private final Set<String> names = new HashSet<>();
@@ -56,9 +57,22 @@ public final class StateProperties implements AnimationCompiler.StateResolver {
      * @param reserved how many properties the entity already uses for other things
      */
     public StateProperties(@NotNull String namespace, @Nullable Summary extract, int reserved) {
+        this(namespace, extract, reserved, RenderStateDefaults.vanilla());
+    }
+
+    /**
+     * Creates a resolver.
+     *
+     * @param namespace the namespace of the properties it creates
+     * @param extract the summary of the renderer's {@code extractRenderState}, or null if there is none
+     * @param reserved how many properties the entity already uses for other things
+     * @param defaults the values render state fields hold while the entity is idle
+     */
+    public StateProperties(@NotNull String namespace, @Nullable Summary extract, int reserved, @NotNull RenderStateDefaults defaults) {
         this.namespace = namespace;
         this.extract = extract;
         this.reserved = reserved;
+        this.defaults = defaults;
 
         // State objects such as an AnimationState are copied into the render state rather than assigned.
         for (Summary.Invocation invocation : extract == null ? List.<Summary.Invocation>of() : extract.invocations()) {
@@ -72,6 +86,11 @@ public final class StateProperties implements AnimationCompiler.StateResolver {
     @Override
     public String resolve(@NotNull String field) {
         return RenderStateQueries.query(field);
+    }
+
+    @Override
+    public Value idle(@NotNull String owner, @NotNull String member) {
+        return this.defaults.idle(owner, member);
     }
 
     @Override

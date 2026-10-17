@@ -5,11 +5,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import org.geysermc.conduit.Value;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.entity.property.type.GeyserFloatEntityProperty;
 import org.geysermc.geyser.api.entity.property.type.GeyserIntEntityProperty;
 import org.geysermc.geyser.session.GeyserSession;
+import org.geysermc.hydraulic.mixin.EntityInvoker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -130,13 +132,27 @@ public final class PropertySync {
         Identifier type = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
         Binding binding = this.bindings.get(type);
 
+        // Only clients work out walk animations, which client calls such as starting an idle animation read
+        if (entity instanceof LivingEntity living) {
+            living.calculateEntityAnimation(((EntityInvoker) entity).hydraulic$omnidirectionalAirMover());
+        }
+
+        // Fields are worked out from what the entity held before any of them change, as the client's tick does
+        Map<String, Object> fields = new HashMap<>();
         for (int i = 0; i < binding.calls.size(); i++) {
             ClientCall call = binding.calls.get(i);
             Object made = call.condition() == null ? Boolean.TRUE : this.attempt(type, "client call " + i, call.condition(), entity, true);
-            if (made != null && ValueEvaluator.number(made) != 0) {
-                this.attempt(type, "client call " + i, call.call(), entity, false);
+            if (made == null || ValueEvaluator.number(made) == 0) {
+                continue;
+            }
+
+            Object result = this.attempt(type, "client call " + i, call.call(), entity, false);
+            if (call.field() != null && result != null) {
+                fields.put(call.field(), result);
             }
         }
+
+        fields.forEach((field, value) -> this.set(type, entity, field, value));
 
         float[] floats = new float[binding.floats.size()];
         for (int i = 0; i < floats.length; i++) {
@@ -179,6 +195,34 @@ public final class PropertySync {
             }
 
             return null;
+        }
+    }
+
+    private void set(@NotNull Identifier type, @NotNull Entity entity, @NotNull String name, @NotNull Object value) {
+        String key = type + "/field " + name;
+        if (this.failures.contains(key)) {
+            return;
+        }
+
+        try {
+            for (Class<?> owner = entity.getClass(); owner != null; owner = owner.getSuperclass()) {
+                for (java.lang.reflect.Field field : owner.getDeclaredFields()) {
+                    if (field.getName().equals(name) && !java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                        field.setAccessible(true);
+                        Class<?> kind = field.getType();
+                        field.set(entity, kind == float.class ? (Object) (float) ValueEvaluator.number(value)
+                            : kind == double.class ? (Object) ValueEvaluator.number(value)
+                            : kind == int.class ? (Object) (int) ValueEvaluator.number(value)
+                            : kind == boolean.class ? (Object) (ValueEvaluator.number(value) != 0) : value);
+                        return;
+                    }
+                }
+            }
+            throw new NoSuchFieldException(name);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            if (this.failures.add(key)) {
+                LOGGER.debug("Can't set {} for {}, so it won't be sent: {}", name, type, e.getMessage());
+            }
         }
     }
 

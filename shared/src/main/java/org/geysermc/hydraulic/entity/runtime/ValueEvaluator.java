@@ -47,11 +47,11 @@ public final class ValueEvaluator {
             case Value.InstanceCall(String _, String name, Value receiver, List<Value> args) -> {
                 Object target = this.evaluate(receiver, subject);
                 Object[] arguments = this.evaluateAll(args, subject);
-                yield invoke(this.executable(target == null ? null : target.getClass(), name, arguments.length, false), target, arguments);
+                yield invoke(this.executable(target == null ? null : target.getClass(), name, arguments, false), target, arguments);
             }
             case Value.StaticCall(String owner, String name, List<Value> args) -> {
                 Object[] arguments = this.evaluateAll(args, subject);
-                yield invoke(this.executable(type(owner, subject), name, arguments.length, true), null, arguments);
+                yield invoke(this.executable(type(owner, subject), name, arguments, true), null, arguments);
             }
             case Value.Constructed(String type, List<Value> args) -> {
                 Object[] arguments = this.evaluateAll(args, subject);
@@ -61,7 +61,7 @@ public final class ValueEvaluator {
                 if (enumType != null && arguments.length > 0 && arguments[0] instanceof String name) {
                     yield enumConstant(enumType, name);
                 }
-                yield invoke(this.executable(constructed, "<init>", arguments.length, false), null, arguments);
+                yield invoke(this.executable(constructed, "<init>", arguments, false), null, arguments);
             }
             case Value.InstanceOf(Value inner, String type) -> type(type, subject).isInstance(this.evaluate(inner, subject));
             case Value.Conditional(Value condition, Value then, Value otherwise) ->
@@ -202,40 +202,90 @@ public final class ValueEvaluator {
     }
 
     @NotNull
-    private Executable executable(@Nullable Class<?> owner, @NotNull String name, int arity, boolean isStatic) {
+    private Executable executable(@Nullable Class<?> owner, @NotNull String name, Object[] arguments, boolean isStatic) {
         if (owner == null) {
             throw new UnsupportedOperationException("Method " + name + " called on null");
         }
 
-        return this.executables.computeIfAbsent(owner.getName() + "." + name + "/" + arity, _ -> {
+        StringBuilder key = new StringBuilder(owner.getName()).append('.').append(name);
+        for (Object argument : arguments) {
+            key.append('/').append(argument == null ? "null" : argument.getClass().getName());
+        }
+
+        return this.executables.computeIfAbsent(key.toString(), _ -> {
+            List<Executable> candidates = new ArrayList<>();
             if (name.equals("<init>")) {
-                for (Constructor<?> constructor : owner.getDeclaredConstructors()) {
-                    if (constructor.getParameterCount() == arity) {
-                        constructor.setAccessible(true);
-                        return Optional.of(constructor);
+                candidates.addAll(List.of(owner.getDeclaredConstructors()));
+            } else {
+                for (Class<?> type = owner; type != null; type = type.getSuperclass()) {
+                    for (Method method : type.getDeclaredMethods()) {
+                        if (method.getName().equals(name) && Modifier.isStatic(method.getModifiers()) == isStatic && !method.isBridge()) {
+                            candidates.add(method);
+                        }
                     }
                 }
-                return Optional.empty();
-            }
-
-            for (Class<?> type = owner; type != null; type = type.getSuperclass()) {
-                for (Method method : type.getDeclaredMethods()) {
-                    if (method.getName().equals(name) && method.getParameterCount() == arity
-                        && Modifier.isStatic(method.getModifiers()) == isStatic && !method.isBridge()) {
-                        method.setAccessible(true);
-                        return Optional.of(method);
+                for (Method method : owner.getMethods()) {
+                    if (method.getName().equals(name)) {
+                        candidates.add(method);
                     }
                 }
             }
 
-            for (Method method : owner.getMethods()) {
-                if (method.getName().equals(name) && method.getParameterCount() == arity) {
-                    return Optional.of(method);
+            // Overloads such as Math.min are told apart by what they're given, preferring those that keep its precision.
+            Executable best = null;
+            int bestScore = -1;
+            for (Executable candidate : candidates) {
+                int score = score(candidate.getParameterTypes(), arguments);
+                if (score > bestScore) {
+                    best = candidate;
+                    bestScore = score;
                 }
             }
 
-            return Optional.empty();
-        }).orElseThrow(() -> new UnsupportedOperationException("No method " + owner.getName() + "." + name + "/" + arity));
+            if (best != null) {
+                best.setAccessible(true);
+            }
+            return Optional.ofNullable(best);
+        }).orElseThrow(() -> new UnsupportedOperationException("No method " + owner.getName() + "." + name + "/" + arguments.length));
+    }
+
+    private static int score(Class<?>[] types, Object[] arguments) {
+        if (types.length != arguments.length) {
+            return -1;
+        }
+
+        int score = 0;
+        for (int i = 0; i < types.length; i++) {
+            Class<?> type = types[i];
+            Object argument = arguments[i];
+            if (argument == null) {
+                if (type.isPrimitive()) {
+                    return -1;
+                }
+                score += 1;
+            } else if (type.isPrimitive() ? wrapper(type) == argument.getClass() : type.isInstance(argument)) {
+                score += 3;
+            } else if (argument instanceof Number || argument instanceof Boolean) {
+                int from = rank(argument.getClass());
+                int to = rank(type.isPrimitive() ? wrapper(type) : type);
+                if (to < 0) {
+                    return -1;
+                }
+                score += to >= from ? 2 : 1;
+            } else {
+                return -1;
+            }
+        }
+
+        return score;
+    }
+
+    private static int rank(Class<?> type) {
+        return List.of(Boolean.class, Byte.class, Short.class, Integer.class, Long.class, Float.class, Double.class).indexOf(type);
+    }
+
+    private static Class<?> wrapper(Class<?> primitive) {
+        return java.lang.invoke.MethodType.methodType(primitive).wrap().returnType();
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

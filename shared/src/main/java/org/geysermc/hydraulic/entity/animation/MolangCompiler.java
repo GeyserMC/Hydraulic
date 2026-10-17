@@ -19,6 +19,8 @@ public final class MolangCompiler {
     static final double DEGREES = 180 / Math.PI;
     private static final double RADIANS = Math.PI / 180;
     private static final int HOIST_SIZE = 4;
+    private static final Value LEFT_ARM = new Value.Constructed("net/minecraft/world/entity/HumanoidArm", List.of(Value.literal("LEFT"), Value.literal(0)));
+    private static final Value RIGHT_ARM = new Value.Constructed("net/minecraft/world/entity/HumanoidArm", List.of(Value.literal("RIGHT"), Value.literal(1)));
     private static final double EPSILON = 1e-6;
     private static final MathContext PRECISION = new MathContext(9);
 
@@ -89,6 +91,11 @@ public final class MolangCompiler {
             molang = property == null ? null : Molang.of(property);
         }
 
+        if (molang == null && value instanceof Value.InstanceField(Value.Parameter(int index), String owner, String field) && index == 0
+                && this.inputs.idle(owner, field) instanceof Value.Literal(Object idle)) {
+            molang = literal(idle);
+        }
+
         if (molang != null && molang.constant() == null
                 && this.references.getOrDefault(value, 0) > 1 && size(value) >= HOIST_SIZE) {
             String variable = "v." + this.prefix + this.variables.size();
@@ -106,7 +113,15 @@ public final class MolangCompiler {
             case Value.Literal(Object literal) -> literal(literal);
             case Value.InstanceField(Value.Parameter(int index), String _, String field) when index == 0 -> {
                 String state = this.inputs.state(field);
-                yield state == null ? null : Molang.of(state);
+                if (state == null) {
+                    yield null;
+                }
+
+                try {
+                    yield number(Double.parseDouble(state));
+                } catch (NumberFormatException e) {
+                    yield Molang.of(state);
+                }
             }
 
             case Value.InstanceField(Value receiver, String _, String field) -> {
@@ -126,6 +141,21 @@ public final class MolangCompiler {
             }
 
             case Value.Operation(Value.Operator operator, List<Value> operands) -> this.operation(operator, operands);
+            case Value.InstanceCall(String _, String name, Value.InstanceCall(String owner, String held, Value.Parameter(int index), List<Value> heldArgs), List<Value> args)
+                    when index == 0 && heldArgs.isEmpty() && args.isEmpty()
+                    && this.inputs.idle(owner, held + "()." + name) instanceof Value.Literal(Object idle) -> literal(idle);
+            case Value.InstanceCall(String _, String name, Value receiver, List<Value> args) when args.isEmpty() -> {
+                Value constant = this.object(receiver);
+                int index = switch (name) {
+                    case "ordinal" -> 1;
+                    case "isTwoHanded" -> 2;
+                    case "affectsOffhandPose" -> 3;
+                    default -> -1;
+                };
+                yield constant instanceof Value.Constructed(String _, List<Value> fields) && index >= 0 && index < fields.size()
+                    && fields.get(index) instanceof Value.Literal(Object literal) ? literal(literal) : null;
+            }
+
             case Value.StaticCall(String owner, String name, List<Value> args) -> this.call(owner, name, args);
             default -> null;
         };
@@ -133,6 +163,27 @@ public final class MolangCompiler {
 
     @Nullable
     private Molang operation(@NotNull Value.Operator operator, @NotNull List<Value> operands) {
+        if (operator == Value.Operator.LOGICAL_AND || operator == Value.Operator.LOGICAL_OR) {
+            return this.logicalOperator(operator == Value.Operator.LOGICAL_AND, operands);
+        }
+
+        if ((operator == Value.Operator.EQUAL || operator == Value.Operator.NOT_EQUAL) && operands.size() == 2) {
+            Value a = this.object(operands.get(0));
+            Value b = this.object(operands.get(1));
+            if (a != null && b != null) {
+                return number(sameConstant(a, b) == (operator == Value.Operator.EQUAL) ? 1 : 0);
+            }
+
+            // A constant picked at runtime is compared in each branch instead
+            for (int i = 0; i < 2; i++) {
+                Value other = operands.get(1 - i);
+                if (operands.get(i) instanceof Value.Conditional(Value condition, Value then, Value otherwise) && this.object(other) != null) {
+                    return this.molang(new Value.Conditional(condition,
+                        new Value.Operation(operator, List.of(then, other)), new Value.Operation(operator, List.of(otherwise, other))));
+                }
+            }
+        }
+
         List<Molang> args = this.molangs(operands);
         if (args == null) {
             return null;
@@ -154,11 +205,78 @@ public final class MolangCompiler {
             case LESS_OR_EQUAL -> compare("<=", args, (a, b) -> a <= b);
             case GREATER -> compare(">", args, (a, b) -> a > b);
             case GREATER_OR_EQUAL -> compare(">=", args, (a, b) -> a >= b);
-            case LOGICAL_AND -> join(" && ", args);
-            case LOGICAL_OR -> join(" || ", args);
             case LOGICAL_NOT -> args.getFirst().constant() != null ? number(args.getFirst().constant() == 0 ? 1 : 0) : Molang.of("!" + args.getFirst().text());
             default -> null;
         };
+    }
+
+
+    @Nullable
+    private Molang logicalOperator(boolean and, @NotNull List<Value> operands) {
+        List<Molang> args = new ArrayList<>(operands.size());
+        boolean failed = false;
+        for (Value operand : operands) {
+            Molang molang = this.molang(operand);
+            if (molang == null) {
+                failed = true;
+            } else if (molang.constant() == null) {
+                args.add(molang);
+            } else if ((molang.constant() != 0) != and) {
+                return number(and ? 0 : 1);
+            }
+        }
+
+        if (failed) {
+            return null;
+        }
+
+        return args.isEmpty() ? number(and ? 1 : 0) : join(and ? " && " : " || ", args);
+    }
+
+    @Nullable
+    private Value object(@NotNull Value value) {
+        return switch (value) {
+            case Value.Literal(Object literal) when literal == null -> value;
+            case Value.Constructed(String _, List<Value> args) when args.size() >= 2
+                    && args.get(0) instanceof Value.Literal(String _) && args.get(1) instanceof Value.Literal(Integer _) -> value;
+            case Value.InstanceField(Value.Parameter(int index), String owner, String field) when index == 0 -> this.inputs.idle(owner, field);
+            case Value.Conditional(Value condition, Value then, Value otherwise) -> {
+                Molang test = this.molang(condition);
+                yield test == null || test.constant() == null ? null : this.object(test.constant() != 0 ? then : otherwise);
+            }
+
+            case Value.InstanceCall(String owner, String name, Value receiver, List<Value> args) when args.size() == 1 -> {
+                if (!(this.object(args.getFirst()) instanceof Value.Constructed(String _, List<Value> arm))) {
+                    yield null;
+                }
+
+                String side = (String) ((Value.Literal) arm.getFirst()).value();
+                yield switch (name) {
+                    case "asArm" -> this.object(receiver) instanceof Value.Constructed(String _, List<Value> hand)
+                            ? hand.getFirst().equals(Value.literal("MAIN_HAND")) ? this.object(args.getFirst()) : opposite(side)
+                            : null;
+                    case "getArmPose" -> receiver instanceof Value.Parameter(int index) && index == 0
+                            ? this.inputs.idle(owner, side.equals("RIGHT") ? "rightArmPose" : "leftArmPose")
+                            : null;
+                    default -> null;
+                };
+            }
+
+            default -> null;
+        };
+    }
+
+    @NotNull
+    private static Value opposite(@NotNull String arm) {
+        return arm.equals("LEFT") ? RIGHT_ARM : LEFT_ARM;
+    }
+
+    private static boolean sameConstant(@NotNull Value a, @NotNull Value b) {
+        if (a instanceof Value.Constructed(String _, List<Value> first) && b instanceof Value.Constructed(String _, List<Value> second)) {
+            return first.getFirst().equals(second.getFirst());
+        }
+
+        return a instanceof Value.Literal && b instanceof Value.Literal;
     }
 
     @Nullable
@@ -175,7 +293,7 @@ public final class MolangCompiler {
         return switch (name) {
             case "sin", "cos" -> function("math." + name, List.of(args.getFirst().scale(DEGREES)));
             case "abs", "sqrt", "floor", "ceil", "round", "exp", "min", "max", "pow", "clamp" -> function("math." + name, args);
-            case "lerp" -> args.size() == 3 ? function("math.lerp", List.of(args.get(1), args.get(2), args.get(0))) : null;
+            case "lerp", "rotLerp", "rotLerpRad" -> args.size() == 3 ? function("math.lerp", List.of(args.get(1), args.get(2), args.get(0))) : null;
             case "atan2" -> function("math.atan2", args).scale(RADIANS);
             case "toRadians" -> args.getFirst().scale(RADIANS);
             case "toDegrees" -> args.getFirst().scale(DEGREES);
@@ -338,6 +456,18 @@ public final class MolangCompiler {
          */
         @Nullable
         String property(@NotNull Value value);
+
+        /**
+         * Gets the value an idle entity's render state holds for a field, or for calls made on it.
+         *
+         * @param owner the internal name of the class the field or call is read through
+         * @param member the field, or the calls made
+         * @return the value, or null if it isn't known
+         */
+        @Nullable
+        default Value idle(@NotNull String owner, @NotNull String member) {
+            return null;
+        }
     }
 
     // base * factor + offset, or the constant offset alone when base is null.

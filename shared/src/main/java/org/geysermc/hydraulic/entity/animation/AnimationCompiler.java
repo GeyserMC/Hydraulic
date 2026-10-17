@@ -220,6 +220,9 @@ public final class AnimationCompiler {
             }
         });
 
+        String length = MolangCompiler.number(exact(use.definition().length())).text();
+        time = use.definition().looping() ? "math.mod(" + time + ", " + length + ")" : "math.min(" + time + ", " + length + ")";
+
         Animations animation = new Animations();
         animation.loop(use.definition().looping() ? Boolean.TRUE : "hold_on_last_frame");
         animation.animationLength(use.definition().length());
@@ -233,7 +236,7 @@ public final class AnimationCompiler {
     private static Frame frame(@NotNull KeyframeDefinition.Target target, @NotNull KeyframeDefinition.Frame frame, float scale) {
         String[] pre = vector(target, frame.pre(), scale);
         String[] post = vector(target, frame.post(), scale);
-        return new Frame(Arrays.equals(pre, post) ? null : pre, post, frame.catmullrom() ? "catmullrom" : null);
+        return new Frame(frame.catmullrom() && Arrays.equals(pre, post) ? null : pre, post, frame.catmullrom() ? "catmullrom" : null);
     }
 
     private static void channel(@NotNull Bones bone, @NotNull KeyframeDefinition.Target target, @NotNull Map<String, Frame> frames) {
@@ -327,6 +330,18 @@ public final class AnimationCompiler {
          */
         @Nullable
         String resolve(@NotNull String field);
+
+        /**
+         * Gets the value an idle entity's render state holds for a field, or for calls made on it.
+         *
+         * @param owner the internal name of the class the field or call is read through
+         * @param member the field, or the calls made
+         * @return the value, or null if it isn't known
+         */
+        @Nullable
+        default Value idle(@NotNull String owner, @NotNull String member) {
+            return null;
+        }
 
         /**
          * Gets the Molang reading a value computed from the render state, sent as an entity property.
@@ -464,6 +479,11 @@ public final class AnimationCompiler {
         @Override
         public String property(@NotNull Value value) {
             return this.state.property(value, null);
+        }
+
+        @Override
+        public Value idle(@NotNull String owner, @NotNull String member) {
+            return this.state.idle(owner, member);
         }
 
         @Override

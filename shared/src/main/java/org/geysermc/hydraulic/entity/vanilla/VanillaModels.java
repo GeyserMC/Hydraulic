@@ -7,6 +7,8 @@ import com.google.gson.JsonParser;
 import org.geysermc.conduit.Summary;
 import org.geysermc.conduit.Value;
 import org.geysermc.hydraulic.entity.JavaEntityModel;
+import org.geysermc.hydraulic.entity.animation.RenderStateDefaults;
+import org.geysermc.hydraulic.entity.animation.Values;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -16,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -29,6 +33,7 @@ public final class VanillaModels {
     public static final String RESOURCE = "hydraulic/vanilla-models.json";
     public static final String VANILLA_TEXTURES = "vanilla/textures/";
     public static final String MODEL_LAYERS = "net/minecraft/client/model/geom/ModelLayers";
+    private static final String CONSTRUCTOR = "<init>";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VanillaModels.class);
     private static final Gson GSON = new Gson();
@@ -37,12 +42,15 @@ public final class VanillaModels {
     private final JsonObject layers;
     private final JsonObject locations;
     private final JsonObject models;
+    private final JsonObject states;
     private final Map<String, Summary> summaries = new ConcurrentHashMap<>();
+    private final Map<String, RenderStateDefaults.StateClass> renderStates = new ConcurrentHashMap<>();
 
     private VanillaModels(@NotNull JsonObject json) {
         this.layers = json.getAsJsonObject("layers");
         this.locations = json.has("locations") ? json.getAsJsonObject("locations") : new JsonObject();
         this.models = json.getAsJsonObject("models");
+        this.states = json.has("states") ? json.getAsJsonObject("states") : new JsonObject();
     }
 
     /**
@@ -187,6 +195,18 @@ public final class VanillaModels {
     }
 
     /**
+     * Gets a vanilla render state class, as read from the client jar.
+     *
+     * @param stateClass the internal name of the render state class
+     * @return the render state class, or null if it isn't a vanilla render state
+     */
+    @Nullable
+    public RenderStateDefaults.StateClass renderState(@NotNull String stateClass) {
+        JsonObject state = this.states.getAsJsonObject(stateClass);
+        return state == null ? null : this.renderStates.computeIfAbsent(stateClass, _ -> RenderStateDefaults.StateClass.read(state));
+    }
+
+    /**
      * Gets a vanilla model's {@code setupAnim}, as summarized from the client jar.
      *
      * @param modelClass the internal name of the model class
@@ -195,6 +215,89 @@ public final class VanillaModels {
     @Nullable
     public Summary setupAnim(@NotNull String modelClass) {
         return this.summary(modelClass, "setupAnim");
+    }
+
+    /**
+     * Inlines a mod model's call to the vanilla model it extends, such as {@code super(root)} or
+     * {@code super.setupAnim(state)}, which can't be followed without the client jar.
+     *
+     * @param summary the summary of the mod model's constructor or {@code setupAnim}
+     * @param method the method summarized, either {@code <init>} or {@code setupAnim}
+     * @return the summary with the vanilla call's effects applied before its own
+     */
+    @NotNull
+    public Summary inlineSuperCall(@NotNull Summary summary, @NotNull String method) {
+        for (Summary.Invocation invocation : summary.invocations()) {
+            if (invocation.condition() != null
+                    || !(invocation.call() instanceof Value.InstanceCall(String owner, String name, Value.This _, List<Value> args))
+                    || !name.equals(method)) {
+                continue;
+            }
+
+            Summary parent = this.summary(owner, method.equals(CONSTRUCTOR) ? "constructor" : method);
+            if (parent == null) {
+                continue;
+            }
+
+            Map<String, Value> assigned = new HashMap<>();
+            List<Summary.Assignment> assignments = new ArrayList<>();
+            for (Summary.Assignment assignment : parent.assignments()) {
+                Value target = assignment.target() == null ? null : withArguments(assignment.target(), args);
+                Value value = withArguments(assignment.value(), args);
+                assignments.add(new Summary.Assignment(target, assignment.className(), assignment.field(), value));
+
+                String key = fieldKey(target, assignment.field());
+                if (key != null) {
+                    assigned.put(key, value);
+                }
+            }
+
+            for (Summary.Assignment assignment : summary.assignments()) {
+                String key = fieldKey(assignment.target(), assignment.field());
+                assignments.removeIf(inherited -> key != null && key.equals(fieldKey(inherited.target(), inherited.field())));
+                assignments.add(new Summary.Assignment(assignment.target(), assignment.className(), assignment.field(),
+                        Values.map(assignment.value(), read -> readInherited(read, assigned)))
+                );
+            }
+
+            List<Summary.Invocation> invocations = new ArrayList<>();
+            for (Summary.Invocation inherited : parent.invocations()) {
+                invocations.add(new Summary.Invocation(inherited.condition() == null ? null : withArguments(inherited.condition(), args),
+                        withArguments(inherited.call(), args))
+                );
+            }
+
+            summary.invocations().stream().filter(other -> other != invocation).forEach(invocations::add);
+            return new Summary(summary.returned(), assignments, invocations);
+        }
+
+        return summary;
+    }
+
+    @NotNull
+    private static Value withArguments(@NotNull Value value, @NotNull List<Value> args) {
+        return Values.map(value, inner -> inner instanceof Value.Parameter(int index) && index < args.size() ? args.get(index) : inner);
+    }
+
+    @NotNull
+    private static Value readInherited(@NotNull Value value, @NotNull Map<String, Value> assigned) {
+        if (!(value instanceof Value.InstanceField(Value receiver, String _, String field))) {
+            return value;
+        }
+
+        String key = fieldKey(receiver, field);
+        return key != null && assigned.containsKey(key) ? assigned.get(key) : value;
+    }
+
+    @Nullable
+    private static String fieldKey(@Nullable Value target, @NotNull String field) {
+        String receiver = switch (target) {
+            case Value.This _ -> "this";
+            case Value.InstanceField(Value inner, String _, String name) -> fieldKey(inner, name);
+            case null, default -> null;
+        };
+
+        return receiver == null ? null : receiver + "." + field;
     }
 
     @Nullable

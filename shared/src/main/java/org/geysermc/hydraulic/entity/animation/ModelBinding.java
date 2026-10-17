@@ -12,6 +12,7 @@ import org.geysermc.hydraulic.entity.vanilla.VanillaModels;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,82 +27,89 @@ public record ModelBinding(@NotNull String modelClass, @NotNull String namespace
     private static final String BAKE_LAYER = "bakeLayer";
 
     /**
-     * Finds the model a renderer is constructed with, as either {@code new Model(context.bakeLayer(LAYER))}
-     * or a {@code Model::new} reference applied to the baked layer.
+     * Finds the models a renderer may be constructed with, as either {@code new Model(context.bakeLayer(LAYER))}
+     * or a {@code Model::new} reference applied to the baked layer. A renderer that picks between models
+     * has each of them, in the order they appear.
      *
      * @param vm the machine the renderer was captured by
      * @param context the context the renderer was read from
      * @param renderer the renderer, as constructed by its provider
-     * @return the binding, or null if the renderer doesn't build its model that way
+     * @return the bindings, empty if the renderer doesn't build its model that way
      */
-    @Nullable
-    public static ModelBinding of(@NotNull VirtualMachine vm, @NotNull ConduitContext context, @Nullable Value renderer) {
+    @NotNull
+    public static List<ModelBinding> of(@NotNull VirtualMachine vm, @NotNull ConduitContext context, @Nullable Value renderer) {
         if (!(renderer instanceof Value.Constructed constructed)) {
-            return null;
+            return List.of();
         }
 
-        ModelBinding direct = find(renderer, context);
-        if (direct != null) {
+        List<ModelBinding> direct = find(renderer, context);
+        if (!direct.isEmpty()) {
             return direct;
         }
 
         Summary summary = vm.summarize(constructed);
         if (summary == null) {
-            return null;
+            return List.of();
         }
 
         for (Summary.Invocation invocation : summary.invocations()) {
-            ModelBinding found = find(invocation.call(), context);
-            if (found != null) {
+            List<ModelBinding> found = find(invocation.call(), context);
+            if (!found.isEmpty()) {
                 return found;
             }
         }
 
         for (Summary.Assignment assignment : summary.assignments()) {
-            ModelBinding found = find(assignment.value(), context);
-            if (found != null) {
+            List<ModelBinding> found = find(assignment.value(), context);
+            if (!found.isEmpty()) {
                 return found;
             }
         }
 
-        return null;
+        return List.of();
     }
 
-    @Nullable
-    private static ModelBinding find(@Nullable Value value, @NotNull ConduitContext context) {
+    @NotNull
+    private static List<ModelBinding> find(@Nullable Value value, @NotNull ConduitContext context) {
         return switch (value) {
             case Value.Constructed(String className, List<Value> args) -> {
                 ModelBinding bound = args.size() == 1 ? bind(className, args.getFirst(), context) : null;
-                yield bound != null ? bound : first(args, context);
+                yield bound != null ? List.of(bound) : first(args, context);
             }
 
             case Value.InstanceCall(String owner, String name, Value receiver, List<Value> args) -> {
                 if (receiver instanceof Value.Lambda lambda && "<init>".equals(lambda.implMethod()) && args.size() == 1) {
                     ModelBinding bound = bind(lambda.implOwner(), args.getFirst(), context);
                     if (bound != null) {
-                        yield bound;
+                        yield List.of(bound);
                     }
                 }
 
-                ModelBinding inReceiver = find(receiver, context);
-                yield inReceiver != null ? inReceiver : first(args, context);
+                List<ModelBinding> inReceiver = find(receiver, context);
+                yield !inReceiver.isEmpty() ? inReceiver : first(args, context);
+            }
+
+            case Value.Conditional(Value _, Value then, Value otherwise) -> {
+                List<ModelBinding> both = new ArrayList<>(find(then, context));
+                both.addAll(find(otherwise, context));
+                yield both;
             }
 
             case Value.StaticCall(String owner, String name, List<Value> args) -> first(args, context);
-            case null, default -> null;
+            case null, default -> List.of();
         };
     }
 
-    @Nullable
-    private static ModelBinding first(@NotNull List<Value> values, @NotNull ConduitContext context) {
+    @NotNull
+    private static List<ModelBinding> first(@NotNull List<Value> values, @NotNull ConduitContext context) {
         for (Value value : values) {
-            ModelBinding found = find(value, context);
-            if (found != null) {
+            List<ModelBinding> found = find(value, context);
+            if (!found.isEmpty()) {
                 return found;
             }
         }
 
-        return null;
+        return List.of();
     }
 
     @Nullable

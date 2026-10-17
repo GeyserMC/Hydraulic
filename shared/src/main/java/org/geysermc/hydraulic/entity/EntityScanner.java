@@ -14,6 +14,7 @@ import org.geysermc.hydraulic.entity.animation.AnimationCompiler;
 import org.geysermc.hydraulic.entity.animation.AnimationCompiler.CompiledAnimation;
 import org.geysermc.hydraulic.entity.animation.BoneMap;
 import org.geysermc.hydraulic.entity.animation.ModelBinding;
+import org.geysermc.hydraulic.entity.animation.RenderStateDefaults;
 import org.geysermc.hydraulic.entity.animation.StateProperties;
 import org.geysermc.hydraulic.entity.animation.Values;
 import org.geysermc.hydraulic.entity.conduit.EntityFactory;
@@ -57,6 +58,7 @@ public final class EntityScanner {
     private final Logger logger;
     private final Collection<Path> textureSources;
     private final List<GeckoLibEntity> geckoLibEntities = new ArrayList<>();
+    private final Map<Identifier, String> entityClasses = new HashMap<>();
     private List<String> assets;
 
     public EntityScanner(@NotNull ConduitContext context, @NotNull Logger logger) {
@@ -79,7 +81,9 @@ public final class EntityScanner {
     @NotNull
     public List<CustomEntity> scan(@NotNull ModelLayerRegistryInfo layerInfo, @NotNull EntityRendererRegistryInfo rendererInfo) {
         this.geckoLibEntities.clear();
+        this.entityClasses.clear();
         VirtualMachine vm = VirtualMachineFactory.create(this.context).await();
+        RenderStateDefaults defaults = RenderStateDefaults.of(this.context, vm);
 
         Map<String, JavaEntityModel> layers = new HashMap<>();
         vm.intercept(layerInfo.registryClass());
@@ -150,7 +154,11 @@ public final class EntityScanner {
                 continue;
             }
 
-            ModelBinding binding = renderer.binding();
+            if (renderer.entityClass() != null) {
+                this.entityClasses.put(id, renderer.entityClass());
+            }
+
+            ModelBinding binding = pickModelBinding(renderer.bindings(), layers);
             if (binding == null && renderer.constructed() != null) {
                 GeckoLibEntity geckoLib = GeckoLibScanner.scan(vm, this.context, id, renderer.constructed(), this.logger);
                 if (geckoLib != null) {
@@ -174,13 +182,23 @@ public final class EntityScanner {
 
             Summary extract = renderer.rendererClass() == null ? null : vm.summarize(renderer.rendererClass(), "extractRenderState", null);
             int reserved = renderer.textures().size() > 1 ? 1 : 0;
-            CompiledAnimation animation = binding == null ? null : this.animation(vm, id, binding, model, extract, reserved);
+            CompiledAnimation animation = binding == null ? null : this.animation(vm, id, binding, model, extract, reserved, defaults);
             entities.add(new CustomEntity(id, model, renderer.textures(), binding, animation, this.texture(id, renderer, extract),
-                    animation == null || animation.keyframes().isEmpty() || renderer.entityClass() == null ? List.of() : clientCalls(vm, renderer.entityClass()))
+                    animation == null || renderer.entityClass() == null ? List.of() : clientCalls(vm, renderer.entityClass()))
             );
         }
 
         return entities;
+    }
+
+    /**
+     * Gets the class each entity type the last scan found a renderer for is made from.
+     *
+     * @return the name of each entity type's class
+     */
+    @NotNull
+    public Map<Identifier, String> entityClasses() {
+        return this.entityClasses;
     }
 
     /**
@@ -211,7 +229,7 @@ public final class EntityScanner {
             textures = parseValidTextures((entityClass == null ? renderer : Conduits.withTypeArgument(renderer, entityClass)).getTextureLocation());
         }
 
-        ModelBinding binding = ModelBinding.of(vm, this.context, trace.returned());
+        List<ModelBinding> bindings = ModelBinding.of(vm, this.context, trace.returned());
         Value.Constructed constructed = trace.returned() instanceof Value.Constructed value ? value : null;
         String rendererClass = constructed == null ? null : constructed.className();
         Summary texture = rendererClass == null ? null : vm.summarize(rendererClass, "getTextureLocation", null);
@@ -232,8 +250,20 @@ public final class EntityScanner {
             textures = TextureTemplates.expand(textureLocation, this.assets);
         }
 
-        this.logger.debug("Renderer for {}: textures={} model={}", entityClass, textures, binding);
-        return new Renderer(entityClass, registered != null ? registered : deferredId(registration.type()), constructed, rendererClass, textures, binding, textureLocation);
+        this.logger.debug("Renderer for {}: textures={} models={}", entityClass, textures, bindings);
+        return new Renderer(entityClass, registered != null ? registered : deferredId(registration.type()), constructed, rendererClass, textures, bindings, textureLocation);
+    }
+
+    @Nullable
+    private static ModelBinding pickModelBinding(@NotNull List<ModelBinding> bindings, @NotNull Map<String, JavaEntityModel> layers) {
+        for (ModelBinding binding : bindings) {
+            JavaEntityModel model = layers.get(layerKey(binding.namespace(), binding.path(), binding.layer()));
+            if (model != null && !model.parts().isEmpty()) {
+                return binding;
+            }
+        }
+
+        return bindings.isEmpty() ? null : bindings.getFirst();
     }
 
     @Nullable
@@ -252,7 +282,8 @@ public final class EntityScanner {
 
     @Nullable
     private CompiledAnimation animation(@NotNull VirtualMachine vm, @NotNull Identifier id, @NotNull ModelBinding binding,
-                                        @NotNull JavaEntityModel model, @Nullable Summary extract, int reserved) {
+                                        @NotNull JavaEntityModel model, @Nullable Summary extract, int reserved,
+                                        @NotNull RenderStateDefaults defaults) {
         Summary constructor = vm.summarize(binding.modelClass(), "<init>", null);
         Summary setupAnim = vm.summarize(binding.modelClass(), "setupAnim", null);
         if (constructor == null || setupAnim == null) {
@@ -265,9 +296,12 @@ public final class EntityScanner {
             return null;
         }
 
+        constructor = VanillaModels.get().inlineSuperCall(constructor, "<init>");
+        setupAnim = VanillaModels.get().inlineSuperCall(setupAnim, "setupAnim");
+
         String name = "animation." + id.getNamespace() + "." + id.getPath().replace('/', '.') + ".setup";
         BoneMap bones = BoneMap.of(constructor, model);
-        StateProperties state = new StateProperties(id.getNamespace(), extract, reserved);
+        StateProperties state = new StateProperties(id.getNamespace(), extract, reserved, defaults);
         CompiledAnimation animation = AnimationCompiler.compile(name, setupAnim, bones, model.scale(), state, this.logger);
         if (animation != null && state.overLimit(animation.properties())) {
             this.logger.debug("{} needs {} properties, more than an entity may have, so some parts are left still", id, animation.properties().size());
@@ -287,7 +321,13 @@ public final class EntityScanner {
             if (invocation.call() instanceof Value.InstanceCall(String owner, String name, Value.InstanceField(Value.This _, String _, String _), List<Value> _)
                 && owner.equals(ANIMATION_STATE) && STATE_CALLS.contains(name)
                 && invocation.condition() != null && Values.contains(invocation.condition(), EntityScanner::isClientSide)) {
-                calls.add(new ClientCall(invocation.call(), Values.map(invocation.condition(), value -> isClientSide(value) ? Value.literal(true) : value)));
+                calls.add(new ClientCall(invocation.call(), Values.map(invocation.condition(), value -> isClientSide(value) ? Value.literal(true) : value), null));
+            }
+        }
+
+        for (Summary.Assignment assignment : tick == null ? List.<Summary.Assignment>of() : tick.assignments()) {
+            if (assignment.target() instanceof Value.This && Values.contains(assignment.value(), EntityScanner::isClientSide)) {
+                calls.add(new ClientCall(Values.map(assignment.value(), value -> isClientSide(value) ? Value.literal(true) : value), null, assignment.field()));
             }
         }
 
@@ -371,7 +411,7 @@ public final class EntityScanner {
 
     private record Renderer(@Nullable String entityClass, @Nullable Identifier id, @Nullable Value.Constructed constructed,
                             @Nullable String rendererClass, @NotNull List<String> textures,
-                            @Nullable ModelBinding binding, @Nullable Value textureLocation
+                            @NotNull List<ModelBinding> bindings, @Nullable Value textureLocation
     ) {
     }
 }

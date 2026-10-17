@@ -15,7 +15,7 @@ import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final class TestMod {
+public final class TestMod {
     static final String CLIENT = "org/geysermc/hydraulic/fabric/test/client/";
 
     private static Path jar;
@@ -23,11 +23,11 @@ final class TestMod {
     private TestMod() {
     }
 
-    static ConduitContext context() {
+    public static ConduitContext context() {
         return ConduitContext.load(jar());
     }
 
-    static Map<String, CustomEntity> scan(ConduitContext context) {
+    public static Map<String, CustomEntity> scan(ConduitContext context) {
         return new EntityScanner(context, LoggerFactory.getLogger("test"))
             .scan(TestRegistries.LAYERS, TestRegistries.RENDERERS)
             .stream().collect(Collectors.toMap(entity -> entity.id().getPath(), Function.identity()));

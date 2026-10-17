@@ -47,6 +47,7 @@ import org.geysermc.hydraulic.storage.ModStorage;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.util.SingletonBlockGetter;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
+import org.geysermc.pack.bedrock.resource.Sounds;
 import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -159,8 +160,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
         BlockSounds sounds = BlockSounds.of(context.registryValues(BuiltInRegistries.BLOCK));
         sounds.blocks().forEach(bedrockPack::addBlock);
-        if (sounds.sounds() != null) {
-            bedrockPack.sounds(sounds.sounds());
+        Sounds blockSounds = sounds.sounds();
+        if (blockSounds != null && bedrockPack.sounds() != null) {
+            bedrockPack.sounds().blockSounds(blockSounds.blockSounds());
+            bedrockPack.sounds().interactiveSounds(blockSounds.interactiveSounds());
+        } else if (blockSounds != null) {
+            bedrockPack.sounds(blockSounds);
         }
 
         for (Texture texture : assets.textures()) {

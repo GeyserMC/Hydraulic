@@ -36,6 +36,17 @@ public final class GeckoLibEntities {
     }
 
     /**
+     * Gets the identifiers of a mod's GeckoLib entities.
+     *
+     * @param mod the mod's id
+     * @return the identifiers
+     */
+    @NotNull
+    public List<String> ids(@NotNull String mod) {
+        return this.entities.getOrDefault(mod, List.of()).stream().map(entity -> entity.id().toString()).toList();
+    }
+
+    /**
      * Processes a mod's GeckoLib entities.
      *
      * @param mod the mod's id

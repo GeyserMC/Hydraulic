@@ -20,12 +20,17 @@ import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
+import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
+import org.geysermc.pack.bedrock.resource.Sounds;
 import org.geysermc.pack.bedrock.resource.entity.ClientEntity;
 import org.geysermc.pack.bedrock.resource.entity.Entity;
 import org.geysermc.pack.bedrock.resource.entity.cliententity.Description;
 import org.geysermc.pack.bedrock.resource.entity.cliententity.description.Scripts;
 import org.geysermc.pack.bedrock.resource.render_controllers.RenderControllers;
 import org.geysermc.pack.bedrock.resource.render_controllers.rendercontrollers.Arrays;
+import org.geysermc.pack.bedrock.resource.sounds.EntitySounds;
+import org.geysermc.pack.bedrock.resource.sounds.entitysounds.Entities;
+import org.geysermc.pack.bedrock.resource.sounds.entitysounds.entities.Events;
 import org.geysermc.pack.converter.pipeline.AssetConverters;
 import org.geysermc.pack.converter.pipeline.ConverterPipeline;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +55,7 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
     private static final String SETUP_ANIMATION = "setup";
     private static final String TEXTURES_DIRECTORY = "textures/";
     private static final String PNG = ".png";
+    private static final List<String> SILENCED_SOUNDS = List.of("hurt", "death", "fall.big", "fall.small");
 
     private final Map<String, List<CustomEntity>> entities = new HashMap<>();
     private final GeckoLibEntities geckoLib = new GeckoLibEntities();
@@ -80,6 +86,8 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
             context.logger().info("Found entity {} with {} texture(s): {}", entity.id(), entity.textures().size(), entity.textures());
         }
 
+        scanner.entityClasses().forEach(CustomEntityTypes::remember);
+
         this.geckoLib.preProcess(context.mod().id(), scanner.geckoLibEntities(), context.logger());
     }
 
@@ -87,6 +95,15 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
         this.geckoLib.postProcess(context.mod().id(), context.bedrockResourcePack(), texture -> bedrockTexture(context, texture), context.logger());
 
         List<CustomEntity> entities = this.entities.get(context.mod().id());
+        List<String> ids = new ArrayList<>(this.geckoLib.ids(context.mod().id()));
+        if (entities != null) {
+            entities.forEach(entity -> ids.add(entity.id().toString()));
+        }
+
+        // The server already sends the sounds Java plays for these, so a Bedrock player's
+        // defaults would only add a wrong one
+        silenceClientSounds(context.bedrockResourcePack(), ids);
+
         if (entities == null) {
             return;
         }
@@ -287,9 +304,43 @@ public class EntityPackModule extends TexturePackModule<EntityPackModule> {
     private void onDefineEntities(PackEventContext<GeyserDefineEntitiesEvent, EntityPackModule> context) {
         for (CustomEntity entity : this.entities.getOrDefault(context.mod().id(), List.of())) {
             context.event().register(CustomEntityDefinition.of(entity.id().toString()));
-            context.logger().debug("Registered custom entity {}", entity.id());
+            context.logger().debug("Registered custom entity {} (mob: {})", entity.id(), CustomEntityTypes.isMob(entity.id()));
         }
 
         this.geckoLib.defineEntities(context.mod().id(), context.event(), context.logger());
+    }
+
+    private static void silenceClientSounds(@NotNull BedrockResourcePack pack, @NotNull List<String> ids) {
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        Sounds sounds = pack.sounds();
+        if (sounds == null) {
+            sounds = new Sounds();
+            pack.sounds(sounds);
+        }
+
+        EntitySounds entitySounds = sounds.entitySounds();
+        if (entitySounds == null) {
+            entitySounds = new EntitySounds();
+            sounds.entitySounds(entitySounds);
+        }
+
+        Map<String, Entities> entities = entitySounds.entities() == null ? new LinkedHashMap<>() : new LinkedHashMap<>(entitySounds.entities());
+        for (String id : ids) {
+            Map<String, Events> events = new LinkedHashMap<>();
+            for (String event : SILENCED_SOUNDS) {
+                Events silent = new Events();
+                silent.sound("");
+                events.put(event, silent);
+            }
+
+            Entities entity = new Entities();
+            entity.events(events);
+            entities.put(id, entity);
+        }
+
+        entitySounds.entities(entities);
     }
 }

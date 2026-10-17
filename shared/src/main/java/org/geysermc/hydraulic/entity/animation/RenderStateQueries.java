@@ -21,13 +21,13 @@ public final class RenderStateQueries {
         Map.entry("isInWater", "query.is_in_water"),
         Map.entry("isDiscrete", "query.is_sneaking"),
         Map.entry("isInvisible", "query.is_invisible"),
-        Map.entry("scale", "1"),
+        Map.entry("isPassenger", "query.is_riding"),
+        Map.entry("isRiding", "query.is_riding"),
+        Map.entry("isFallFlying", "query.is_gliding"),
+        Map.entry("swimAmount", "(query.is_swimming ? 1 : 0)"),
+        Map.entry("isUsingItem", "query.is_using_item"),
+        Map.entry("isCrouching", "query.is_sneaking"),
         Map.entry("ageScale", "(query.is_baby ? 0.5 : 1)"),
-        Map.entry("isUpsideDown", "0"),
-        Map.entry("isFullyFrozen", "0"),
-        Map.entry("isAutoSpinAttack", "0"),
-        Map.entry("hasRedOverlay", "0"),
-        Map.entry("isInvisibleToPlayer", "0"),
         Map.entry("displayFireAnimation", "query.is_on_fire")
     );
 

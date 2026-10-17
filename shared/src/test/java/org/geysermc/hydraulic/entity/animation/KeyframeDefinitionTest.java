@@ -1,11 +1,16 @@
-package org.geysermc.hydraulic.entity;
+package org.geysermc.hydraulic.entity.animation;
 
+import org.geysermc.conduit.Summary;
 import org.geysermc.conduit.Value;
-import org.geysermc.hydraulic.entity.animation.KeyframeDefinition;
+import org.geysermc.hydraulic.entity.JavaEntityModel;
+import org.geysermc.pack.bedrock.resource.animations.actoranimation.animations.bones.Rotation;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,9 +52,60 @@ class KeyframeDefinitionTest {
     }
 
     @Test
+    void linearKeyframesCarryTheirPre() {
+        Value state = new Value.InstanceField(new Value.Parameter(0), "", "idleAnimationState");
+        Summary setupAnim = new Summary(null, List.of(), List.of(new Summary.Invocation(null,
+                new Value.InstanceCall("", "animate", new Value.This(), List.of(state, bodyAnimation(), Value.literal(0f))))
+        ));
+
+        JavaEntityModel model = new JavaEntityModel("mod", "test", "main", 64, 64,
+                List.of(new JavaEntityModel.Part("body", JavaEntityModel.Pose.ZERO, List.of(), List.of())), 1f
+        );
+
+        AnimationCompiler.StateResolver resolver = new AnimationCompiler.StateResolver() {
+            @Override
+            public String resolve(@NotNull String field) {
+                return null;
+            }
+
+            @Override
+            public String property(@NotNull Value value, String name) {
+                return "query.property('mod:idle')";
+            }
+        };
+
+        AnimationCompiler.CompiledAnimation animation = AnimationCompiler.compile("animation.test.setup", setupAnim,
+                BoneMap.of(new Summary(null, List.of(), List.of()), model), 1f, resolver, LoggerFactory.getLogger("test")
+        );
+
+        assertNotNull(animation);
+        Map<String, Rotation> frames = animation.keyframes().getFirst().animation().bones().get("body").rotation();
+        assertArrayEquals(frames.get("0").post(), frames.get("0").pre());
+        assertNull(frames.get("0.5").pre());
+    }
+
+    @Test
     void rejectsAnythingElse() {
         assertNull(KeyframeDefinition.read(new Value.Unknown("arith")));
         assertNull(KeyframeDefinition.read(null));
+    }
+
+    private static Value bodyAnimation() {
+        Value channel = new Value.Constructed(CHANNEL, List.of(
+                new Value.Field(CHANNEL + "$Targets", "ROTATION"),
+                new Value.Array("Lnet/minecraft/client/animation/Keyframe;", new ArrayList<>(List.of(
+                        keyframe(0f, 0f, "LINEAR"),
+                        keyframe(0.5f, -10f, "CATMULLROM")))
+                )
+        ));
+
+        return new Value.InstanceCall(BUILDER, "build",
+                new Value.InstanceCall(BUILDER, "addAnimation",
+                        new Value.InstanceCall(BUILDER, "looping", new Value.StaticCall(BUILDER, "withLength", List.of(Value.literal(1f))), List.of()),
+                        List.of(Value.literal("body"), channel)
+                ),
+                List.of()
+        );
     }
 
     private static Value keyframe(float time, float x, String interpolation) {

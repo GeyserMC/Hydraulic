@@ -83,13 +83,18 @@ val generator: SourceSet = sourceSets.create("generator") {
 }
 
 val generateVanillaModels = tasks.register<JavaExec>("generateVanillaModels") {
-    description = "Reads vanilla's entity models from the client jar into the bundle Hydraulic ships."
+    description = "Reads vanilla's entity models from the client jar into the bundle Hydraulic ships. " +
+        "Only runs when the bundle is missing, or with -PregenerateVanillaModels."
     val bundle = layout.buildDirectory.dir("generated/vanilla-models")
+    val json = bundle.map { it.file("hydraulic/vanilla-models.json").asFile }
+    val regenerate = providers.gradleProperty("regenerateVanillaModels")
+    onlyIf { regenerate.isPresent || !json.get().exists() }
     classpath = generator.runtimeClasspath
     mainClass = "org.geysermc.hydraulic.generator.VanillaModelsGenerator"
     javaLauncher = javaToolchains.launcherFor(java.toolchain)
-    inputs.files(loom.namedMinecraftJars)
+    inputs.files(loom.namedMinecraftJars).withNormalizer(ClasspathNormalizer::class)
     outputs.dir(bundle)
+    outputs.cacheIf { true }
     argumentProviders.add(CommandLineArgumentProvider {
         listOf(bundle.get().file("hydraulic/vanilla-models.json").asFile.absolutePath) + loom.namedMinecraftJars.files.map { it.absolutePath }
     })

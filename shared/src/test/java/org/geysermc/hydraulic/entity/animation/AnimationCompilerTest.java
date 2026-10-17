@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.entity;
+package org.geysermc.hydraulic.entity.animation;
 
 import org.cloudburstmc.mojava.MoJava;
 import org.cloudburstmc.mojava.runtime.MoRuntime;
@@ -7,9 +7,9 @@ import org.geysermc.conduit.Summary;
 import org.geysermc.conduit.Value;
 import org.geysermc.conduit.VirtualMachine;
 import org.geysermc.conduit.VirtualMachineFactory;
-import org.geysermc.hydraulic.entity.animation.AnimationCompiler;
-import org.geysermc.hydraulic.entity.animation.BoneMap;
-import org.geysermc.hydraulic.entity.animation.RenderStateQueries;
+import org.geysermc.hydraulic.entity.CustomEntity;
+import org.geysermc.hydraulic.entity.JavaEntityModel;
+import org.geysermc.hydraulic.entity.TestMod;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;

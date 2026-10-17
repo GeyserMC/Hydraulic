@@ -1,11 +1,14 @@
 package org.geysermc.hydraulic.entity;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Mob;
 import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.geyser.entity.BedrockEntityDefinition;
 import org.geysermc.geyser.entity.GeyserEntityType;
+import org.geysermc.geyser.entity.VanillaEntities;
 import org.geysermc.geyser.entity.VanillaEntityType;
 import org.geysermc.geyser.entity.type.Entity;
+import org.geysermc.geyser.entity.type.living.MobEntity;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +28,7 @@ public final class CustomEntityTypes {
 
     private static final Map<net.minecraft.resources.Identifier, GeyserEntityType> TYPES = new ConcurrentHashMap<>();
     private static final Map<Spawn, Integer> SPAWNS = new ConcurrentHashMap<>();
+    private static final Map<net.minecraft.resources.Identifier, String> CLASSES = new ConcurrentHashMap<>();
 
     private CustomEntityTypes() {
     }
@@ -42,6 +46,7 @@ public final class CustomEntityTypes {
     }
 
     @Nullable
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static GeyserEntityType define(net.minecraft.resources.Identifier key, net.minecraft.world.entity.EntityType<?> type) {
         Identifier identifier = Identifier.of(key.toString());
         BedrockEntityDefinition bedrock = Registries.BEDROCK_ENTITY_DEFINITIONS.get(identifier);
@@ -51,17 +56,37 @@ public final class CustomEntityTypes {
 
         GeyserEntityType geyserType = new GeyserEntityType(identifier, PLACEHOLDER);
 
-        Registries.JAVA_ENTITY_TYPES.get().putIfAbsent(geyserType, new VanillaEntityType<>(
-            Entity::new,
-            geyserType,
-            type.getWidth(),
-            type.getHeight(),
-            0f,
-            bedrock,
-            List.of()
-        ));
+        // Mobs move and turn the way vanilla's do, rather than snapping to every packet the server sends. Just
+        // use a giant as it's a mob entity
+        VanillaEntityType<?> definition = isMob(key)
+                ? new VanillaEntityType<>(MobEntity::new, geyserType, type.getWidth(), type.getHeight(), 0f, bedrock, (List) VanillaEntities.GIANT.translators())
+                : new VanillaEntityType<>(Entity::new, geyserType, type.getWidth(), type.getHeight(), 0f, bedrock, List.of());
+        Registries.JAVA_ENTITY_TYPES.get().putIfAbsent(geyserType, definition);
 
         return geyserType;
+    }
+
+    /**
+     * Remembers the class a custom entity type creates, as found when scanning its mod.
+     *
+     * @param type the entity type
+     * @param entityClass the name of the class its entities are made from
+     */
+    public static void remember(@NotNull net.minecraft.resources.Identifier type, @NotNull String entityClass) {
+        CLASSES.put(type, entityClass.replace('/', '.'));
+    }
+
+    static boolean isMob(@NotNull net.minecraft.resources.Identifier type) {
+        String entityClass = CLASSES.get(type);
+        if (entityClass == null) {
+            return false;
+        }
+
+        try {
+            return Mob.class.isAssignableFrom(Class.forName(entityClass, false, CustomEntityTypes.class.getClassLoader()));
+        } catch (ClassNotFoundException | LinkageError e) {
+            return false;
+        }
     }
 
     /**
