@@ -29,6 +29,9 @@ dependencyResolutionManagement {
 
         // Sponge Snapshots
         maven("https://repo.spongepowered.org/repository/maven-public/")
+
+        // Jitpack
+        maven("https://jitpack.io/")
     }
 }
 
@@ -47,12 +50,16 @@ pluginManagement {
 
         // Fabric
         maven("https://maven.fabricmc.net/")
+
+        // Jitpack
+        maven("https://jitpack.io/")
     }
 
     plugins {
         id("net.kyori.blossom") version "2.2.0"
         id("net.kyori.indra")
         id("net.kyori.indra.git")
+        id("dev.opencollab.conduit") version "0.1.0-SNAPSHOT"
     }
 
     includeBuild("build-logic")

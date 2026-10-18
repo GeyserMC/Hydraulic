@@ -1,6 +1,8 @@
 package org.geysermc.hydraulic.platform;
 
 import net.minecraft.server.MinecraftServer;
+import org.geysermc.hydraulic.entity.EntityRendererRegistryInfo;
+import org.geysermc.hydraulic.entity.ModelLayerRegistryInfo;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,4 +51,36 @@ public interface HydraulicBootstrap {
      * Register a listener for the stop server event
      */
     void registerServerStop(Consumer<MinecraftServer> listenerAction);
+
+    /**
+     * Registers a listener called at the end of every server tick.
+     *
+     * @param listenerAction the listener
+     */
+    void registerServerTick(Consumer<MinecraftServer> listenerAction);
+
+    /**
+     * Gets the {@link ModelLayerRegistryInfo} for capturing model layer registrations on
+     * this platform.
+     *
+     * @return the model layer registry info for capturing model layer registrations
+     */
+    ModelLayerRegistryInfo modelLayerInfo();
+
+    /**
+     * Gets the jar every loaded mod was read from, including libraries left out of {@link #mods()},
+     * so code calling into them can be followed. Minecraft itself is not included.
+     *
+     * @return the jars on disk of every loaded mod
+     */
+    @NotNull
+    Collection<Path> modJars();
+
+    /**
+     * Gets the {@link EntityRendererRegistryInfo} for capturing renderer registrations on
+     * this platform.
+     *
+     * @return the renderer registry info for capturing renderer registrations
+     */
+    EntityRendererRegistryInfo entityRendererInfo();
 }

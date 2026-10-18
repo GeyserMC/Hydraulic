@@ -14,6 +14,9 @@ config = "hydraulic.mixins.json"
 [[mixins]]
 config = "hydraulic-neoforge.mixins.json"
 
+[[mixins]]
+config = "hydraulic-geckolib.mixins.json"
+
 [[dependencies.hydraulic]]
     modId="neoforge"
     type="required"
