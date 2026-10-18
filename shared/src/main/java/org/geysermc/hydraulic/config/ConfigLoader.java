@@ -2,7 +2,6 @@ package org.geysermc.hydraulic.config;
 
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
-import org.spongepowered.configurate.interfaces.InterfaceDefaultOptions;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
@@ -43,7 +42,6 @@ public class ConfigLoader {
             .file(configFile)
             .indent(2)
             .nodeStyle(NodeStyle.BLOCK)
-            .defaultOptions(InterfaceDefaultOptions::addTo)
             .build();
     }
 }

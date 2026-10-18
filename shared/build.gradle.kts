@@ -17,7 +17,6 @@ dependencies {
     implementation(libs.auto.service)
     annotationProcessor(libs.auto.service)
 
-    annotationProcessor(libs.configurate.`interface`.ap)
     compileOnly(libs.bundles.configurate)
 
     // Only here to suppress "unknown enum constant EnvType.CLIENT" warnings.

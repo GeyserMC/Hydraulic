@@ -31,6 +31,36 @@ tasks {
         archiveBaseName.set("${modId}-fabric")
     }
 
+    register("patchGeyserRuntimeArtifacts") {
+        doLast {
+            val runtimeArtifacts = configurations.getByName("localRuntime")
+                .resolvedConfiguration
+                .resolvedArtifacts
+            val fabricJar = runtimeArtifacts.first {
+                it.moduleVersion.id.group == "org.geysermc.geyser" && it.name == "fabric"
+            }.file
+            val coreJar = runtimeArtifacts.first {
+                it.moduleVersion.id.group == "org.geysermc.geyser" && it.name == "core"
+            }.file
+            val modJar = runtimeArtifacts.first {
+                it.moduleVersion.id.group == "org.geysermc.geyser" && it.name == "mod"
+            }.file
+
+            ant.withGroovyBuilder {
+                "zip"("destfile" to fabricJar.absolutePath, "update" to "true") {
+                    // Geyser's fabric platform resolves resources from its own mod jar only, so copy
+                    // every non-class resource out of core instead of an ever-growing include list.
+                    "zipfileset"("src" to coreJar.absolutePath, "excludes" to "org/**,META-INF/**,LICENSE,git.properties")
+                    "zipfileset"("src" to modJar.absolutePath, "includes" to "geyser.mixins.json")
+                }
+            }
+        }
+    }
+
+    named("runServer") {
+        dependsOn("patchGeyserRuntimeArtifacts")
+    }
+
     shadowJar {
         archiveClassifier.set("dev-shadow")
         relocate("org.spongepowered.configurate", "org.geysermc.hydraulic.shaded.org.spongepowered.configurate")
@@ -63,6 +93,10 @@ dependencies {
         exclude(group = "io.netty")
         exclude(group = "io.netty.incubator")
         exclude(group = "org.incendo")
+    }
+    localRuntime(libs.geyser.core) {
+        exclude(group = "io.netty")
+        exclude(group = "io.netty.incubator")
     }
 
     localRuntime(project(":test"))
