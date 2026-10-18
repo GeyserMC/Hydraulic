@@ -1,10 +1,14 @@
 package org.geysermc.hydraulic.mixin.ext;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import org.geysermc.hydraulic.block.BlockStateRemapper;
 import org.geysermc.hydraulic.entity.CustomEntityTypes;
 import org.geysermc.hydraulic.entity.JavaEntityTypeHolder;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundAddEntityPacket;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -13,6 +17,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 //       solution to allow for custom entities to be registered and used in the game.
 @Mixin(value = ClientboundAddEntityPacket.class, remap = false)
 public class ClientboundAddEntityPacketMixin implements JavaEntityTypeHolder {
+
+    @Shadow
+    @Final
+    private EntityType type;
 
     @Unique
     private int hydraulic$javaTypeId = -1;
@@ -32,6 +40,18 @@ public class ClientboundAddEntityPacketMixin implements JavaEntityTypeHolder {
         }
 
         return EntityType.from(javaTypeId);
+    }
+
+    @ModifyExpressionValue(
+        method = "<init>(Lio/netty/buffer/ByteBuf;)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lorg/geysermc/mcprotocollib/protocol/codec/MinecraftTypes;readVarInt(Lio/netty/buffer/ByteBuf;)I",
+            ordinal = 2
+        )
+    )
+    private int hydraulic$remapFallingBlockState(int data) {
+        return this.type == EntityType.FALLING_BLOCK ? BlockStateRemapper.remapState(data) : data;
     }
 
     @Override
