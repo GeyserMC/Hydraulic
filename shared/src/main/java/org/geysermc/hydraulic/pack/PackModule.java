@@ -5,6 +5,7 @@ import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
+import org.geysermc.pack.converter.pipeline.ConverterPipeline;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,18 @@ public abstract class PackModule<T extends PackModule<T>> {
      */
     public boolean test(@NotNull PackPostProcessContext<T> context) {
         return true;
+    }
+
+    /**
+     * Gets the converters this pack module adds to the conversion of a mod's pack, run alongside
+     * the converters for its resource pack's assets.
+     *
+     * @param mod the mod whose pack is being converted
+     * @return the converters
+     */
+    @NotNull
+    public List<ConverterPipeline<?, ?>> converters(@NotNull ModInfo mod) {
+        return List.of();
     }
 
     /**
