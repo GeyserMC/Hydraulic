@@ -20,6 +20,7 @@ import team.unnamed.creative.metadata.pack.PackMeta;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -49,10 +50,17 @@ public class MetadataPackModule implements AssetExtractor<ModInfo>, AssetConvert
         String packUuid = PackUtil.getModUUID(mod.roots()).toString();
         header.uuid(packUuid);
 
+        // Bedrock clients keep a pack they've downloaded until its version changes, so each conversion gets a newer one.
+        // Each part must fit in 16 bits, so the time of day is counted in two second steps.
+        long now = Instant.now().getEpochSecond();
+        float[] version = { 1, now / 86400, now % 86400 / 2 };
+        header.version(version);
+
         // Generate module uuid based on type
         for (Modules module : manifest.modules()) {
             module.uuid(UUID.nameUUIDFromBytes((module.type + packUuid).getBytes()).toString());
             module.description(mod.name().trim() + " " + StringUtils.capitalize(module.type));
+            module.version(version);
         }
 
         return manifest;

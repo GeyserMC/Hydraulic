@@ -37,6 +37,16 @@ allprojects {
         // creative
         maven("https://repo.nexomc.com/releases/")
 
+        // Jitpack
+        maven("https://jitpack.io/")
+
+        // GeckoLib
+        maven("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/") {
+            content {
+                includeGroup("com.geckolib")
+            }
+        }
+
         // Modrinth
         exclusiveContent {
             forRepository {

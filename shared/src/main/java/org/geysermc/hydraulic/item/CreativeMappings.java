@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.item;
 
+import net.minecraft.tags.BlockItemTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -38,14 +39,14 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.FENCE_GATES),
+                List.of(BlockItemTags.FENCE_GATES.item()),
                 List.of(FenceGateBlock.class),
                 List.of(BlockTags.FENCE_GATES)
             ), new CreativeMapping(ItemGroup.FENCE_GATES, CreativeCategory.CONSTRUCTION));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.PLANKS),
+                List.of(BlockItemTags.PLANKS.item()),
                 List.of(),
                 List.of(BlockTags.PLANKS)
             ), new CreativeMapping(ItemGroup.PLANKS, CreativeCategory.CONSTRUCTION));
@@ -73,7 +74,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.WALLS),
+                List.of(BlockItemTags.WALLS.item()),
                 List.of(WallBlock.class),
                 List.of(BlockTags.WALLS)
             ), new CreativeMapping(ItemGroup.WALLS, CreativeCategory.CONSTRUCTION));
@@ -96,14 +97,14 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.LEAVES),
+                List.of(BlockItemTags.LEAVES.item()),
                 List.of(LeavesBlock.class),
                 List.of(BlockTags.LEAVES)
             ), new CreativeMapping(ItemGroup.LEAVES, CreativeCategory.NATURE));
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.LOGS),
+                List.of(BlockItemTags.LOGS.item()),
                 List.of(),
                 List.of(BlockTags.LOGS)
             ), new CreativeMapping(ItemGroup.LOGS, CreativeCategory.NATURE));
@@ -125,7 +126,7 @@ public class CreativeMappings {
 
             put(new CreativeMappingTarget(
                 List.of(),
-                List.of(ItemTags.SAPLINGS),
+                List.of(BlockItemTags.SAPLINGS.item()),
                 List.of(SaplingBlock.class),
                 List.of()
             ), new CreativeMapping(ItemGroup.SAPLINGS, CreativeCategory.NATURE));

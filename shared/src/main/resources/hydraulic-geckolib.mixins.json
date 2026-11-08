@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "org.geysermc.hydraulic.entity.geckolib.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "AnimationTestMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
