@@ -306,8 +306,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
 
                     // Bedrock rotates the boxes with the transformation, so convert them in model space
-                    componentsBuilder.selectionBox(createBoxComponent(shape, rotX, rotY));
-                    componentsBuilder.collisionBoxes(createBoxComponent(collisionShape, rotX, rotY));
+                    componentsBuilder.selectionBox(createBoxComponent(shape, rotX, rotY, true));
+                    componentsBuilder.collisionBoxes(createBoxComponent(collisionShape, rotX, rotY, false));
                 } else {
                     componentsBuilder.geometry(GeometryComponent.builder()
                             .identifier("minecraft:geometry.full_block")
@@ -388,8 +388,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     .friction(Math.min(1 - block.getFriction(), 0.9f))
                     .destructibleByMining(block.defaultDestroyTime() < 0 ? UNBREAKABLE_DESTROY_TIME : block.defaultDestroyTime()) // TODO: Check
                     // .unitCube(true) // TODO: Geometry conversion
-                    .selectionBox(createBoxComponent(shape))
-                    .collisionBoxes(createBoxComponent(collisionShape));
+                    .selectionBox(createBoxComponent(shape, 0, 0, true))
+                    .collisionBoxes(createBoxComponent(collisionShape, 0, 0, false));
 
             builder.components(componentsBuilder.build());
 
@@ -724,15 +724,17 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         return mapping;
     }
 
-    private static BoxComponent createBoxComponent(VoxelShape shape) {
-        return createBoxComponent(shape, 0, 0);
-    }
-
     /**
      * Creates a box component from a Java shape, undoing the given variant rotation
      * since Bedrock re-applies it through the transformation component.
+     *
+     * @param shape the Java world-space shape
+     * @param rotX the variant X rotation in degrees
+     * @param rotY the variant Y rotation in degrees
+     * @param mirrorX whether to mirror the X axis. Selection boxes need this, but collision boxes don't
+     * @return the box component
      */
-    private static BoxComponent createBoxComponent(VoxelShape shape, int rotX, int rotY) {
+    private static BoxComponent createBoxComponent(VoxelShape shape, int rotX, int rotY, boolean mirrorX) {
         if (shape.isEmpty()) {
             return BoxComponent.emptyBox();
         }
@@ -767,7 +769,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         maxZ = MathUtils.clamp(maxZ, 0, 1);
 
         return new BoxComponent(
-                16 * (1 - maxX) - 8, // For some odd reason X is mirrored on Bedrock
+                mirrorX ? 16 * (1 - maxX) - 8 : 16 * minX - 8,
                 16 * minY,
                 16 * minZ - 8,
                 16 * (maxX - minX),
