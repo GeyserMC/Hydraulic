@@ -8,7 +8,6 @@ import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.StringRepresentable;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -35,7 +34,6 @@ import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomBlocksEvent;
 import org.geysermc.geyser.level.physics.PistonBehavior;
 import org.geysermc.geyser.util.MathUtils;
 import org.geysermc.hydraulic.Constants;
-import org.geysermc.hydraulic.HydraulicImpl;
 import org.geysermc.hydraulic.item.CreativeMappings;
 import org.geysermc.hydraulic.pack.PackLogListener;
 import org.geysermc.hydraulic.pack.PackModule;
@@ -443,19 +441,6 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                         .stateGroupId(blockId)
                         .pistonBehavior(pistonBehavior.name());
 
-                // TODO Work out if we need to prefix with _item so we can remove InventoryUtilsMixin
-                try {
-                    ItemStack pickItem = state.getCloneItemStack(HydraulicImpl.instance().server().overworld(), BlockPos.ZERO, false);
-                    String itemId = BuiltInRegistries.ITEM.getKey(pickItem.getItem()).toString();
-
-                    // If the method is annotated with `@Environment(EnvType.CLIENT)` then we get air back, so lets ignore that
-                    if (!itemId.equals("minecraft:air")) {
-                        javaBlockStateBuilder.pickItem(itemId);
-                    }
-                } catch (Exception e) {
-                    context.logger().warn("Failed to get pick item for block {}: {}", blockLocation, e.getMessage());
-                }
-
                 /*
                 List<AABB> aabbs = collisionShape.toAabbs();
                 JavaBoundingBox[] bbs = new JavaBoundingBox[aabbs.size()];
@@ -607,7 +592,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 .texture(texture)
                 .renderMethod(renderMethod)
                 .faceDimming(true)
-                .ambientOcclusion(model.ambientOcclusion())
+                .ambientOcclusionExponent(model.ambientOcclusion() ? 1.0f : 0.0f)
                 .tintMethod(tintMethod)
                 .build();
     }
