@@ -174,7 +174,9 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
             Model baseModel = assets.model(Key.key(itemLocation.getNamespace(), "item/" + itemLocation.getPath()));
             if (baseModel == null) {
-                context.logger().warn("Item {} has no item model, skipping", itemLocation);
+                if (!(item instanceof BlockItem)) {
+                    context.logger().warn("Item {} has no item model, skipping", itemLocation);
+                }
                 continue;
             }
 
