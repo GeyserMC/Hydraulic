@@ -4,11 +4,11 @@
   "package": "org.geysermc.hydraulic.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "ext.BlockStateSerializerMixin",
-    "ext.ItemTranslatorMixin",
-    "ext.MinecraftResourcePackReaderImplMixin",
-    "ext.ModelSerializerMixin",
-    "ext.VanillaPackProviderMixin"
+    "creative.BlockStateSerializerMixin",
+    "geyser.ItemTranslatorMixin",
+    "creative.MinecraftResourcePackReaderImplMixin",
+    "creative.ModelSerializerMixin",
+    "converter.VanillaPackProviderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

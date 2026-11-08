@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.mixin.ext;
+package org.geysermc.hydraulic.mixin.creative;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

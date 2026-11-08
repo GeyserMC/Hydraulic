@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.mixin.ext;
+package org.geysermc.hydraulic.mixin.creative;
 
 import com.google.gson.JsonElement;
 import com.google.gson.stream.JsonReader;

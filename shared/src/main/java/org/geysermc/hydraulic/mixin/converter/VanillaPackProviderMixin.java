@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.mixin.ext;
+package org.geysermc.hydraulic.mixin.converter;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;

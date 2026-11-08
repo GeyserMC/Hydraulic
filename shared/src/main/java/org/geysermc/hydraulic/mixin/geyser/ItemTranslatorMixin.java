@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.mixin.ext;
+package org.geysermc.hydraulic.mixin.geyser;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
