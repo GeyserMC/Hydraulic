@@ -198,13 +198,18 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
             CreativeMappings.setupBlock(block, builder);
 
+            // Bedrock uses the first value of each property as the default state (which is
+            // also what the item icon renders), so put the Java default value first
+            BlockState defaultState = block.defaultBlockState();
             for (Property<?> property : block.getStateDefinition().getProperties()) {
                 if (property instanceof IntegerProperty intProperty) {
-                    builder.intProperty(property.getName(), List.copyOf(intProperty.getPossibleValues()));
+                    builder.intProperty(property.getName(), defaultFirst(intProperty, defaultState));
                 } else if (property instanceof BooleanProperty) {
                     builder.booleanProperty(property.getName());
                 } else if (property instanceof EnumProperty<?> enumProperty) {
-                    builder.stringProperty(enumProperty.getName(), enumProperty.getPossibleValues().stream().map(StringRepresentable::getSerializedName).toList());
+                    builder.stringProperty(enumProperty.getName(), defaultFirst(enumProperty, defaultState).stream()
+                            .map(StringRepresentable::getSerializedName)
+                            .toList());
                 } else {
                     throw new IllegalArgumentException("Unknown property type: " + property.getClass().getName());
                 }
@@ -363,7 +368,6 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
             builder.permutations(permutations);
 
-            BlockState defaultState = block.defaultBlockState();
             VoxelShape shape = defaultState.getShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
             VoxelShape collisionShape = defaultState.getCollisionShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
 
@@ -712,6 +716,14 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 16 * (maxY - minY),
                 16 * (maxZ - minZ)
         );
+    }
+
+    private static <T extends Comparable<T>> List<T> defaultFirst(Property<T> property, BlockState state) {
+        T defaultValue = state.getValue(property);
+        List<T> values = new ArrayList<>(property.getPossibleValues());
+        values.remove(defaultValue);
+        values.addFirst(defaultValue);
+        return values;
     }
 
     /**
