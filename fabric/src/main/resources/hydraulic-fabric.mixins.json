@@ -4,7 +4,8 @@
   "package": "org.geysermc.hydraulic.fabric.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "RegistrySyncManagerMixin"
+    "fabric.RegistrySyncManagerMixin",
+    "misc.WorldWeaverJoinCheckTaskMixin"
   ],
   "injectors": {
     "defaultRequire": 1

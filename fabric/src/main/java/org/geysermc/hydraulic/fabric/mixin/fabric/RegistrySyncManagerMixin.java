@@ -1,4 +1,4 @@
-package org.geysermc.hydraulic.fabric.mixin;
+package org.geysermc.hydraulic.fabric.mixin.fabric;
 
 import net.fabricmc.fabric.impl.registry.sync.RegistrySyncManager;
 import net.minecraft.server.MinecraftServer;
