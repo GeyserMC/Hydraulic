@@ -250,13 +250,13 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .identifier(geoName)
                             .build());
 
-                    // TODO: This is not fully correct. On Bedrock, the shape rotates with
-                    //       the block, so the collision box will need to be rotated back here
                     VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
 
-                    componentsBuilder.selectionBox(createBoxComponent(shape));
-                    componentsBuilder.collisionBox(createBoxComponent(collisionShape));
+                    // Bedrock rotates the boxes with the transformation, so convert them in model space
+                    Variant variant = definition.variant();
+                    componentsBuilder.selectionBox(createBoxComponent(shape, variant.x(), variant.y()));
+                    componentsBuilder.collisionBoxes(createBoxComponent(collisionShape, variant.x(), variant.y()));
                 } else {
                     componentsBuilder.geometry(GeometryComponent.builder()
                             .identifier("minecraft:geometry.full_block")
@@ -373,7 +373,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     .destructibleByMining(block.defaultDestroyTime() < 0 ? UNBREAKABLE_DESTROY_TIME : block.defaultDestroyTime()) // TODO: Check
                     // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(createBoxComponent(shape))
-                    .collisionBox(createBoxComponent(collisionShape));
+                    .collisionBoxes(createBoxComponent(collisionShape));
 
             builder.components(componentsBuilder.build());
 
@@ -663,6 +663,14 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     }
 
     private static BoxComponent createBoxComponent(VoxelShape shape) {
+        return createBoxComponent(shape, 0, 0);
+    }
+
+    /**
+     * Creates a box component from a Java shape, undoing the given variant rotation
+     * since Bedrock re-applies it through the transformation component.
+     */
+    private static BoxComponent createBoxComponent(VoxelShape shape, int rotX, int rotY) {
         if (shape.isEmpty()) {
             return BoxComponent.emptyBox();
         }
@@ -673,7 +681,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         float maxX = -5;
         float maxY = -5;
         float maxZ = -5;
-        for (AABB boundingBox : shape.toAabbs()) {
+        for (AABB worldBox : shape.toAabbs()) {
+            AABB boundingBox = unrotate(worldBox, rotX, rotY);
             double offsetX = boundingBox.getXsize() * 0.5;
             double offsetY = boundingBox.getYsize() * 0.5;
             double offsetZ = boundingBox.getZsize() * 0.5;
@@ -703,5 +712,25 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 16 * (maxY - minY),
                 16 * (maxZ - minZ)
         );
+    }
+
+    /**
+     * Applies the inverse of a Java blockstate variant rotation to a box.
+     * Java applies X then Y, so we undo Y first, then X.
+     */
+    private static AABB unrotate(AABB box, int rotX, int rotY) {
+        int yTurns = Math.floorMod(rotY / 90, 4);
+        for (int i = 0; i < yTurns; i++) {
+            // Inverse of Java's Y+90 (x, z) -> (1 - z, x)
+            box = new AABB(box.minZ, box.minY, 1 - box.maxX, box.maxZ, box.maxY, 1 - box.minX);
+        }
+
+        int xTurns = Math.floorMod(rotX / 90, 4);
+        for (int i = 0; i < xTurns; i++) {
+            // Inverse of Java's X+90 (y, z) -> (z, 1 - y)
+            box = new AABB(box.minX, 1 - box.maxZ, box.minY, box.maxX, 1 - box.minZ, box.maxY);
+        }
+
+        return box;
     }
 }
