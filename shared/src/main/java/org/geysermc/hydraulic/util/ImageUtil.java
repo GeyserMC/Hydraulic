@@ -7,6 +7,7 @@ import team.unnamed.creative.base.Writable;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /**
@@ -49,5 +50,47 @@ public class ImageUtil {
         }
 
         return false;
+    }
+
+    /**
+     * Multiplies the colour of every pixel by the given tint, the same way Java applies item tints.
+     *
+     * @param image the image to tint
+     * @param tint the tint colour in RGB, alpha is ignored
+     * @return a new tinted image
+     */
+    @NotNull
+    public static BufferedImage tint(@NotNull BufferedImage image, int tint) {
+        int tintRed = (tint >> 16) & 0xFF;
+        int tintGreen = (tint >> 8) & 0xFF;
+        int tintBlue = tint & 0xFF;
+
+        BufferedImage tinted = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                int argb = image.getRGB(x, y);
+                int red = ((argb >> 16) & 0xFF) * tintRed / 255;
+                int green = ((argb >> 8) & 0xFF) * tintGreen / 255;
+                int blue = (argb & 0xFF) * tintBlue / 255;
+                tinted.setRGB(x, y, (argb & 0xFF000000) | (red << 16) | (green << 8) | blue);
+            }
+        }
+
+        return tinted;
+    }
+
+    /**
+     * Encodes the given image as a PNG.
+     *
+     * @param image the image
+     * @return the PNG bytes, or null if it couldn't be written
+     */
+    public static byte @Nullable [] toPng(@NotNull BufferedImage image) {
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            ImageIO.write(image, "png", output);
+            return output.toByteArray();
+        } catch (IOException e) {
+            return null;
+        }
     }
 }

@@ -19,18 +19,21 @@ import java.util.function.Function;
 public class PackPreProcessContext<T extends PackModule<T>> extends PackContext<T> {
     private final Collection<ResourcePack> packs;
     private final ModelStitcher.Provider modelProvider;
+    private final ResourcePack vanillaPack;
 
     public PackPreProcessContext(
         @NotNull HydraulicImpl hydraulic,
         @NotNull ModInfo mod,
         @NotNull T module,
         @NotNull Collection<ResourcePack> packs,
-        @NotNull ModelStitcher.Provider modelProvider
+        @NotNull ModelStitcher.Provider modelProvider,
+        @NotNull ResourcePack vanillaPack
     ) {
         super(hydraulic, mod, module);
 
         this.packs = packs;
         this.modelProvider = modelProvider;
+        this.vanillaPack = vanillaPack;
     }
 
     /**
@@ -46,6 +49,16 @@ public class PackPreProcessContext<T extends PackModule<T>> extends PackContext<
     @NotNull
     public ModelStitcher.Provider modelProvider() {
         return modelProvider;
+    }
+
+    /**
+     * Gets the stripped Vanilla resource pack, containing models, blockstates and a few textures.
+     *
+     * @return the Vanilla resource pack
+     */
+    @NotNull
+    public ResourcePack vanillaPack() {
+        return vanillaPack;
     }
 
     @NotNull

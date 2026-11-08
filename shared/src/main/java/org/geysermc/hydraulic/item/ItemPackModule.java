@@ -22,15 +22,21 @@ import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.component.ComponentConverter;
 import org.geysermc.hydraulic.util.HydraulicKey;
+import org.geysermc.hydraulic.util.ImageUtil;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.converter.type.model.ModelStitcher;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import team.unnamed.creative.ResourcePack;
 import team.unnamed.creative.item.*;
+import team.unnamed.creative.item.tint.ConstantTintSource;
+import team.unnamed.creative.item.tint.GrassTintSource;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
+import team.unnamed.creative.texture.Texture;
 
+import java.awt.image.BufferedImage;
 import java.util.*;
 
 @AutoService(PackModule.class)
@@ -38,6 +44,8 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
     private final Set<Identifier> itemsWith2dIcon = new LinkedHashSet<>();
     private final Set<Identifier> handheldItems = new LinkedHashSet<>();
     private final Map<String, String> itemBuiltinTexture = new HashMap<>();
+    private final Map<Identifier, Integer> itemTints = new HashMap<>();
+    private BufferedImage grassColormap;
 
     public ItemPackModule() {
         this.listenOn(GeyserDefineCustomItemsEvent.class, this::onDefineCustomItems);
@@ -48,6 +56,21 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
     private void handleModel(@NotNull PackPreProcessContext<ItemPackModule> context, ItemModel itemModel, Identifier itemLocation) {
         if (itemModel instanceof ReferenceItemModel referenceModel) {
+            // Bedrock can't tint item icons, so the tint is baked into the texture instead
+            if (!referenceModel.tints().isEmpty()) {
+                switch (referenceModel.tints().getFirst()) {
+                    case ConstantTintSource constantTint -> itemTints.put(itemLocation, constantTint.tint());
+                    case GrassTintSource grassTint -> {
+                        Integer grassColor = grassColor(context, grassTint.temperature(), grassTint.downfall());
+                        if (grassColor != null) {
+                            itemTints.put(itemLocation, grassColor);
+                        }
+                    }
+                    default -> {
+                    }
+                }
+            }
+
             Key modelKey = referenceModel.model();
             Model model = context.modelProvider().model(modelKey);
             if (model == null) {
@@ -76,6 +99,31 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
         } else if (itemModel instanceof RangeDispatchItemModel rangeDispatchModel) {
             handleModel(context, rangeDispatchModel.fallback(), itemLocation);
         }
+    }
+
+    /**
+     * Gets the grass colour for the given climate from the vanilla grass colormap, the same way Java does.
+     *
+     * @param context the pre-process context
+     * @param temperature the temperature
+     * @param downfall the downfall
+     * @return the grass colour in RGB, or null if the colormap couldn't be read
+     */
+    @Nullable
+    private Integer grassColor(@NotNull PackPreProcessContext<ItemPackModule> context, float temperature, float downfall) {
+        if (grassColormap == null) {
+            Texture texture = context.vanillaPack().texture(Key.key("colormap/grass.png"));
+            grassColormap = texture == null ? null : ImageUtil.read(texture.data());
+            if (grassColormap == null) {
+                return null;
+            }
+        }
+
+        temperature = Math.clamp(temperature, 0, 1);
+        downfall = Math.clamp(downfall, 0, 1) * temperature;
+        int x = (int) ((1 - temperature) * 255);
+        int y = (int) ((1 - downfall) * 255);
+        return grassColormap.getRGB(x, y) & 0xFFFFFF;
     }
 
     private void preProcess(@NotNull PackPreProcessContext<ItemPackModule> context) {
@@ -144,6 +192,19 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
 
             ModelTexture layer0 = layers.getFirst();
             String outputLoc = getOutputFromModel(context, layer0.key()); // TODO: sort this out, layer0.key() can be null, but the method we use doesn't want that
+
+            // Bake the constant tint into the texture
+            Integer tint = itemTints.get(itemLocation);
+            if (tint != null) {
+                Texture texture = assets.texture(Key.key(layer0.key().namespace(), layer0.key().value() + ".png"));
+                BufferedImage image = texture == null ? null : ImageUtil.read(texture.data());
+                byte[] tintedPng = image == null ? null : ImageUtil.toPng(ImageUtil.tint(image, tint));
+                if (tintedPng != null) {
+                    outputLoc = outputLoc.replace(".png", "_tinted.png");
+                    bedrockPack.addExtraFile(tintedPng, outputLoc);
+                }
+            }
+
             bedrockPack.addItemTexture(itemLocation.toString(), outputLoc.replace(".png", ""));
         }
     }

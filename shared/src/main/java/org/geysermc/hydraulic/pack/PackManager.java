@@ -79,6 +79,7 @@ public class PackManager {
 
     private List<ConverterPipeline<?, ?>> packConverters;
     private ModelStitcher.Provider modelProvider;
+    private ResourcePack vanillaPack;
 
     public PackManager(HydraulicImpl hydraulic) {
         this.hydraulic = hydraulic;
@@ -115,18 +116,19 @@ public class PackManager {
                 new PackLogListener(LOGGER)
         );
 
-        modelProvider = createModelProvider(mods, modPacks, this.getVanillaPath());
+        this.vanillaPack = MinecraftResourcePackReader.minecraft().readFromZipFile(this.getVanillaPath());
+        this.modelProvider = createModelProvider(mods, modPacks, this.vanillaPack);
 
         this.packConverters = new ArrayList<>(AssetConverters.converters(hydraulic.isDev()));
         this.packConverters.remove(AssetConverters.MODEL);
         this.packConverters.remove(AssetConverters.MANIFEST);
         this.packConverters.add(AssetConverters.create(
-                new CustomModelConverter(modelProvider),
+                new CustomModelConverter(this.modelProvider),
                 AssetConverters.MODEL,
                 AssetConverters.MODEL
         ));
         this.packConverters.add(AssetConverters.create(
-                new UvLockModelConverter(modelProvider),
+                new UvLockModelConverter(this.modelProvider),
                 AssetConverters.MODEL,
                 AssetConverters.MODEL
         ));
@@ -146,7 +148,7 @@ public class PackManager {
 
                 if (module.hasPreProcessors()) {
                     try {
-                        module.preProcess0(new PackPreProcessContext(this.hydraulic, mod, module, modPacks.get(mod.id()), modelProvider));
+                        module.preProcess0(new PackPreProcessContext(this.hydraulic, mod, module, modPacks.get(mod.id()), this.modelProvider, this.vanillaPack));
                     } catch (Throwable t) {
                         LOGGER.error("Failed to pre-process mod {} for module {}", mod.id(), module.getClass().getSimpleName(), t);
                     }
@@ -296,20 +298,19 @@ public class PackManager {
      * @param modPacks A {@link Map} from mod ID to a {@link List} of {@link ResourcePack}s contained within that mod.
      *                 There may be multiple {@link ResourcePack}s in a mod if there are multiple resource roots for the
      *                 mod.
+     * @param vanillaResourcePack The Vanilla pack.
      * @return A {@link ModelStitcher.Provider} that searches through mods and the Vanilla pack.
      */
     private static ModelStitcher.Provider createModelProvider(
         Collection<ModInfo> mods,
         Map<String, List<ResourcePack>> modPacks,
-        Path vanillaPath
+        ResourcePack vanillaResourcePack
     ) {
         final List<ResourcePack> flattenedPacks = mods.stream()
             .map(ModInfo::id)
             .map(modPacks::get)
             .flatMap(List::stream)
             .toList();
-
-        ResourcePack vanillaResourcePack = MinecraftResourcePackReader.minecraft().readFromZipFile(vanillaPath);
 
         return key -> {
             for (final ResourcePack pack : flattenedPacks) {
