@@ -63,7 +63,6 @@ import team.unnamed.creative.model.ModelTextures;
 import team.unnamed.creative.texture.Texture;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -81,7 +80,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
     private final Set<String> emptyModels = new HashSet<>();
     private final Set<String> bakedModels = new HashSet<>();
-    private final Map<String, ImageUtil.Transparency> textureTransparency = new HashMap<>();
+    private final Map<String, String> renderMethods = new HashMap<>();
 
     public BlockPackModule() {
         this.listenOn(GeyserDefineCustomBlocksEvent.class, this::onDefineCustomBlocks);
@@ -92,6 +91,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
     private void preProcess(@NotNull PackPreProcessContext<BlockPackModule> context) {
         // Track which block textures use transparency, used to pick the render method
+        Map<String, ImageUtil.Transparency> textureTransparency = new HashMap<>();
         for (Texture texture : context.assets(ResourcePack::textures)) {
             if (!texture.key().value().startsWith("block/")) {
                 continue;
@@ -154,11 +154,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             storage.save();
         }
 
-        // Check for empty models
+        // Check for empty models and pick each block's render method
         List<Block> blocks = context.registryValues(BuiltInRegistries.BLOCK);
         DefaultedRegistry<Block> registry = BuiltInRegistries.BLOCK;
         for (Block block : blocks) {
             Identifier blockLocation = registry.getKey(block);
+            Map<BlockState, Model> stateModels = new HashMap<>();
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
                 ModelDefinition definition = getModel(context, blockLocation, state);
                 if (definition == null) {
@@ -167,6 +168,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
                 Model model = definition.model();
                 Key key = model.key();
+                stateModels.put(state, model);
 
                 // Skip unit cube models
                 if (isUnitCube(model.parent())) {
@@ -188,6 +190,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
                 emptyModels.add(key.toString());
             }
+
+            // Bedrock needs every material instance of a block to share one render method, so pick it across all states
+            renderMethods.put(blockLocation.toString(), getRenderMethod(block, stateModels, storage.materials(), textureTransparency));
         }
     }
 
@@ -252,6 +257,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     throw new IllegalArgumentException("Unknown property type: " + property.getClass().getName());
                 }
             }
+
+            String renderMethod = renderMethods.getOrDefault(blockLocation.toString(), "opaque");
 
             List<CustomBlockPermutation> permutations = new ArrayList<>();
             CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
@@ -319,7 +326,6 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
                 Materials materials = context.storage().materials();
                 Materials.Material material = materials.material(key.toString());
-                String renderMethod = getRenderMethod(block, state, model, material);
 
                 if (material != null) {
                     // Add a default texture, can be replaced by the below (I think)
@@ -581,23 +587,42 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     }
 
     /**
-     * Gets the Bedrock render method for a block state from its most transparent texture.
+     * Gets the Bedrock render method for a block from the most transparent texture across all of its states.
+     * <p>
+     * Bedrock requires every material instance of a block to use the same render method,
+     * including across permutations, so this is worked out once per block.
      * @see <a href="https://wiki.bedrock.dev/blocks/block-visuals-intro#render-methods">Render methods</a>
      *
      * @param block the block
-     * @param state the block state
-     * @param model the model for the block state
-     * @param material the material for the model, if any
+     * @param stateModels the model for each block state
+     * @param materials the materials to look up each model's textures in
+     * @param textureTransparency the transparency of each non-opaque block texture
      * @return the render method
      */
-    private String getRenderMethod(@NotNull Block block, @NotNull BlockState state, @NotNull Model model, @Nullable Materials.Material material) {
+    private static String getRenderMethod(@NotNull Block block, @NotNull Map<BlockState, Model> stateModels, @NotNull Materials materials, @NotNull Map<String, ImageUtil.Transparency> textureTransparency) {
         ImageUtil.Transparency transparency = ImageUtil.Transparency.OPAQUE;
+        boolean occludes = true;
+        boolean cross = false;
 
-        if (material != null) {
-            transparency = material.textures().values().stream()
-                .map(texture -> textureTransparency.getOrDefault(texture, ImageUtil.Transparency.OPAQUE))
-                .max(Comparator.naturalOrder())
-                .orElse(ImageUtil.Transparency.OPAQUE);
+        for (Map.Entry<BlockState, Model> entry : stateModels.entrySet()) {
+            // Distance-based methods draw every state opaque far away, so only use them if every state occludes
+            occludes &= entry.getKey().canOcclude();
+
+            Model model = entry.getValue();
+            String parent = model.parent() == null ? null : model.parent().value();
+            cross |= "block/cross".equals(parent) || "block/tinted_cross".equals(parent);
+
+            Materials.Material material = materials.material(model.key().toString());
+            if (material == null) {
+                continue;
+            }
+
+            for (String texture : material.textures().values()) {
+                ImageUtil.Transparency textureValue = textureTransparency.getOrDefault(texture, ImageUtil.Transparency.OPAQUE);
+                if (textureValue.compareTo(transparency) > 0) {
+                    transparency = textureValue;
+                }
+            }
         }
 
         if (transparency == ImageUtil.Transparency.TRANSLUCENT) {
@@ -609,11 +634,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         if (transparency == ImageUtil.Transparency.CUTOUT) {
-            return state.canOcclude() ? "alpha_test_single_sided_to_opaque" : "alpha_test_single_sided"; // E.g. overlays, or plants and doors
+            return occludes ? "alpha_test_single_sided_to_opaque" : "alpha_test_single_sided"; // E.g. overlays, or plants and doors
         }
 
-        String parent = model.parent() == null ? null : model.parent().value();
-        boolean cross = "block/cross".equals(parent) || "block/tinted_cross".equals(parent);
         return cross ? "alpha_test_single_sided" : "opaque";
     }
 
