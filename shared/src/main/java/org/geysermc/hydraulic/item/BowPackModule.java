@@ -8,6 +8,7 @@ import net.minecraft.world.item.BowItem;
 import org.geysermc.hydraulic.pack.PackModule;
 import org.geysermc.hydraulic.pack.TexturePackModule;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
+import org.geysermc.hydraulic.util.HydraulicKey;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
 import org.geysermc.pack.bedrock.resource.attachables.Attachable;
 import org.geysermc.pack.bedrock.resource.attachables.Attachables;
@@ -16,38 +17,38 @@ import org.geysermc.pack.bedrock.resource.attachables.attachable.description.Scr
 import org.geysermc.pack.bedrock.resource.render_controllers.RenderControllers;
 import org.geysermc.pack.bedrock.resource.render_controllers.rendercontrollers.Arrays;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import team.unnamed.creative.ResourcePack;
-import team.unnamed.creative.model.ItemOverride;
-import team.unnamed.creative.model.ItemPredicate;
+import team.unnamed.creative.item.ConditionItemModel;
+import team.unnamed.creative.item.Item;
+import team.unnamed.creative.item.ItemModel;
+import team.unnamed.creative.item.RangeDispatchItemModel;
+import team.unnamed.creative.item.ReferenceItemModel;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @AutoService(PackModule.class)
 public class BowPackModule extends TexturePackModule<BowPackModule> {
-    private static final Map<String, String> ATTACHABLE_MATERIALS = new HashMap<>() {
-        {
-            put("default", "entity_alphatest");
-            put("enchanted", "entity_alphatest_glint");
-        }
-    };
-    private static final Map<String, String> ATTACHABLE_GEOMETRY = new HashMap<>() {
-        {
-            put("default", "geometry.bow_standby");
-            put("bow_pulling_0", "geometry.bow_pulling_0");
-            put("bow_pulling_1", "geometry.bow_pulling_1");
-            put("bow_pulling_2", "geometry.bow_pulling_2");
-        }
-    };
-    private static final Map<String, String> ATTACHABLE_ANIMATIONS = new HashMap<>() {
-        {
-            put("wield", "animation.bow.wield");
-            put("wield_first_person_pull", "animation.bow.wield_first_person_pull");
-        }
-    };
+    private static final Map<String, String> ATTACHABLE_MATERIALS = Map.of(
+            "default", "entity_alphatest",
+            "enchanted", "entity_alphatest_glint"
+    );
+    private static final Map<String, String> ATTACHABLE_GEOMETRY = Map.of(
+            "default", "geometry.bow_standby",
+            "bow_pulling_0", "geometry.bow_pulling_0",
+            "bow_pulling_1", "geometry.bow_pulling_1",
+            "bow_pulling_2", "geometry.bow_pulling_2"
+    );
+    private static final Map<String, String> ATTACHABLE_ANIMATIONS = Map.of(
+            "wield", "animation.bow.wield",
+            "wield_first_person_pull", "animation.bow.wield_first_person_pull"
+    );
     private static final Scripts ATTACHABLE_SCRIPTS = new Scripts();
 
     static {
@@ -72,71 +73,61 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
         BedrockResourcePack bedrockPack = context.bedrockResourcePack();
 
         List<BowItem> bowItems = context.registryValues(BuiltInRegistries.ITEM).stream()
-                .filter(item -> item instanceof BowItem)
-                .map(item -> (BowItem) item)
+                .filter(BowItem.class::isInstance)
+                .map(BowItem.class::cast)
                 .toList();
 
         context.logger().info("Bows to convert: " + bowItems.size() + " in mod " + context.mod().id());
 
         for (BowItem bowItem : bowItems) {
             Identifier bowLocation = BuiltInRegistries.ITEM.getKey(bowItem);
-            Map<String, String> textures = new HashMap<>() {
-                {
-                    put("enchanted", "textures/misc/enchanted_item_glint");
-                }
-            };
 
-            Model model = assets.model(Key.key(bowLocation.getNamespace(), "item/" + bowLocation.getPath()));
-            if (model == null) {
-                context.logger().warn("Bow {} has no model, skipping", bowLocation);
+            // Bow item definitions are a condition on using_item, with the pulling
+            // frames as a range dispatch on use_duration when the bow is in use
+            Item item = assets.item(HydraulicKey.of(bowLocation));
+            if (item == null
+                    || !(item.model() instanceof ConditionItemModel conditionModel)
+                    || !(conditionModel.onFalse() instanceof ReferenceItemModel standbyModel)
+                    || !(conditionModel.onTrue() instanceof RangeDispatchItemModel pullingModel)) {
+                context.logger().warn("Bow {} has an unsupported item definition, skipping", bowLocation);
                 continue;
             }
 
-            List<ModelTexture> layers = model.textures().layers();
-            if (layers == null || layers.isEmpty()) {
+            String defaultTexture = getTextureFromModel(context, assets, standbyModel.model());
+            if (defaultTexture == null) {
                 context.logger().warn("Bow {} has no layer0 texture, skipping", bowLocation);
                 continue;
             }
 
-            ModelTexture layer0 = layers.getFirst();
-            String defaultOutputLoc = getOutputFromModel(context, layer0.key()).replace(".png", "");
+            Map<String, String> textures = new HashMap<>();
+            textures.put("enchanted", "textures/misc/enchanted_item_glint");
+            textures.put("default", defaultTexture);
 
-            textures.put("default", defaultOutputLoc);
+            List<ItemModel> pullingFrames = new ArrayList<>();
+            pullingFrames.add(pullingModel.fallback());
+            pullingModel.entries().stream()
+                    .sorted(Comparator.comparingDouble(RangeDispatchItemModel.Entry::threshold))
+                    .map(RangeDispatchItemModel.Entry::model)
+                    .forEach(pullingFrames::add);
 
-            for (ItemOverride override : model.overrides()) {
-                Model pullingModel = assets.model(override.model());
-                if (pullingModel == null) {
-                    context.logger().warn("Bow pulling model {} has no model, skipping", override.model());
+            // The attachable only has 3 pulling frames, any extra frames are ignored
+            // TODO Support more than 3? Not aware of any bows that have more than 3 pulling frames
+            for (int i = 0; i < Math.min(pullingFrames.size(), 3); i++) {
+                if (!(pullingFrames.get(i) instanceof ReferenceItemModel frameModel)) {
                     continue;
                 }
 
-                List<ModelTexture> pullingLayers = pullingModel.textures().layers();
-                if (pullingLayers == null || pullingLayers.isEmpty()) {
-                    context.logger().warn("Bow pulling model {} has no layer0 texture, skipping", override.model());
+                String frameTexture = getTextureFromModel(context, assets, frameModel.model());
+                if (frameTexture == null) {
+                    context.logger().warn("Bow pulling model {} has no layer0 texture, skipping", frameModel.model());
                     continue;
                 }
 
-                ModelTexture pullingLayer0 = pullingLayers.getFirst();
-                String outputLoc = getOutputFromModel(context, pullingLayer0.key()).replace(".png", "");
-
-                Map<String, Float> predicate = new HashMap<>();
-                for (ItemPredicate itemPredicate : override.predicate()) {
-                    if (itemPredicate.value() instanceof Number number) {
-                        predicate.put(itemPredicate.name(), number.floatValue());
-                    }
-                }
-
-                if (!predicate.containsKey("pull") || predicate.get("pull") == 0f) {
-                    textures.put("bow_pulling_0", outputLoc);
-                } else if (predicate.get("pull") == 0.65f) {
-                    textures.put("bow_pulling_1", outputLoc);
-                } else if (predicate.get("pull") == 0.9f) {
-                    textures.put("bow_pulling_2", outputLoc);
-                }
+                textures.put("bow_pulling_" + i, frameTexture);
             }
 
-            Attachables armorAttachable = new Attachables();
-            armorAttachable.formatVersion("1.10.0");
+            Attachables bowAttachable = new Attachables();
+            bowAttachable.formatVersion("1.10.0");
 
             Description description = new Description();
             description.identifier(bowLocation.toString());
@@ -150,9 +141,9 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
 
             Attachable attachable = new Attachable();
             attachable.description(description);
-            armorAttachable.attachable(attachable);
+            bowAttachable.attachable(attachable);
 
-            bedrockPack.addAttachable(armorAttachable, "attachables/" + bowLocation.getPath() + ".json");
+            bedrockPack.addAttachable(bowAttachable, "attachables/" + bowLocation.getPath() + ".json");
         }
 
         RenderControllers renderController = new RenderControllers();
@@ -184,6 +175,21 @@ public class BowPackModule extends TexturePackModule<BowPackModule> {
 
         renderController.renderControllers().put("controller.render.bow_custom", bowCustomRenderController);
         bedrockPack.addRenderController(renderController, "render_controllers/bow_custom.render_controllers.json");
+    }
+
+    @Nullable
+    private String getTextureFromModel(@NotNull PackPostProcessContext<BowPackModule> context, @NotNull ResourcePack assets, @NotNull Key modelKey) {
+        Model model = assets.model(modelKey);
+        if (model == null) {
+            return null;
+        }
+
+        List<ModelTexture> layers = model.textures().layers();
+        if (layers.isEmpty()) {
+            return null;
+        }
+
+        return getOutputFromModel(context, layers.getFirst().key()).replace(".png", "");
     }
 
     @Override
