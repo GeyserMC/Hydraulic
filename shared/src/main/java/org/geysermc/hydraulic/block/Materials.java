@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents data relating to Materials.
@@ -46,14 +47,26 @@ public class Materials {
 
     public static class Material {
         private final Map<String, String> textures;
+        private final Set<String> tints;
 
-        public Material(@NotNull Map<String, String> textures) {
+        public Material(@NotNull Map<String, String> textures, @NotNull Set<String> tints) {
             this.textures = textures;
+            this.tints = tints;
         }
 
         @NotNull
         public Map<String, String> textures() {
             return this.textures;
+        }
+
+        /**
+         * Checks if the given texture variable is tinted.
+         *
+         * @param texture the texture variable, EG {@code all} or {@code side}
+         * @return true if the texture is tinted
+         */
+        public boolean tinted(@NotNull String texture) {
+            return this.tints != null && this.tints.contains(texture);
         }
     }
 }

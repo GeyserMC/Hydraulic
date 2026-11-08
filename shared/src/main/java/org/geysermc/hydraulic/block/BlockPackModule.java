@@ -10,7 +10,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.TintedParticleLeavesBlock;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -44,6 +44,7 @@ import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.storage.ModStorage;
+import org.geysermc.hydraulic.util.ImageUtil;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.util.SingletonBlockGetter;
 import org.geysermc.pack.bedrock.resource.BedrockResourcePack;
@@ -56,6 +57,8 @@ import team.unnamed.creative.blockstate.MultiVariant;
 import team.unnamed.creative.blockstate.Selector;
 import team.unnamed.creative.blockstate.Variant;
 import team.unnamed.creative.metadata.animation.AnimationMeta;
+import team.unnamed.creative.model.Element;
+import team.unnamed.creative.model.ElementFace;
 import team.unnamed.creative.model.Model;
 import team.unnamed.creative.model.ModelTexture;
 import team.unnamed.creative.model.ModelTextures;
@@ -79,6 +82,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
     private final Set<String> emptyModels = new HashSet<>();
     private final Set<String> bakedModels = new HashSet<>();
+    private final Set<String> transparentTextures = new HashSet<>();
 
     public BlockPackModule() {
         this.listenOn(GeyserDefineCustomBlocksEvent.class, this::onDefineCustomBlocks);
@@ -88,6 +92,13 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     }
 
     private void preProcess(@NotNull PackPreProcessContext<BlockPackModule> context) {
+        // Track textures with transparent pixels, as Bedrock needs to use alpha testing for those blocks to render correctly
+        for (Texture texture : context.assets(ResourcePack::textures)) {
+            if (texture.key().value().startsWith("block/") && ImageUtil.hasTransparency(texture.data())) {
+                transparentTextures.add(texture.key().toString().replace(".png", ""));
+            }
+        }
+
         for (var blockState : context.assets(ResourcePack::blockStates)) {
             this.blockStates.put(blockState.key().toString(), new StateDefinition(blockState, context.modelProvider()));
         }
@@ -116,7 +127,22 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     textures.put(entry.getKey(), modelTexture.key().toString());
                 }
 
-                Materials.Material material = new Materials.Material(textures);
+                Set<String> tinted = new HashSet<>();
+                for (Element element : stitchedModel.elements()) {
+                    for (ElementFace face : element.faces().values()) {
+                        if (face.tintIndex() == ElementFace.DEFAULT_TINT_INDEX) {
+                            continue;
+                        }
+
+                        // Remove the # from the texture name if it exists
+                        String texture = face.texture();
+                        texture = texture.startsWith("#") ? texture.substring(1) : texture;
+
+                        markTinted(modelTextures, texture, tinted);
+                    }
+                }
+
+                Materials.Material material = new Materials.Material(textures, tinted);
                 materials.addMaterial(model.key().toString(), material);
             }
 
@@ -288,32 +314,29 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 // https://wiki.bedrock.dev/blocks/block-components.html#render-methods
                 String renderMethod = state.canOcclude() ? "opaque" : "blend";
 
+                // Tint colours are registered client side, so guess based on the block type
+                String tintMethod = block instanceof LeavesBlock ? "default_foliage" : "grass";
+
                 // If the model is a cross block (EG a flower), we need to use alpha_test_single_sided
                 if (model.parent() != null && model.parent().value().equals("block/cross")) {
                     renderMethod = "alpha_test_single_sided";
                 }
 
-                String tintMethod = null;
-                // TODO Read this from the model data
-                if (block instanceof TintedParticleLeavesBlock) {
-                    tintMethod = "default_foliage";
-                }
-
                 Materials materials = context.storage().materials();
                 Materials.Material material = materials.material(key.toString());
+
+                // Opaque blocks with transparent textures (e.g. overlays) need alpha testing, or the transparent pixels render black
+                if (renderMethod.equals("opaque") && material != null && material.textures().values().stream().anyMatch(transparentTextures::contains)) {
+                    renderMethod = "alpha_test";
+                }
+
                 if (material != null) {
                     // Add a default texture, can be replaced by the below (I think)
                     Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
 
                     String name = PackUtil.getTextureName(firstEntry.getValue());
 
-                    componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(name)
-                            .renderMethod(renderMethod)
-                            .faceDimming(true)
-                            .ambientOcclusion(model.ambientOcclusion())
-                            .tintMethod(tintMethod)
-                            .build());
+                    componentsBuilder.materialInstance("*", createMaterialInstance(name, renderMethod, model, material.tinted(firstEntry.getKey()) ? tintMethod : null));
 
                     Map<String, String> faceMapping = getFaceMapping(model.parent());
                     if (!faceMapping.isEmpty()) {
@@ -322,13 +345,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
                             String textureName = PackUtil.getTextureName(material.textures().get(face.getValue()));
 
-                            componentsBuilder.materialInstance(face.getKey(), MaterialInstance.builder()
-                                    .texture(textureName)
-                                    .renderMethod(renderMethod)
-                                    .faceDimming(true)
-                                    .ambientOcclusion(model.ambientOcclusion())
-                                    .tintMethod(tintMethod)
-                                    .build());
+                            componentsBuilder.materialInstance(face.getKey(), createMaterialInstance(textureName, renderMethod, model, material.tinted(face.getValue()) ? tintMethod : null));
                         }
                     } else {
                         for (Map.Entry<String, String> entry : material.textures().entrySet()) {
@@ -339,23 +356,11 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                                 materialKey = "*";
                             }
 
-                            componentsBuilder.materialInstance(materialKey, MaterialInstance.builder()
-                                    .texture(PackUtil.getTextureName(entry.getValue()))
-                                    .renderMethod(renderMethod)
-                                    .faceDimming(true)
-                                    .ambientOcclusion(model.ambientOcclusion())
-                                    .tintMethod(tintMethod)
-                                    .build());
+                            componentsBuilder.materialInstance(materialKey, createMaterialInstance(PackUtil.getTextureName(entry.getValue()), renderMethod, model, material.tinted(entry.getKey()) ? tintMethod : null));
                         }
                     }
                 } else {
-                    componentsBuilder.materialInstance("*", MaterialInstance.builder()
-                            .texture(PackUtil.getTextureName(key.toString()))
-                            .renderMethod(renderMethod)
-                            .faceDimming(true)
-                            .ambientOcclusion(model.ambientOcclusion())
-                            .tintMethod(tintMethod)
-                            .build());
+                    componentsBuilder.materialInstance("*", createMaterialInstance(PackUtil.getTextureName(key.toString()), renderMethod, model, null));
                     context.logger().warn("Could not find material for block {}", key);
                 }
 
@@ -595,6 +600,28 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         return null;
+    }
+
+    private static MaterialInstance createMaterialInstance(@NotNull String texture, @NotNull String renderMethod, @NotNull Model model, @Nullable String tintMethod) {
+        return MaterialInstance.builder()
+                .texture(texture)
+                .renderMethod(renderMethod)
+                .faceDimming(true)
+                .ambientOcclusion(model.ambientOcclusion())
+                .tintMethod(tintMethod)
+                .build();
+    }
+
+    private static void markTinted(@NotNull Map<String, ModelTexture> textures, @NotNull String key, @NotNull Set<String> tinted) {
+        if (!tinted.add(key)) {
+            return;
+        }
+
+        // Texture references the value of another texture
+        ModelTexture value = textures.get(key);
+        if (value != null && value.reference() != null) {
+            markTinted(textures, value.reference(), tinted);
+        }
     }
 
     @Nullable
