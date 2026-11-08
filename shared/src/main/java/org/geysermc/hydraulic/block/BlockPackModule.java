@@ -392,8 +392,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
                     .displayName("%" + block.getDescriptionId())
                     .friction(Math.min(1 - block.getFriction(), 0.9f))
+                    .lightDampening(defaultState.getLightDampening())
                     .destructibleByMining(block.defaultDestroyTime() < 0 ? UNBREAKABLE_DESTROY_TIME : block.defaultDestroyTime()) // TODO: Check
-                    // .unitCube(true) // TODO: Geometry conversion
                     .selectionBox(createBoxComponent(shape, 0, 0, true))
                     .collisionBoxes(createBoxComponent(collisionShape, 0, 0, false));
 
