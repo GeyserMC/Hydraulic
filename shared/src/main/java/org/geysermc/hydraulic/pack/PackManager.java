@@ -18,6 +18,7 @@ import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.pack.converter.CustomModelConverter;
+import org.geysermc.hydraulic.pack.converter.UvLockModelConverter;
 import org.geysermc.hydraulic.pack.modules.MetadataPackModule;
 import org.geysermc.hydraulic.platform.mod.ModInfo;
 import org.geysermc.pack.converter.PackConverter;
@@ -121,6 +122,11 @@ public class PackManager {
         this.packConverters.remove(AssetConverters.MANIFEST);
         this.packConverters.add(AssetConverters.create(
                 new CustomModelConverter(modelProvider),
+                AssetConverters.MODEL,
+                AssetConverters.MODEL
+        ));
+        this.packConverters.add(AssetConverters.create(
+                new UvLockModelConverter(modelProvider),
                 AssetConverters.MODEL,
                 AssetConverters.MODEL
         ));

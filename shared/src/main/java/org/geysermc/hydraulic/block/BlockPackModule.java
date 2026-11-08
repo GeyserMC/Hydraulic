@@ -78,6 +78,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
     private final Set<String> emptyModels = new HashSet<>();
+    private final Set<String> bakedModels = new HashSet<>();
 
     public BlockPackModule() {
         this.listenOn(GeyserDefineCustomBlocksEvent.class, this::onDefineCustomBlocks);
@@ -142,8 +143,15 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     continue;
                 }
 
-                // Check if the model is empty
                 Model stitchedModel = new ModelStitcher(context.modelProvider(), model, new PackLogListener(context.logger())).stitch();
+
+                // Track which uvlocked variants get baked geometry (generated in CustomModelConverter)
+                Variant variant = definition.variant();
+                if (UvLockBaker.needsBaking(variant) && UvLockBaker.canBake(stitchedModel)) {
+                    bakedModels.add(UvLockBaker.bakedKey(key, variant.x(), variant.y()).toString());
+                }
+
+                // Check if the model is empty
                 if (!stitchedModel.elements().isEmpty()) {
                     continue;
                 }
@@ -226,10 +234,19 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 Model model = definition.model();
                 Key key = model.key();
 
+                // Uvlocked variants use geometry with the rotation already baked in, as rotating
+                // with the transformation would also rotate the textures. See UvLockBaker
+                Variant variant = definition.variant();
+                Key bakedKey = UvLockBaker.bakedKey(key, variant.x(), variant.y());
+                boolean baked = !isUnitCube(model.parent()) && bakedModels.contains(bakedKey.toString());
+                Key geometryKey = baked ? bakedKey : key;
+                int rotX = baked ? 0 : variant.x();
+                int rotY = baked ? 0 : variant.y();
+
                 CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
                         .transformation(new TransformationComponent(
-                            (360 - definition.variant().x()) % 360, // Rotation X
-                            (360 - definition.variant().y()) % 360, // Rotation Y
+                            (360 - rotX) % 360, // Rotation X
+                            (360 - rotY) % 360, // Rotation Y
                             0, // Rotation Z
                             1, // Scale X
                             1, // Scale Y
@@ -240,8 +257,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                         ));
 
                 if (!isUnitCube(model.parent())) {
-                    String namespace = key.namespace();
-                    String value = key.value();
+                    String namespace = geometryKey.namespace();
+                    String value = geometryKey.value();
 
                     String geoKey = value.substring(value.lastIndexOf('/') + 1);
                     String geoName = "geometry." + (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + geoKey;
@@ -259,9 +276,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
 
                     // Bedrock rotates the boxes with the transformation, so convert them in model space
-                    Variant variant = definition.variant();
-                    componentsBuilder.selectionBox(createBoxComponent(shape, variant.x(), variant.y()));
-                    componentsBuilder.collisionBoxes(createBoxComponent(collisionShape, variant.x(), variant.y()));
+                    componentsBuilder.selectionBox(createBoxComponent(shape, rotX, rotY));
+                    componentsBuilder.collisionBoxes(createBoxComponent(collisionShape, rotX, rotY));
                 } else {
                     componentsBuilder.geometry(GeometryComponent.builder()
                             .identifier("minecraft:geometry.full_block")
