@@ -63,6 +63,7 @@ import team.unnamed.creative.model.ModelTextures;
 import team.unnamed.creative.texture.Texture;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -80,7 +81,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     private final Map<String, StateDefinition> blockStates = new HashMap<>();
     private final Set<String> emptyModels = new HashSet<>();
     private final Set<String> bakedModels = new HashSet<>();
-    private final Set<String> transparentTextures = new HashSet<>();
+    private final Map<String, ImageUtil.Transparency> textureTransparency = new HashMap<>();
 
     public BlockPackModule() {
         this.listenOn(GeyserDefineCustomBlocksEvent.class, this::onDefineCustomBlocks);
@@ -90,10 +91,15 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
     }
 
     private void preProcess(@NotNull PackPreProcessContext<BlockPackModule> context) {
-        // Track textures with transparent pixels, as Bedrock needs to use alpha testing for those blocks to render correctly
+        // Track which block textures use transparency, used to pick the render method
         for (Texture texture : context.assets(ResourcePack::textures)) {
-            if (texture.key().value().startsWith("block/") && ImageUtil.hasTransparency(texture.data())) {
-                transparentTextures.add(texture.key().toString().replace(".png", ""));
+            if (!texture.key().value().startsWith("block/")) {
+                continue;
+            }
+
+            ImageUtil.Transparency transparency = ImageUtil.transparency(texture.data());
+            if (transparency != ImageUtil.Transparency.OPAQUE) {
+                textureTransparency.put(texture.key().toString().replace(".png", ""), transparency);
             }
         }
 
@@ -308,25 +314,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .build());
                 }
 
-                // TODO: Work this out based on block state/texture? as this isn't perfect
-                // https://wiki.bedrock.dev/blocks/block-components.html#render-methods
-                String renderMethod = state.canOcclude() ? "opaque" : "blend";
-
                 // Tint colours are registered client side, so guess based on the block type
                 String tintMethod = block instanceof LeavesBlock ? "default_foliage" : "grass";
 
-                // If the model is a cross block (EG a flower), we need to use alpha_test_single_sided
-                if (model.parent() != null && model.parent().value().equals("block/cross")) {
-                    renderMethod = "alpha_test_single_sided";
-                }
-
                 Materials materials = context.storage().materials();
                 Materials.Material material = materials.material(key.toString());
-
-                // Opaque blocks with transparent textures (e.g. overlays) need alpha testing, or the transparent pixels render black
-                if (renderMethod.equals("opaque") && material != null && material.textures().values().stream().anyMatch(transparentTextures::contains)) {
-                    renderMethod = "alpha_test";
-                }
+                String renderMethod = getRenderMethod(block, state, model, material);
 
                 if (material != null) {
                     // Add a default texture, can be replaced by the below (I think)
@@ -585,6 +578,43 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         return null;
+    }
+
+    /**
+     * Gets the Bedrock render method for a block state from its most transparent texture.
+     * @see <a href="https://wiki.bedrock.dev/blocks/block-visuals-intro#render-methods">Render methods</a>
+     *
+     * @param block the block
+     * @param state the block state
+     * @param model the model for the block state
+     * @param material the material for the model, if any
+     * @return the render method
+     */
+    private String getRenderMethod(@NotNull Block block, @NotNull BlockState state, @NotNull Model model, @Nullable Materials.Material material) {
+        ImageUtil.Transparency transparency = ImageUtil.Transparency.OPAQUE;
+
+        if (material != null) {
+            transparency = material.textures().values().stream()
+                .map(texture -> textureTransparency.getOrDefault(texture, ImageUtil.Transparency.OPAQUE))
+                .max(Comparator.naturalOrder())
+                .orElse(ImageUtil.Transparency.OPAQUE);
+        }
+
+        if (transparency == ImageUtil.Transparency.TRANSLUCENT) {
+            return "blend";
+        }
+
+        if (block instanceof LeavesBlock) {
+            return "alpha_test_to_opaque";
+        }
+
+        if (transparency == ImageUtil.Transparency.CUTOUT) {
+            return state.canOcclude() ? "alpha_test_single_sided_to_opaque" : "alpha_test_single_sided"; // E.g. overlays, or plants and doors
+        }
+
+        String parent = model.parent() == null ? null : model.parent().value();
+        boolean cross = "block/cross".equals(parent) || "block/tinted_cross".equals(parent);
+        return cross ? "alpha_test_single_sided" : "opaque";
     }
 
     private static MaterialInstance createMaterialInstance(@NotNull String texture, @NotNull String renderMethod, @NotNull Model model, @Nullable String tintMethod) {

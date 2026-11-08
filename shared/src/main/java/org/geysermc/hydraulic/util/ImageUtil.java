@@ -30,26 +30,59 @@ public class ImageUtil {
     }
 
     /**
-     * Checks if the given image data has any pixels that aren't fully opaque.
+     * Works out how the given image uses transparency.
+     * <p>
+     * An image only counts as translucent if at least a quarter of its visible pixels
+     * are semi-transparent, so a few anti-aliased edges don't make a cutout texture translucent.
      *
      * @param data the image data, EG a texture
-     * @return true if the image has transparent pixels
+     * @return the transparency of the image
      */
-    public static boolean hasTransparency(@NotNull Writable data) {
+    @NotNull
+    public static Transparency transparency(@NotNull Writable data) {
         BufferedImage image = read(data);
         if (image == null || !image.getColorModel().hasAlpha()) {
-            return false;
+            return Transparency.OPAQUE;
         }
 
+        int visible = 0;
+        int semiTransparent = 0;
+        boolean transparent = false;
         for (int y = 0; y < image.getHeight(); y++) {
             for (int x = 0; x < image.getWidth(); x++) {
-                if ((image.getRGB(x, y) >>> 24) < 255) {
-                    return true;
+                int alpha = image.getRGB(x, y) >>> 24;
+                if (alpha == 0) {
+                    transparent = true;
+                    continue;
+                }
+
+                visible++;
+                if (alpha < 255) {
+                    semiTransparent++;
                 }
             }
         }
 
-        return false;
+        if (semiTransparent > 0 && semiTransparent * 4 >= visible) {
+            return Transparency.TRANSLUCENT;
+        }
+
+        return transparent || semiTransparent > 0 ? Transparency.CUTOUT : Transparency.OPAQUE;
+    }
+
+    public enum Transparency {
+        /**
+         * Every pixel is fully opaque.
+         */
+        OPAQUE,
+        /**
+         * Pixels are either fully opaque or fully transparent, EG leaves or plants.
+         */
+        CUTOUT,
+        /**
+         * Pixels are semi-transparent, EG stained glass or ice.
+         */
+        TRANSLUCENT
     }
 
     /**
