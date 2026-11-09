@@ -6,6 +6,7 @@
   "mixins": [
     "creative.BlockStateSerializerMixin",
     "geyser.ItemTranslatorMixin",
+    "geyser.MinecraftTypesMixin",
     "creative.MinecraftResourcePackReaderImplMixin",
     "creative.ModelSerializerMixin",
     "converter.VanillaPackProviderMixin"
