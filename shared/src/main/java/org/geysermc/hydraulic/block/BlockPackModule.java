@@ -274,6 +274,10 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
             String renderMethod = renderMethods.getOrDefault(blockLocation.toString(), "opaque");
 
+            // Calculate the base selection and collision boxes for the block
+            BoxComponent baseSelectionBox = createBoxComponent(defaultState.getShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO), 0, 0, true);
+            BoxComponent baseCollisionBox = createBoxComponent(defaultState.getCollisionShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO), 0, 0, false);
+
             List<CustomBlockPermutation> permutations = new ArrayList<>();
             CustomBlockComponents.Builder baseComponentBuilder = CustomBlockComponents.builder();
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
@@ -328,17 +332,20 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     componentsBuilder.geometry(GeometryComponent.builder()
                             .identifier(geoName)
                             .build());
-
-                    VoxelShape shape = state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO);
-                    VoxelShape collisionShape = state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO);
-
-                    // Bedrock rotates the boxes with the transformation, so convert them in model space
-                    componentsBuilder.selectionBox(createBoxComponent(shape, rotX, rotY, true));
-                    componentsBuilder.collisionBoxes(createBoxComponent(collisionShape, rotX, rotY, false));
                 } else {
                     componentsBuilder.geometry(GeometryComponent.builder()
                             .identifier("minecraft:geometry.full_block")
                             .build());
+                }
+
+                // Only override the base boxes when this state's differ
+                BoxComponent selectionBox = createBoxComponent(state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO), rotX, rotY, true);
+                BoxComponent collisionBox = createBoxComponent(state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO), rotX, rotY, false);
+                if (!selectionBox.equals(baseSelectionBox)) {
+                    componentsBuilder.selectionBox(selectionBox);
+                }
+                if (!collisionBox.equals(baseCollisionBox)) {
+                    componentsBuilder.collisionBoxes(collisionBox);
                 }
 
                 // Tint colours are registered client side, so guess based on the block type
@@ -406,16 +413,13 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
 
             builder.permutations(permutations);
 
-            VoxelShape shape = defaultState.getShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
-            VoxelShape collisionShape = defaultState.getCollisionShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO);
-
             CustomBlockComponents.Builder componentsBuilder = baseComponentBuilder
                     .displayName("%" + block.getDescriptionId())
                     .friction(Math.min(1 - block.getFriction(), 0.9f))
                     .lightDampening(defaultState.getLightDampening())
                     .destructibleByMining(block.defaultDestroyTime() < 0 ? UNBREAKABLE_DESTROY_TIME : block.defaultDestroyTime()) // TODO: Check
-                    .selectionBox(createBoxComponent(shape, 0, 0, true))
-                    .collisionBoxes(createBoxComponent(collisionShape, 0, 0, false));
+                    .selectionBox(baseSelectionBox)
+                    .collisionBoxes(baseCollisionBox);
 
             builder.components(componentsBuilder.build());
 
