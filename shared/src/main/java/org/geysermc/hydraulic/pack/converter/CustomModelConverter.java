@@ -1,5 +1,6 @@
 package org.geysermc.hydraulic.pack.converter;
 
+import org.geysermc.hydraulic.block.DefaultUvs;
 import org.geysermc.pack.converter.pipeline.AssetExtractor;
 import org.geysermc.pack.converter.pipeline.ExtractionContext;
 import org.geysermc.pack.converter.type.model.ModelStitcher;
@@ -19,6 +20,7 @@ public class CustomModelConverter implements AssetExtractor<Model> {
     public Collection<Model> extract(ResourcePack pack, ExtractionContext context) {
         return pack.models().stream()
                 .map(model -> new ModelStitcher(this.modelProvider, model, context.logListener()).stitch())
+                .map(model -> model == null ? null : DefaultUvs.fill(model)) // Fill in UVs that are missing and Java would default
                 .toList();
     }
 }

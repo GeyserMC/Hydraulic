@@ -19,24 +19,27 @@ import java.util.Map;
 /**
  * Bakes the rotation of {@code uvlock} blockstate variants into a new model.
  * <p>
- * Bedrock has no uvlock, so rotating with the transformation component also rotates
- * the textures. Instead the rotation is applied to the elements and their default UVs
- * are recalculated from the rotated positions, matching what uvlock does on Java.
+ * Bedrock has no uvlock, so rotating with the transformation component would also rotate
+ * the textures. Instead the elements are rotated and their default UVs are recalculated
+ * from the rotated bounds, which matches what uvlock does on Java.
  */
 public final class UvLockBaker {
     private static final Vector3Float BLOCK_CENTER = new Vector3Float(8, 8, 8);
     private static final float UV_TOLERANCE = 0.0001f;
 
     /**
+     * Checks whether a variant needs a baked model.
+     *
      * @param variant the variant
-     * @return whether the variant is uvlocked and rotated
+     * @return whether the variant is both uvlocked and rotated
      */
     public static boolean needsBaking(@NotNull Variant variant) {
         return variant.uvLock() && (Math.floorMod(variant.x(), 360) != 0 || Math.floorMod(variant.y(), 360) != 0);
     }
 
     /**
-     * Elements with their own rotation aren't supported, so those models keep using the transformation.
+     * Checks whether a model can be baked. Models with rotated elements aren't
+     * supported, so they keep using the transformation component instead.
      *
      * @param model the stitched model
      * @return whether the model can be baked
@@ -46,7 +49,7 @@ public final class UvLockBaker {
     }
 
     /**
-     * Gets the key of the baked model for the given model and rotation.
+     * Gets the key of the baked model for a model and rotation.
      *
      * @param model the original model key
      * @param x the variant X rotation
@@ -59,12 +62,12 @@ public final class UvLockBaker {
     }
 
     /**
-     * Bakes the variant rotation into the given model, recalculating default UVs so they stay locked.
+     * Bakes a variant rotation into a model, recalculating default UVs so the textures stay locked.
      *
      * @param model the stitched model
      * @param x the variant X rotation
      * @param y the variant Y rotation
-     * @return the model with the rotation baked in, or null if it can't be baked
+     * @return the baked model, or null if the model can't be baked
      */
     @Nullable
     public static Model bake(@NotNull Model model, int x, int y) {
@@ -83,16 +86,20 @@ public final class UvLockBaker {
             Vector3Float to = new Vector3Float(Math.max(a.x(), b.x()), Math.max(a.y(), b.y()), Math.max(a.z(), b.z()));
 
             Map<CubeFace, ElementFace> faces = new EnumMap<>(CubeFace.class);
-            element.faces().forEach((direction, face) -> {
+            for (Map.Entry<CubeFace, ElementFace> entry : element.faces().entrySet()) {
+                CubeFace direction = entry.getKey();
+                ElementFace face = entry.getValue();
                 CubeFace rotatedDirection = rotate(direction, xTurns, yTurns);
                 CubeFace cullFace = face.cullFace() == null ? null : rotate(face.cullFace(), xTurns, yTurns);
 
-                // Custom UVs can't be locked this simply, so only default UVs are recalculated
-                boolean lockUv = face.uv() == null || uvEquals(face.uv(), defaultUv(direction, element.from(), element.to()));
-                faces.put(rotatedDirection, lockUv
-                        ? ElementFace.face(defaultUv(rotatedDirection, from, to), face.texture(), cullFace, 0, face.tintIndex())
-                        : ElementFace.face(face.uv(), face.texture(), cullFace, face.rotation(), face.tintIndex()));
-            });
+                // Only default UVs are locked, custom UVs are kept as they are
+                boolean defaultUv = face.uv() == null || uvEquals(face.uv(), DefaultUvs.defaultUv(direction, element.from(), element.to()));
+                if (defaultUv) {
+                    faces.put(rotatedDirection, ElementFace.face(DefaultUvs.defaultUv(rotatedDirection, from, to), face.texture(), cullFace, 0, face.tintIndex()));
+                } else {
+                    faces.put(rotatedDirection, ElementFace.face(face.uv(), face.texture(), cullFace, face.rotation(), face.tintIndex()));
+                }
+            }
 
             elements.add(element.toBuilder()
                     .from(from)
@@ -107,7 +114,10 @@ public final class UvLockBaker {
                 .build();
     }
 
-    // Java applies X then Y. Around the center, X+90 maps (y, z) -> (z, -y) and Y+90 maps (x, z) -> (-z, x)
+    /**
+     * Rotates a point around a center the same way Java does: X first, then Y.
+     * A quarter turn on X maps (y, z) to (z, -y), and a quarter turn on Y maps (x, z) to (-z, x).
+     */
     private static Vector3Float rotate(Vector3Float vector, Vector3Float center, int xTurns, int yTurns) {
         Vector3Float v = vector.subtract(center);
         for (int i = 0; i < xTurns; i++) {
@@ -130,20 +140,6 @@ public final class UvLockBaker {
         }
 
         throw new IllegalStateException("Could not rotate face " + face);
-    }
-
-    // Minecraft's default UVs for a face, in the 0-1 range used by creative
-    private static TextureUV defaultUv(CubeFace face, Vector3Float from, Vector3Float to) {
-        Vector3Float f = from.divide(16);
-        Vector3Float t = to.divide(16);
-        return switch (face) {
-            case WEST -> TextureUV.uv(f.z(), 1 - t.y(), t.z(), 1 - f.y());
-            case EAST -> TextureUV.uv(1 - t.z(), 1 - t.y(), 1 - f.z(), 1 - f.y());
-            case DOWN -> TextureUV.uv(f.x(), 1 - t.z(), t.x(), 1 - f.z());
-            case UP -> TextureUV.uv(f.x(), f.z(), t.x(), t.z());
-            case NORTH -> TextureUV.uv(1 - t.x(), 1 - t.y(), 1 - f.x(), 1 - f.y());
-            case SOUTH -> TextureUV.uv(f.x(), 1 - t.y(), t.x(), 1 - f.y());
-        };
     }
 
     private static boolean uvEquals(TextureUV a, TextureUV b) {
