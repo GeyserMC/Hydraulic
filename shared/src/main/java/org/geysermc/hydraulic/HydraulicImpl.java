@@ -80,6 +80,17 @@ public class HydraulicImpl implements EventRegistrar {
     }
 
     /**
+     * Gets all the mods loaded on this platform, including library mods
+     * that don't get their own pack but whose assets may be referenced by other mods.
+     *
+     * @return all mods loaded on this platform, including libraries
+     */
+    @NotNull
+    public Collection<ModInfo> allMods() {
+        return this.bootstrap.allMods();
+    }
+
+    /**
      * Gets the mod with the specified name, or null if not found.
      *
      * @param modName the name of the mod to get

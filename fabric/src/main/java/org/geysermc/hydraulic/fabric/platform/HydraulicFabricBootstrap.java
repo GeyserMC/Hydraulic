@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -25,7 +26,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class HydraulicFabricBootstrap implements HydraulicBootstrap {
-    private final Supplier<Map<String, ModInfo>> modsList = Suppliers.memoize(() ->
+    private final Supplier<Map<String, ModInfo>> allModsList = Suppliers.memoize(() ->
         FabricLoader.getInstance()
             .getAllMods()
             .stream()
@@ -34,6 +35,14 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
             .filter(mod -> mod.getOrigin().getKind() != ModOrigin.Kind.NESTED) // Nested jars are handled in resolveJiJ below
             .<ModInfo>mapMulti((mod, output) -> FabricUtil.resolveJiJ(mod.getRootPaths(), output))
             .collect(Collectors.toUnmodifiableMap(ModInfo::id, Function.identity(), this::maxByVersion))
+    );
+
+    private final Supplier<List<ModInfo>> modsList = Suppliers.memoize(() ->
+        allModsList.get()
+            .values()
+            .stream()
+            .filter(Predicate.not(ModInfo::library))
+            .toList()
     );
 
     /**
@@ -58,12 +67,17 @@ public class HydraulicFabricBootstrap implements HydraulicBootstrap {
 
     @Override
     public @Nullable ModInfo mod(@NotNull String modName) {
-        return modsList.get().get(modName);
+        return allModsList.get().get(modName);
     }
 
     @Override
     public @NotNull Collection<ModInfo> mods() {
-        return modsList.get().values();
+        return modsList.get();
+    }
+
+    @Override
+    public @NotNull Collection<ModInfo> allMods() {
+        return allModsList.get().values();
     }
 
     @Override

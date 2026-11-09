@@ -13,7 +13,8 @@ public record ModInfo(
     @NotNull String name,
     @NotNull String version,
     @Nullable Path iconPath,
-    @NotNull Collection<Path> roots
+    @NotNull Collection<Path> roots,
+    boolean library
 ) {
     @Nullable
     public Path resolveFile(String file) {

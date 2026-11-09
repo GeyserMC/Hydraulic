@@ -22,6 +22,18 @@ public interface HydraulicBootstrap {
     Collection<ModInfo> mods();
 
     /**
+     * Gets all the mods loaded on this platform, including library mods
+     * that are excluded from {@link #mods()}. These are used as a source
+     * of assets (e.g. parent models) during conversion.
+     *
+     * @return all mods loaded on this platform, including libraries
+     */
+    @NotNull
+    default Collection<ModInfo> allMods() {
+        return this.mods();
+    }
+
+    /**
      * Gets the mod with the specified name, or null if not found.
      *
      * @param modName the name of the mod to get

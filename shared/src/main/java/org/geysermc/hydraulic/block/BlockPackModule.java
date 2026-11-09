@@ -119,39 +119,10 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     continue;
                 }
 
-                Map<String, String> textures = new HashMap<>();
-                Map<String, ModelTexture> modelTextures = getTextures(stitchedModel.textures());
-                for (Map.Entry<String, ModelTexture> entry : modelTextures.entrySet()) {
-                    ModelTexture modelTexture = getModelTexture(modelTextures, entry.getKey());
-                    if (modelTexture == null || modelTexture.key() == null) {
-                        // LOGGER.warn("Could not find a texture for key {} in model {}", entry.getKey(), model.key());
-                        continue;
-                    }
-
-                    textures.put(entry.getKey(), modelTexture.key().toString());
-                }
-
-                Set<String> tinted = new HashSet<>();
-                for (Element element : stitchedModel.elements()) {
-                    for (ElementFace face : element.faces().values()) {
-                        if (face.tintIndex() == ElementFace.DEFAULT_TINT_INDEX) {
-                            continue;
-                        }
-
-                        // Remove the # from the texture name if it exists
-                        String texture = face.texture();
-                        texture = texture.startsWith("#") ? texture.substring(1) : texture;
-
-                        markTinted(modelTextures, texture, tinted);
-                    }
-                }
-
-                Materials.Material material = new Materials.Material(textures, tinted);
-                materials.addMaterial(model.key().toString(), material);
+                materials.addMaterial(model.key().toString(), createMaterial(stitchedModel));
             }
 
             storage.materials(materials);
-            storage.save();
         }
 
         // Check for empty models and pick each block's render method
@@ -169,6 +140,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 Model model = definition.model();
                 Key key = model.key();
                 stateModels.put(state, model);
+
+                // Models from other mods or vanilla (e.g. minecraft:block/basalt) aren't covered above
+                if (storage.materials().material(key.toString()) == null) {
+                    Model stitchedModel = new ModelStitcher(context.modelProvider(), model, new PackLogListener(context.logger())).stitch();
+                    storage.materials().addMaterial(key.toString(), createMaterial(stitchedModel));
+                }
 
                 // Skip unit cube models
                 if (isUnitCube(model.parent())) {
@@ -194,6 +171,43 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             // Bedrock needs every material instance of a block to share one render method, so pick it across all states
             renderMethods.put(blockLocation.toString(), getRenderMethod(block, stateModels, storage.materials(), textureTransparency));
         }
+
+        storage.save();
+    }
+
+    /**
+     * Creates the material (resolved textures and tints) for a stitched model.
+     */
+    @NotNull
+    private static Materials.Material createMaterial(@NotNull Model stitchedModel) {
+        Map<String, String> textures = new HashMap<>();
+        Map<String, ModelTexture> modelTextures = getTextures(stitchedModel.textures());
+        for (Map.Entry<String, ModelTexture> entry : modelTextures.entrySet()) {
+            ModelTexture modelTexture = getModelTexture(modelTextures, entry.getKey());
+            if (modelTexture == null || modelTexture.key() == null) {
+                // LOGGER.warn("Could not find a texture for key {} in model {}", entry.getKey(), model.key());
+                continue;
+            }
+
+            textures.put(entry.getKey(), modelTexture.key().toString());
+        }
+
+        Set<String> tinted = new HashSet<>();
+        for (Element element : stitchedModel.elements()) {
+            for (ElementFace face : element.faces().values()) {
+                if (face.tintIndex() == ElementFace.DEFAULT_TINT_INDEX) {
+                    continue;
+                }
+
+                // Remove the # from the texture name if it exists
+                String texture = face.texture();
+                texture = texture.startsWith("#") ? texture.substring(1) : texture;
+
+                markTinted(modelTextures, texture, tinted);
+            }
+        }
+
+        return new Materials.Material(textures, tinted);
     }
 
     private void postProcess(@NotNull PackPostProcessContext<BlockPackModule> context) {
@@ -277,21 +291,25 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 Key bakedKey = UvLockBaker.bakedKey(key, variant.x(), variant.y());
                 boolean baked = !isUnitCube(model.parent()) && bakedModels.contains(bakedKey.toString());
                 Key geometryKey = baked ? bakedKey : key;
-                int rotX = baked ? 0 : variant.x();
-                int rotY = baked ? 0 : variant.y();
+                // Bedrock rejects transforming the empty geometry (it has no bounds), and rotating it does nothing anyway
+                boolean empty = emptyModels.contains(key.toString());
+                int rotX = baked || empty ? 0 : variant.x();
+                int rotY = baked || empty ? 0 : variant.y();
 
-                CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder()
-                        .transformation(new TransformationComponent(
-                            (360 - rotX) % 360, // Rotation X
-                            (360 - rotY) % 360, // Rotation Y
-                            0, // Rotation Z
-                            1, // Scale X
-                            1, // Scale Y
-                            1, // Scale Z
-                            0, // Translation X
-                            0, // Translation Y
-                            0 // Translation Z
-                        ));
+                CustomBlockComponents.Builder componentsBuilder = CustomBlockComponents.builder();
+                if (!empty) {
+                    componentsBuilder.transformation(new TransformationComponent(
+                        (360 - rotX) % 360, // Rotation X
+                        (360 - rotY) % 360, // Rotation Y
+                        0, // Rotation Z
+                        1, // Scale X
+                        1, // Scale Y
+                        1, // Scale Z
+                        0, // Translation X
+                        0, // Translation Y
+                        0 // Translation Z
+                    ));
+                }
 
                 if (!isUnitCube(model.parent())) {
                     String namespace = geometryKey.namespace();
@@ -300,8 +318,10 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     String geoKey = value.substring(value.lastIndexOf('/') + 1);
                     String geoName = "geometry." + (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + geoKey;
 
-                    if (emptyModels.contains(key.toString())) {
-                        context.logger().warn("Missing block model for block {}", blockLocation);
+                    if (empty) {
+                        if (model.parent() != null) {
+                            context.logger().warn("Missing block model for block {}", blockLocation);
+                        }
                         geoName = "geometry." + Constants.MOD_ID + ".empty";
                     }
 
@@ -327,7 +347,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 Materials materials = context.storage().materials();
                 Materials.Material material = materials.material(key.toString());
 
-                if (material != null) {
+                if (material != null && !material.textures().isEmpty()) {
                     // Add a default texture, can be replaced by the below (I think)
                     Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
 

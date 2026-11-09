@@ -93,8 +93,9 @@ public class PackManager {
         initializeModLookups();
 
         final Collection<ModInfo> mods = this.hydraulic.mods();
-        final Map<String, List<ResourcePack>> modPacks = Maps.newHashMapWithExpectedSize(mods.size());
-        for (final ModInfo mod : mods) {
+        final Collection<ModInfo> allMods = this.hydraulic.allMods();
+        final Map<String, List<ResourcePack>> modPacks = Maps.newHashMapWithExpectedSize(allMods.size());
+        for (final ModInfo mod : allMods) {
             modPacks.put(
                 mod.id(),
                 mod.roots()
@@ -117,7 +118,7 @@ public class PackManager {
         );
 
         this.vanillaPack = MinecraftResourcePackReader.minecraft().readFromZipFile(this.getVanillaPath());
-        this.modelProvider = createModelProvider(mods, modPacks, this.vanillaPack);
+        this.modelProvider = createModelProvider(allMods, modPacks, this.vanillaPack);
 
         this.packConverters = new ArrayList<>(AssetConverters.converters(hydraulic.isDev()));
         this.packConverters.remove(AssetConverters.MODEL);

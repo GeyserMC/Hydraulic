@@ -106,6 +106,7 @@ public class FabricUtil {
     private static ModInfo createModInfo(JsonObject metadata, Collection<Path> roots, int schemaVersion) {
         // Fabric Loom generation checks, if generated, is not actually a mod, but a library
         final JsonElement custom = metadata.get("custom");
+        boolean library = false;
         if (custom instanceof JsonObject object) {
             if (
                     new JsonPrimitive(true).equals(object.get("fabric-loom:generated")) ||
@@ -113,10 +114,9 @@ public class FabricUtil {
             ) {
                 return null;
             } else if (object.get("modmenu") instanceof JsonObject modMenuData) {
+                // Libraries don't get their own pack, but other mods may still reference their assets
                 final JsonElement badges = modMenuData.get("badges");
-                if (badges instanceof JsonArray badgeArray && badgeArray.contains(new JsonPrimitive("library"))) {
-                    return null;
-                }
+                library = badges instanceof JsonArray badgeArray && badgeArray.contains(new JsonPrimitive("library"));
             }
         }
 
@@ -180,7 +180,8 @@ public class FabricUtil {
             name.getAsString(),
             version.getAsString(),
             iconPath != null ? resolveFile(roots, iconPath) : null,
-            roots
+            roots,
+            library
         );
     }
 
