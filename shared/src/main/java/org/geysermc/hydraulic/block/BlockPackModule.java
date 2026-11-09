@@ -778,10 +778,11 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
      * @param shape the Java world-space shape
      * @param rotX the variant X rotation in degrees
      * @param rotY the variant Y rotation in degrees
-     * @param mirrorX whether to mirror the X axis. Selection boxes need this, but collision boxes don't
+     * @param selection whether this is a selection box. Selection boxes need the X axis mirrored and must
+     *                  stay within the block, while collision boxes can go up to 1.5 blocks tall (e.g. walls)
      * @return the box component
      */
-    private static BoxComponent createBoxComponent(VoxelShape shape, int rotX, int rotY, boolean mirrorX) {
+    private static BoxComponent createBoxComponent(VoxelShape shape, int rotX, int rotY, boolean selection) {
         if (shape.isEmpty()) {
             return BoxComponent.emptyBox();
         }
@@ -812,11 +813,11 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         minY = MathUtils.clamp(minY, 0, 1);
         minZ = MathUtils.clamp(minZ, 0, 1);
         maxX = MathUtils.clamp(maxX, 0, 1);
-        maxY = MathUtils.clamp(maxY, 0, 1);
+        maxY = MathUtils.clamp(maxY, 0, selection ? 1 : 1.5f);
         maxZ = MathUtils.clamp(maxZ, 0, 1);
 
         return new BoxComponent(
-                mirrorX ? 16 * (1 - maxX) - 8 : 16 * minX - 8,
+                16 * (selection ? 1 - maxX : minX) - 8,
                 16 * minY,
                 16 * minZ - 8,
                 16 * (maxX - minX),
