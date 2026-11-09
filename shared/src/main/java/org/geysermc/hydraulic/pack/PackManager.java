@@ -9,7 +9,6 @@ import net.minecraft.SharedConstants;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Item;
 import org.geysermc.event.Event;
 import org.geysermc.geyser.api.GeyserApi;
 import org.geysermc.hydraulic.Constants;
@@ -41,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -249,47 +249,40 @@ public class PackManager {
             }
         }
 
-        // Step 2: Use namespace information to lookup which mods contains what block models
-        final Multimap<String, Identifier> modsToBlocks = this.modsToBlocks;
-        modsToBlocks.clear();
-        for (final Identifier block : BuiltInRegistries.BLOCK.keySet()) {
-            if (block.getNamespace().equals("minecraft")) continue;
-            for (final ModInfo mod : namespacesToMods.get(block.getNamespace())) {
-                final Path checkFile = mod.resolveFile("assets/" + block.getNamespace() + "/blockstates/" + block.getPath() + ".json");
-                if (checkFile != null) {
-                    modsToBlocks.put(mod.id(), block);
-                    break;
-                } else {
-                    LOGGER.warn("Failed to find path for block state {}, skipping", block);
-                }
-            }
-        }
+        // Step 2: Use namespace information to lookup which mods contain what block and item models
+        this.modsToBlocks.clear();
+        BuiltInRegistries.BLOCK.keySet().stream()
+            .filter(id -> !id.getNamespace().equals("minecraft"))
+            .forEach(id -> this.registerAssetOwner(this.modsToBlocks, id, id, "blockstates", "block state"));
 
-        // Step 3: Use namespace information to lookup which mods contains what item models
-        // There's no ordering requirement between this and Step 2.
-        final Multimap<String, Identifier> modsToItems = this.modsToItems;
-        modsToItems.clear();
-        for (final Identifier itemId : BuiltInRegistries.ITEM.keySet()) {
-            if (itemId.getNamespace().equals("minecraft")) continue;
+        this.modsToItems.clear();
+        BuiltInRegistries.ITEM.keySet().stream()
+            .filter(id -> !id.getNamespace().equals("minecraft"))
+            .forEach(id -> Optional.ofNullable(BuiltInRegistries.ITEM.getValue(id).components().get(DataComponents.ITEM_MODEL))
+                .ifPresentOrElse(
+                    model -> this.registerAssetOwner(this.modsToItems, id, model, "items", "item"),
+                    () -> LOGGER.warn("Failed to find item model component for item {}, skipping", id)
+                ));
+    }
 
-            Item item = BuiltInRegistries.ITEM.getValue(itemId);
-            Identifier itemModel = item.components().get(DataComponents.ITEM_MODEL);
-            // Item model is missing, can't do much here
-            if (itemModel == null) {
-                LOGGER.warn("Failed to find item model component for item {}, skipping", item);
-                continue;
-            }
-
-            for (final ModInfo mod : namespacesToMods.get(itemId.getNamespace())) {
-                final Path checkFile = mod.resolveFile("assets/" + itemModel.getNamespace() + "/items/" + itemModel.getPath() + ".json");
-                if (checkFile != null) {
-                    modsToItems.put(mod.id(), itemId);
-                    break;
-                } else {
-                    LOGGER.warn("Failed to find path for item {}, skipping", item);
-                }
-            }
-        }
+    /**
+     * Finds which mod provides the asset file for a block or item, and adds the mapping to {@code target}.
+     *
+     * @param target mod ID to entry map to record into
+     * @param id the registry ID being looked up
+     * @param assetId the asset to look for
+     * @param assetType the asset directory, e.g. {@code blockstates} or {@code items}
+     * @param description entry type name used when logging
+     */
+    private void registerAssetOwner(Multimap<String, Identifier> target, Identifier id, Identifier assetId, String assetType, String description) {
+        final String assetPath = "assets/" + assetId.getNamespace() + "/" + assetType + "/" + assetId.getPath() + ".json";
+        this.namespacesToMods.get(id.getNamespace()).stream()
+            .filter(mod -> mod.resolveFile(assetPath) != null)
+            .findFirst()
+            .ifPresentOrElse(
+                mod -> target.put(mod.id(), id),
+                () -> LOGGER.warn("Failed to find path for {} {}, skipping", description, id)
+            );
     }
 
     /**
