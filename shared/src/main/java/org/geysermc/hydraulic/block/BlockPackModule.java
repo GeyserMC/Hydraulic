@@ -10,6 +10,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -42,6 +43,7 @@ import org.geysermc.hydraulic.pack.context.PackEventContext;
 import org.geysermc.hydraulic.pack.context.PackPostProcessContext;
 import org.geysermc.hydraulic.pack.context.PackPreProcessContext;
 import org.geysermc.hydraulic.storage.ModStorage;
+import org.geysermc.hydraulic.util.GeoUtil;
 import org.geysermc.hydraulic.util.ImageUtil;
 import org.geysermc.hydraulic.util.PackUtil;
 import org.geysermc.hydraulic.util.SingletonBlockGetter;
@@ -273,6 +275,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
             }
 
             String renderMethod = renderMethods.getOrDefault(blockLocation.toString(), "opaque");
+            boolean fluid = block instanceof LiquidBlock;
 
             // Calculate the base selection and collision boxes for the block
             BoxComponent baseSelectionBox = createBoxComponent(defaultState.getShape(new SingletonBlockGetter(defaultState), BlockPos.ZERO), 0, 0, true);
@@ -315,7 +318,12 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     ));
                 }
 
-                if (!isUnitCube(model.parent())) {
+                if (fluid) {
+                    // Fluids have no block model, so use the shared geometry for the fluid height
+                    componentsBuilder.geometry(GeometryComponent.builder()
+                            .identifier(GeoUtil.fluidGeometry(state.getValue(LiquidBlock.LEVEL)))
+                            .build());
+                } else if (!isUnitCube(model.parent())) {
                     String namespace = geometryKey.namespace();
                     String value = geometryKey.value();
 
@@ -327,7 +335,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                         if (model.parent() != null && !model.parent().asString().equals("minecraft:block/block")) {
                             context.logger().warn("Missing block model for block {}", blockLocation);
                         }
-                        geoName = "geometry." + Constants.MOD_ID + ".empty";
+                        geoName = GeoUtil.EMPTY_GEOMETRY;
                     }
 
                     componentsBuilder.geometry(GeometryComponent.builder()
@@ -355,7 +363,9 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 Materials materials = context.storage().materials();
                 Materials.Material material = materials.material(key.toString());
 
-                if (material != null && !material.textures().isEmpty()) {
+                if (fluid && material != null && !material.textures().isEmpty()) {
+                    addFluidMaterials(componentsBuilder, material, renderMethod, model);
+                } else if (material != null && !material.textures().isEmpty()) {
                     // Add a default texture, can be replaced by the below (I think)
                     Map.Entry<String, String> firstEntry = material.textures().entrySet().iterator().next();
 
@@ -663,6 +673,26 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
         }
 
         return cross ? "alpha_test_single_sided" : "opaque";
+    }
+
+    /**
+     * Add the material instances for a fluid block
+     * <p>
+     * Fluid textures are registered client side, so guess them from the particle texture.
+     *
+     * @param componentsBuilder the components builder to add the material instances to
+     * @param material the fluid block model's material
+     * @param renderMethod the render method of the block
+     * @param model the fluid block model
+     */
+    private static void addFluidMaterials(@NotNull CustomBlockComponents.Builder componentsBuilder, @NotNull Materials.Material material, @NotNull String renderMethod, @NotNull Model model) {
+        String still = material.textures().getOrDefault("particle", material.textures().values().iterator().next());
+        String flow = still.endsWith("_still") ? still.substring(0, still.length() - 6) + "_flow" : still;
+
+        String stillName = PackUtil.getTextureName(still);
+        componentsBuilder.materialInstance("*", createMaterialInstance(PackUtil.getTextureName(flow), renderMethod, model, null));
+        componentsBuilder.materialInstance("up", createMaterialInstance(stillName, renderMethod, model, null));
+        componentsBuilder.materialInstance("down", createMaterialInstance(stillName, renderMethod, model, null));
     }
 
     private static MaterialInstance createMaterialInstance(@NotNull String texture, @NotNull String renderMethod, @NotNull Model model, @Nullable String tintMethod) {

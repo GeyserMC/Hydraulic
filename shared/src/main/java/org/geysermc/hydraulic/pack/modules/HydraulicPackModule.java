@@ -8,7 +8,6 @@ import org.geysermc.hydraulic.util.GeoUtil;
 import org.geysermc.pack.converter.util.JsonMappings;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
@@ -31,8 +30,7 @@ public class HydraulicPackModule extends PackModule<HydraulicPackModule> {
                 }
             }
 
-            // Add the empty geometry
-            context.bedrockResourcePack().addBlockModel(GeoUtil.empty("geometry." + Constants.MOD_ID + ".empty"), "empty.json");
+            GeoUtil.addSharedGeometries(context.bedrockResourcePack());
         });
     }
 
