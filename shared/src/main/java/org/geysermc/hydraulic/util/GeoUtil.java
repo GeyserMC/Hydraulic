@@ -82,8 +82,8 @@ public class GeoUtil {
         cube.size(new float[] { SCALE, height, SCALE });
 
         Uv uv = new Uv();
-        float[] sideUv = new float[] { 0, SCALE - height };
-        float[] sideSize = new float[] { SCALE, height };
+        float[] sideUv = new float[] { 0, (SCALE - height) / 2f };
+        float[] sideSize = new float[] { SCALE / 2f, height / 2f };
 
         North north = new North();
         north.uv(sideUv);
