@@ -323,7 +323,8 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     String geoName = "geometry." + (namespace.equals(Key.MINECRAFT_NAMESPACE) ? "" : namespace + ".") + geoKey;
 
                     if (empty) {
-                        if (model.parent() != null) {
+                        // Dont warn for particle-only models as they are intentionally empty
+                        if (model.parent() != null && !model.parent().asString().equals("minecraft:block/block")) {
                             context.logger().warn("Missing block model for block {}", blockLocation);
                         }
                         geoName = "geometry." + Constants.MOD_ID + ".empty";
