@@ -3,6 +3,8 @@ package org.geysermc.hydraulic.item;
 import com.google.auto.service.AutoService;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.locale.Language;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.*;
@@ -298,6 +300,14 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                     );
 
                     CreativeMappings.setupBlock(block, customItemOptions);
+                }
+
+                // Put the song name onto a second line of the name like Bedrock does
+                JukeboxPlayable playable = item.components().get(DataComponents.JUKEBOX_PLAYABLE);
+                if (playable != null && playable.song().isBound()) {
+                    customItemDefinition.displayName(item.components().getOrDefault(DataComponents.RARITY, Rarity.COMMON).color()
+                            + Language.getInstance().getOrDefault(item.getDescriptionId())
+                            + "\n§7" + playable.song().value().description().getString() + "§f");
                 }
 
                 customItemDefinition.bedrockOptions(customItemOptions);
