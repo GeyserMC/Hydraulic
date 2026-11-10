@@ -202,7 +202,7 @@ public class ItemPackModule extends TexturePackModule<ItemPackModule> {
                 BufferedImage image = texture == null ? null : ImageUtil.read(texture.data());
                 byte[] tintedPng = image == null ? null : ImageUtil.toPng(ImageUtil.tint(image, tint));
                 if (tintedPng != null) {
-                    outputLoc = outputLoc.replace(".png", "_tinted.png");
+                    outputLoc = outputLoc.replace(".png", "_carried.png");
                     bedrockPack.addExtraFile(tintedPng, outputLoc);
                 }
             }
