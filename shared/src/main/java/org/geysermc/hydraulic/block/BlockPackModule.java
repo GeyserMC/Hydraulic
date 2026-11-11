@@ -347,7 +347,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                             .build());
                 }
 
-                // Only override the base boxes when this state's differ
+                // Override the base boxes if this state differs
                 BoxComponent selectionBox = createBoxComponent(state.getShape(new SingletonBlockGetter(state), BlockPos.ZERO), rotX, rotY, true);
                 BoxComponent collisionBox = createBoxComponent(state.getCollisionShape(new SingletonBlockGetter(state), BlockPos.ZERO), rotX, rotY, false);
                 if (!selectionBox.equals(baseSelectionBox)) {
@@ -355,6 +355,11 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                 }
                 if (!collisionBox.equals(baseCollisionBox)) {
                     componentsBuilder.collisionBoxes(collisionBox);
+                }
+
+                // Override light emission if this state differs
+                if (state.getLightEmission() != defaultState.getLightEmission()) {
+                    componentsBuilder.lightEmission(state.getLightEmission());
                 }
 
                 // Tint colours are registered client side, so guess based on the block type
@@ -428,6 +433,7 @@ public class BlockPackModule extends PackModule<BlockPackModule> {
                     .displayName("%" + block.getDescriptionId())
                     .friction(Math.min(1 - block.getFriction(), 0.9f))
                     .lightDampening(defaultState.getLightDampening())
+                    .lightEmission(defaultState.getLightEmission())
                     .destructibleByMining(block.defaultDestroyTime() < 0 ? UNBREAKABLE_DESTROY_TIME : block.defaultDestroyTime()) // TODO: Check
                     .selectionBox(baseSelectionBox)
                     .collisionBoxes(baseCollisionBox);
